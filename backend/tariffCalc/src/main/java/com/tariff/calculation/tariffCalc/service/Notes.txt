@@ -1,0 +1,3 @@
+All implementation of the services goes in here. 
+For this, one service can use multiple Repoes at a single time, so long 
+as its not one for everything (common sence deduction) 
