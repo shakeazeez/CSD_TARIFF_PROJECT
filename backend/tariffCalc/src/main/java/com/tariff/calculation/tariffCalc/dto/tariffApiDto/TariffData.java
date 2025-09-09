@@ -1,10 +1,10 @@
-package com.tariff.calculation.tariffCalc.dto;
+package com.tariff.calculation.tariffCalc.dto.tariffApiDto;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record Data (
+public record TariffData (
     
     @JsonProperty("hs_code")
     String hsCode,

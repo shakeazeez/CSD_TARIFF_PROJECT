@@ -4,6 +4,7 @@ import org.hibernate.cache.spi.support.AbstractReadWriteAccess.Item;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 @Entity
@@ -15,6 +16,7 @@ public class Tariff {
     private String reportingCountry;
     private String partnerCountry;
     
+    @OneToMany
     private Item item;
     private Double percentageRate;
 }
