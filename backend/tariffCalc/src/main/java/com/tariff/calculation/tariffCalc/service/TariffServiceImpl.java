@@ -23,13 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 /*
- * Welcome to hell. This is my mystical garbage to call an API on the backend 
+ * This class is the service class that handles endpoints related to tariffs
  * Since Java doesnt have an easy way to dynamically store an object, you have 
- * the mess known as DTO MoachQuery... 
+ * alot of DTOs elsewhere... 
+ *
+ * It should only have 2 methods (working progress). One method to call 
+ * current api and one method to call historical API. 
  * 
- * And since we cant have simple thing on this earth, I used some interesting logic
- * to retrieve the tariff info out of the json response when we have to do external
- * api calls. 
+ *  Currently completed: 
  * 
  * @author: Joseph
 */
