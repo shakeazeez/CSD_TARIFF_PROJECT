@@ -80,7 +80,7 @@ public class TariffServiceImpl implements TariffService {
                                          .uri("")
                                          .retrieve()
                                          .onStatus((status) -> status.value() == 404, (request, response) -> {
-                                             throw new IllegalArgumentException (response.getStatusText());
+                                             throw new ApiFailureException (response.getStatusText());
                                           })
                                          .body(MoachDTO.class);
         
@@ -193,7 +193,7 @@ public class TariffServiceImpl implements TariffService {
                                          .uri("")
                                          .retrieve()
                                          .onStatus((status) -> status.value() == 404, (request, response) -> {
-                                             throw new IllegalArgumentException (response.getStatusText());
+                                             throw new ApiFailureException (response.getStatusText());
                                           })
                                          .body(ItemRetrievalDTO.class); 
         if (result == null || result.codes() == null) {
