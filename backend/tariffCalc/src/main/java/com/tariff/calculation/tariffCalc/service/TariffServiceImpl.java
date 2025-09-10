@@ -91,7 +91,7 @@ public class TariffServiceImpl implements TariffService {
         
         List<Tariff> res = new ArrayList<>();
         
-        // sigh... This is gna be disgusting. Also, IDK why tf is there multiple data.... 
+        // sigh... This is gna be disgusting. Also, IDK why is there multiple data.... 
         // Actually i will leave this here for now since idt i know how I want to decipher this nonsence 
         // TODO: Which data we taking? 
         result.tariffData().stream()
