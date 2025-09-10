@@ -1,6 +1,6 @@
 package com.tariff.calculation.tariffCalc.service;
 
-import com.tariff.calculation.tariffCalc.dto.tariffApiDto.TariffQueryDTO;
+import com.tariff.calculation.tariffCalc.dto.TariffQueryDTO;
 
 public interface TariffService {
     // Getters 

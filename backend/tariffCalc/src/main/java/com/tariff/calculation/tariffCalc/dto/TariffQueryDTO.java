@@ -1,8 +1,9 @@
-package com.tariff.calculation.tariffCalc.dto.tariffApiDto;
+package com.tariff.calculation.tariffCalc.dto;
 
 public record TariffQueryDTO (
     String reportingCountry,
     String partnerCountry,
-    String item
+    String item, 
+    Integer costOfItem
 ) 
 {}
