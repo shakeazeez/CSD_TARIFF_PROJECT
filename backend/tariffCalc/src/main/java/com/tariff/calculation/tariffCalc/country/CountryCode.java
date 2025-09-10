@@ -15,6 +15,6 @@ public class CountryCode {
     private Integer countryNumber;
     private String countryCode;
     private String countryName;
-    
+    private Boolean isDeveloping;
     
 }

@@ -100,7 +100,6 @@ public class TariffServiceImpl implements TariffService {
                                 // This is the US case where it is abit confusing since it stores general tariff 
                                 // and seperate tariffs differently. This is why we dont try to be special 
                                 if (tariffRate != null) {
-                                    // countries
                                     String countriesInfo = tariffRate.countries();
                                     
                                     // This is the official 2 or 1 letter code provided to each country for some reason or another. 
@@ -120,14 +119,14 @@ public class TariffServiceImpl implements TariffService {
                                     countries.forEach((code) ->  {
                                         Optional<CountryCode> country = countryCodesRepo.findByCountryCode(code);
                                        
-                                        if (!country.isEmpty()) {
+                                        if (country.isPresent()) {
                                             Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue));
                                             res.add(tariff);
                                         } 
                                     });
                                     
                                     // This is the world case 
-                                    CountryCode world = countryCodesRepo.findByCountryName("World").get();
+                                    CountryCode world = countryCodesRepo.findByCountryName("world").get();
                                     
                                     String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
                                     Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free") ? Double.parseDouble(generalRateInfo) : 0.0;
@@ -139,17 +138,22 @@ public class TariffServiceImpl implements TariffService {
                                 // This is the general case that all other tariff information seems to like to follow. 
                                 // If by some reason this no longer applies for some edge case... Well bops
                                 List<TableData> tariffInformation = tariffData.countryInformation();
-                               
+                                
                                 tariffInformation.forEach((information) -> {
                                     List<CountryCode> country = new ArrayList<>();
                                     
-                                    Optional<CountryCode> firstCountry = countryCodesRepo.findByCountryName(information.tariffRegion());
-                                    
-                                    if (!firstCountry.isEmpty()) {
-                                        country.add(firstCountry.get());
+                                    if ("MFN".equals(information.tariffRegion())) {
+                                        country.add(countryCodesRepo.findByCountryName("world").get());
+                                    } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
+                                        country.add(countryCodesRepo.findByCountryName("developing").get());
+                                    } else {
+                                        Optional<CountryCode> firstCountry = countryCodesRepo.findByCountryName(information.tariffRegion());
+                                        if (!firstCountry.isEmpty()) {
+                                            country.add(firstCountry.get());
+                                        }
                                     }
                                     
-                                    // The spliting is wrong. I need to look over this first. If you can 
+                                    // This is wrong because it is not standard how these countries are described.....
                                     // help ping me for the sample queries 
                                     // TODO: Fix this garbage
                                     List<String> countryNames = List.of(information.country().split(","));
@@ -157,7 +161,7 @@ public class TariffServiceImpl implements TariffService {
                                     countryNames.forEach((names) -> {
                                         Optional<CountryCode> temp = countryCodesRepo.findByCountryName(names);
                                         
-                                        if (!temp.isEmpty()) {
+                                        if (temp.isPresent()) {
                                             country.add(temp.get());
                                         }
                                     });
@@ -165,7 +169,7 @@ public class TariffServiceImpl implements TariffService {
                                     // Sorry about this line bear with me. I will maybe clean this up
                                     String regionTariffRate = information.tariffRate().substring(information.tariffRate().indexOf("%"));
                                     Double regionTariffRateValue;
-                                    if (regionTariffRate == null || "".equals(regionTariffRate) || "0.0".equals(regionTariffRate)){
+                                    if (regionTariffRate == null || "".equals(regionTariffRate)) {
                                         regionTariffRateValue = 0.0;
                                     } else {
                                         regionTariffRateValue = Double.parseDouble(regionTariffRate);
@@ -220,18 +224,41 @@ public class TariffServiceImpl implements TariffService {
         Item item = itemRepo.findByItemName(tariffQueryDTO.item())
                             .orElseGet(() -> loadItemFromApi(tariffQueryDTO.item()));
        
-        List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem (
-                                                        tariffQueryDTO.partnerCountry(), 
+        // Needs to be final here because being used in a very interesting lambda later down the line 
+        final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem (
+                                                        reportingCode, 
                                                         item);
                                   
         if (tariffList.isEmpty()) {
-            tariffList = loadTariffFromApi(reportingCode, item);
+            tariffList.addAll(loadTariffFromApi(reportingCode, item));
         }
-        
+    
         Tariff tariff = tariffList.stream()
-                                  .filter((tariffs) -> tariffs.getPartnerCountry().equals(tariffQueryDTO.partnerCountry()))
+                                  .filter((tariffs) -> tariffs.getPartnerCountry().getCountryName().equals(tariffQueryDTO.partnerCountry()))
                                   .findFirst()
-                                  .orElseThrow(() -> new IllegalArgumentException("Unable to find the tariff"));
+                                  // Here, we check to return either developing tariff or non-developed tariff 
+                                  .orElseGet(() -> {
+                                        CountryCode temp = countryCodesRepo.findByCountryName(tariffQueryDTO.reportingCountry())
+                                                                         .orElseThrow(() -> new IllegalArgumentException("Country not found"));
+                                                                         
+                                        Optional<CountryCode> developing = countryCodesRepo.findByCountryName("developing");
+                                        CountryCode world = countryCodesRepo.findByCountryName("world")
+                                                                            .orElseThrow(() -> new IllegalCallerException ("World not found"));
+                                        if (temp.getIsDeveloping() && developing.isPresent()) {
+                                            return tariffList.stream()
+                                                             .filter((currTariff) -> currTariff.getReportingCountry().equals(developing.get()))
+                                                             .findFirst()
+                                                             .get();
+                                        } else {
+                                            return tariffList.stream()
+                                                             .filter((currTariff) -> currTariff.getReportingCountry().equals(world))
+                                                             .findFirst()
+                                                             .get();
+                                        }
+                                  });
+                                
+                                  // Havent decided about this yet actually....
+                                  // .orElseThrow(() -> new IllegalArgumentException("Unable to find the tariff"));
         
                                   
         // TODO: Do the tariff calculation here 
