@@ -10,6 +10,7 @@ import com.tariff.calculation.tariffCalc.dto.TariffQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.itemApiDto.ItemRetrievalDTO;
 import com.tariff.calculation.tariffCalc.dto.tariffApiDto.MoachDTO;
 import com.tariff.calculation.tariffCalc.dto.tariffApiDto.TableData;
+import com.tariff.calculation.tariffCalc.dto.tariffApiDto.TariffData;
 import com.tariff.calculation.tariffCalc.dto.tariffApiDto.TariffRate;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 import com.tariff.calculation.tariffCalc.item.Item;
@@ -94,92 +95,92 @@ public class TariffServiceImpl implements TariffService {
         // sigh... This is gna be disgusting. Also, IDK why is there multiple data.... 
         // Actually i will leave this here for now since idt i know how I want to decipher this nonsence 
         // TODO: Which data we taking? 
-        result.tariffData().stream()
-                           .forEach((tariffData) -> {
-                                TariffRate tariffRate = tariffData.tariffRate();
+        TariffData tariffData = result.tariffData().get(0);
+        
+        TariffRate tariffRate = tariffData.tariffRate();
                                 
-                                // This is the US case where it is abit confusing since it stores general tariff 
-                                // and seperate tariffs differently. This is why we dont try to be special 
-                                if (tariffRate != null) {
-                                    String countriesInfo = tariffRate.countries();
+        // This is the US case where it is abit confusing since it stores general tariff 
+        // and seperate tariffs differently. This is why we dont try to be special 
+        if (tariffRate != null) {
+            String countriesInfo = tariffRate.countries();
                                     
-                                    // This is the official 2 or 1 letter code provided to each country for some reason or another. 
-                                    // Will be a database thing down the road
-                                    List<String> countries = List.of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
-                                                                                  .split(","));
-                                    String customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
-                                                                   .trim()
-                                                                   .toLowerCase();
+            // This is the official 2 or 1 letter code provided to each country for some reason or another. 
+            // Will be a database thing down the road
+            List<String> countries = List.of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
+                                                          .split(","));
+                        
+            String customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
+                                                 .trim()
+                                                 .toLowerCase();
                                                                    
-                                    // Stores rateInfo as decimal as it is a percentage initially
-                                    if (customRateInfo.contains("%")) {
-                                        customRateInfo = customRateInfo.substring(customRateInfo.indexOf('%'));
-                                    }
+            // Stores rateInfo as decimal as it is a percentage initially
+            if (customRateInfo.contains("%")) {
+                customRateInfo = customRateInfo.substring(customRateInfo.indexOf('%'));
+            }
     
-                                    Double customRateValue =  customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
-                                    countries.forEach((code) ->  {
-                                        Optional<CountryCode> country = countryCodesRepo.findByCountryCode(code);
-                                       
-                                        if (country.isPresent()) {
-                                            Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue));
-                                            res.add(tariff);
-                                        } 
-                                    });
-                                    
-                                    // This is the world case 
-                                    CountryCode world = countryCodesRepo.findByCountryName("world").get();
-                                    
-                                    String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
-                                    Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free") ? Double.parseDouble(generalRateInfo) : 0.0;
-                                    
-                                    Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue));
-                                    res.add(tariff);
-                                }
-                               
-                                // This is the general case that all other tariff information seems to like to follow. 
-                                // If by some reason this no longer applies for some edge case... Well bops
-                                List<TableData> tariffInformation = tariffData.countryInformation();
-                                
-                                tariffInformation.forEach((information) -> {
-                                    List<CountryCode> country = new ArrayList<>();
-                                    
-                                    if ("MFN".equals(information.tariffRegion())) {
-                                        country.add(countryCodesRepo.findByCountryName("world").get());
-                                    } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
-                                        country.add(countryCodesRepo.findByCountryName("developing").get());
-                                    } else {
-                                        Optional<CountryCode> firstCountry = countryCodesRepo.findByCountryName(information.tariffRegion());
-                                        if (!firstCountry.isEmpty()) {
-                                            country.add(firstCountry.get());
-                                        }
-                                    }
-                                    
-                                    // This is wrong because it is not standard how these countries are described.....
-                                    // help ping me for the sample queries 
-                                    // TODO: Fix this garbage
-                                    List<String> countryNames = List.of(information.country().split(","));
-                                    
-                                    countryNames.forEach((names) -> {
-                                        Optional<CountryCode> temp = countryCodesRepo.findByCountryName(names);
+            Double customRateValue =  customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
+            countries.forEach((code) ->  {
+                Optional<CountryCode> country = countryCodesRepo.findByCountryCode(code);
                                         
-                                        if (temp.isPresent()) {
-                                            country.add(temp.get());
-                                        }
-                                    });
+                if (country.isPresent()) {
+                    Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue));
+                    res.add(tariff);
+                } 
+            });
                                     
-                                    // Sorry about this line bear with me. I will maybe clean this up
-                                    String regionTariffRate = information.tariffRate().substring(information.tariffRate().indexOf("%"));
-                                    Double regionTariffRateValue;
-                                    if (regionTariffRate == null || "".equals(regionTariffRate)) {
-                                        regionTariffRateValue = 0.0;
-                                    } else {
-                                        regionTariffRateValue = Double.parseDouble(regionTariffRate);
-                                    }
+            // This is the world case 
+            CountryCode world = countryCodesRepo.findByCountryName("world").get();
                                     
-                                    country.forEach((regionCountry) -> res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue))));
-                                });
+            String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
+            Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free") ? Double.parseDouble(generalRateInfo) : 0.0;
+                                    
+            Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue));
+            res.add(tariff);
+        }
                                
-                            });
+        // This is the general case that all other tariff information seems to like to follow. 
+        // If by some reason this no longer applies for some edge case... Well bops
+        List<TableData> tariffInformation = tariffData.countryInformation();
+                                
+        tariffInformation.forEach((information) -> {
+            List<CountryCode> country = new ArrayList<>();
+                                    
+            if ("MFN".equals(information.tariffRegion())) {
+                country.add(countryCodesRepo.findByCountryName("world").get());
+            } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
+                country.add(countryCodesRepo.findByCountryName("developing").get());
+            } else {
+                Optional<CountryCode> firstCountry = countryCodesRepo.findByCountryName(information.tariffRegion());
+                if (!firstCountry.isEmpty()) {
+                    country.add(firstCountry.get());
+                }
+            }
+                                    
+            // This is wrong because it is not standard how these countries are described.....
+            // help ping me for the sample queries 
+            // TODO: Fix this garbage
+            List<String> countryNames = List.of(information.country().split(","));
+                                    
+            countryNames.forEach((names) -> {
+                Optional<CountryCode> temp = countryCodesRepo.findByCountryName(names);
+                                        
+                if (temp.isPresent()) {
+                    country.add(temp.get());
+                }
+            });
+                                    
+            // Sorry about this line bear with me. I will maybe clean this up
+            String regionTariffRate = information.tariffRate().substring(information.tariffRate().indexOf("%"));
+            Double regionTariffRateValue;
+            if (regionTariffRate == null || "".equals(regionTariffRate)) {
+                regionTariffRateValue = 0.0;
+            } else {
+                regionTariffRateValue = Double.parseDouble(regionTariffRate);
+            }
+                                    
+            country.forEach((regionCountry) -> res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue))));
+        });
+                               
         return res;
     }
     
