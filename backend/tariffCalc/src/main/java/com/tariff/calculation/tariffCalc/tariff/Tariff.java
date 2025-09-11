@@ -1,6 +1,6 @@
 package com.tariff.calculation.tariffCalc.tariff;
 
-import com.tariff.calculation.tariffCalc.country.CountryCode;
+import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.item.Item;
 
 import jakarta.persistence.Entity;
@@ -23,16 +23,16 @@ public class Tariff {
     private Integer id;
 
     @OneToMany(mappedBy = "reporting_country")
-    private CountryCode reportingCountry;
+    private Country reportingCountry;
 
     @OneToMany(mappedBy = "partner_country")
-    private CountryCode partnerCountry;
+    private Country partnerCountry;
 
     @OneToMany
     private Item item;
     private Double percentageRate;
 
-    public Tariff(CountryCode reportingCountry, CountryCode partnerCountry, Item item, Double percentageRate) {
+    public Tariff(Country reportingCountry, Country partnerCountry, Item item, Double percentageRate) {
         this.reportingCountry = reportingCountry;
         this.partnerCountry = partnerCountry;
         this.item = item;

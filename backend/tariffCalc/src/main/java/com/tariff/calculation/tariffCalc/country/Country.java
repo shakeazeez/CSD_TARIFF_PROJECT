@@ -9,7 +9,7 @@ import lombok.Data;
 @Entity
 @Data
 @AllArgsConstructor
-public class CountryCode {
+public class Country {
     // temporary cause im not sure how I want to store this yet
     @Id
     private Integer countryNumber;

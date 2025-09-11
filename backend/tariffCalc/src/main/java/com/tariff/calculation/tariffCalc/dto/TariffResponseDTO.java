@@ -1,10 +1,15 @@
 package com.tariff.calculation.tariffCalc.dto;
 import  com.tariff.calculation.tariffCalc.dto.tariffApiDto.TariffRate;
 
+/** 
+ * DTO for tariff query response. 
+ * 
+*/
 public record TariffResponseDTO(
     String reportingCountry,
     String partnerCountry,
     String item,
-    TariffRate tariffRate
-    // add more fields afterwards (js start with these first)
+    TariffRate tariffRate,
+    Double tariffAmount,
+    Double itemCostWithTariff
 ) {}
