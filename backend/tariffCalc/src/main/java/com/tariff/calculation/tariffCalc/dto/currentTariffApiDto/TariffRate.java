@@ -1,4 +1,4 @@
-package com.tariff.calculation.tariffCalc.dto.tariffApiDto;
+package com.tariff.calculation.tariffCalc.dto.currentTariffApiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
