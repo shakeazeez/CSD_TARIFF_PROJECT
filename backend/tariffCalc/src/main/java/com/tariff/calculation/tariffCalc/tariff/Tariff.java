@@ -1,5 +1,7 @@
 package com.tariff.calculation.tariffCalc.tariff;
 
+import java.time.LocalDate;
+
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.item.Item;
 
@@ -31,11 +33,14 @@ public class Tariff {
     @OneToMany
     private Item item;
     private Double percentageRate;
+    
+    private LocalDate localDate;
 
-    public Tariff(Country reportingCountry, Country partnerCountry, Item item, Double percentageRate) {
+    public Tariff(Country reportingCountry, Country partnerCountry, Item item, Double percentageRate, LocalDate localDate) {
         this.reportingCountry = reportingCountry;
         this.partnerCountry = partnerCountry;
         this.item = item;
         this.percentageRate = percentageRate;
+        this.localDate = localDate;
     }
 }

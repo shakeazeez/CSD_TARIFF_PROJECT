@@ -1,5 +1,6 @@
 package com.tariff.calculation.tariffCalc.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -125,7 +126,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 Optional<Country> country = countryCodesRepo.findByCountryCode(code);
                                         
                 if (country.isPresent()) {
-                    Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue));
+                    Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue, LocalDate.now()));
                     res.add(tariff);
                 } 
             });
@@ -136,7 +137,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
             Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free") ? Double.parseDouble(generalRateInfo) : 0.0;
                                     
-            Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue));
+            Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue, LocalDate.now()));
             res.add(tariff);
         }
                                
@@ -180,7 +181,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 regionTariffRateValue = Double.parseDouble(regionTariffRate);
             }
                                     
-            country.forEach((regionCountry) -> res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue))));
+            country.forEach((regionCountry) -> res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue, LocalDate.now()))));
         });
                                
         return res;
@@ -259,7 +260,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                                              .findFirst()
                                                              .get();
                                         }
-                                  });
+                                });
                                 
                                   // Havent decided about this yet actually....
                                   // .orElseThrow(() -> new IllegalArgumentException("Unable to find the tariff"));
