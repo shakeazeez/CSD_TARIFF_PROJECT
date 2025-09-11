@@ -122,7 +122,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
     
             Double customRateValue =  customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
             countries.forEach((code) ->  {
-                Optional<CountryCode> country = countryCodesRepo.findByCountryCode(code);
+                Optional<Country> country = countryCodesRepo.findByCountryCode(code);
                                         
                 if (country.isPresent()) {
                     Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue));
@@ -131,7 +131,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             });
                                     
             // This is the world case 
-            CountryCode world = countryCodesRepo.findByCountryName("world").get();
+            Country world = countryCodesRepo.findByCountryName("world").get();
                                     
             String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
             Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free") ? Double.parseDouble(generalRateInfo) : 0.0;
@@ -145,14 +145,14 @@ public class TariffCalculationImpl implements TariffCalculationService {
         List<TableData> tariffInformation = tariffData.countryInformation();
                                 
         tariffInformation.forEach((information) -> {
-            List<CountryCode> country = new ArrayList<>();
+            List<Country> country = new ArrayList<>();
                                     
             if ("MFN".equals(information.tariffRegion())) {
                 country.add(countryCodesRepo.findByCountryName("world").get());
             } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
                 country.add(countryCodesRepo.findByCountryName("developing").get());
             } else {
-                Optional<CountryCode> firstCountry = countryCodesRepo.findByCountryName(information.tariffRegion());
+                Optional<Country> firstCountry = countryCodesRepo.findByCountryName(information.tariffRegion());
                 if (!firstCountry.isEmpty()) {
                     country.add(firstCountry.get());
                 }
@@ -164,7 +164,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             List<String> countryNames = List.of(information.country().split(","));
                                     
             countryNames.forEach((names) -> {
-                Optional<CountryCode> temp = countryCodesRepo.findByCountryName(names);
+                Optional<Country> temp = countryCodesRepo.findByCountryName(names);
                                         
                 if (temp.isPresent()) {
                     country.add(temp.get());
@@ -247,7 +247,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                                                          
                                         Optional<Country> developing = countryCodesRepo.findByCountryName("developing");
                                         Country world = countryCodesRepo.findByCountryName("world")
-                                                                            .orElseThrow(() -> new IllegalCallerException ("World not found"));
+                                                                            .orElseThrow(() -> new NoSuchElementException ("World not found"));
                                         if (temp.getIsDeveloping() && developing.isPresent()) {
                                             return tariffList.stream()
                                                              .filter((currTariff) -> currTariff.getReportingCountry().equals(developing.get()))
@@ -267,10 +267,12 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                   
         // TODO: Do the tariff calculation here 
         double percentage = tariff.getPercentageRate();
+        
         return null;
     }
-
-    public TariffResponseDTO getPastTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) throws IllegalArgumentException, NoSuchElementException{
+    
+    
+    public TariffResponseDTO getPastTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) throws IllegalArgumentException, NoSuchElementException {
         // TODO: Add implementation for historical tariffs, remove exceptions thrown on signature
         return null;
     }

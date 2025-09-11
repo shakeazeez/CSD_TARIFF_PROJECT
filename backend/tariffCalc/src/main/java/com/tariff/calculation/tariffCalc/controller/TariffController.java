@@ -30,7 +30,7 @@ public class TariffController {
     /*
      * Get tariff details for item between two countries of default(current) year
      */
-    @GetMapping("/calculate/{reportingCountry}/{partnerCountry}/{item}")
+    @GetMapping("/current")
     public ResponseEntity<TariffResponseDTO> getCurrentTariffDetails(@RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffResponseDTO response = null;
@@ -39,7 +39,6 @@ public class TariffController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         } catch (NoSuchElementException e) {
-            // TODO: discuss with Joseph on the appropriate exception (from service implementation)
             return ResponseEntity.notFound().build();
         }
 
@@ -49,7 +48,7 @@ public class TariffController {
     /*
      * Get tariff details for item between two countries of selected year
      */
-    @GetMapping("/calculate/{reportingCountry}/{partnerCountry}/{item}/{year}")
+    @GetMapping("/past")
     public ResponseEntity<TariffResponseDTO> getHistoricalTariffDetails(@RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffResponseDTO response = null;
@@ -58,7 +57,6 @@ public class TariffController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         } catch (NoSuchElementException e) {
-            // TODO: discuss with Joseph on the appropriate exception (from service implementation)
             return ResponseEntity.notFound().build();
         }
 
