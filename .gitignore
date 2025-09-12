@@ -1,5 +1,8 @@
 .env
 
+#frontend
+node_modules
+
 # mac issues 
 .DS_Store
 
