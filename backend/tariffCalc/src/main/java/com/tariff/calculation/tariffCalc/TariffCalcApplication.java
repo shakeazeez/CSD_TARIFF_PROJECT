@@ -13,7 +13,8 @@ public class TariffCalcApplication {
                                                .load();
 	public static void main(String[] args) {
 	    System.setProperty("DATABASE_PASSWORD", dotenv.get("DATABASE_PASSWORD"));
-	
+					
+		System.setProperty("DATABASE_URL", dotenv.get("DATABASE_URL"));
 		SpringApplication.run(TariffCalcApplication.class, args);
 	}
 

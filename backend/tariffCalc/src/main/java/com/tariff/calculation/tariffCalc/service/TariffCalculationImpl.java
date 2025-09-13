@@ -59,7 +59,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
         this.countryRepo = countryRepo;
         this.itemRepo = itemRepo;
         this.tariffRepo = tariffRepo;
-        // TODO: The actual API please
         this.restClientMoach = restClientBuilder.clone()
                                                 .baseUrl("https://mtech-api.com/client/api")
                                                 .build();
@@ -74,7 +73,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * there is a general tariff to everyone. This will also store data 
      * into the database for reducing amount of queries
      * 
-     * TODO: The actual API please
      *
      * @param countryCode The reporting countriy's countryCodes 
      *                    that has been saved and loaded ahead of time 

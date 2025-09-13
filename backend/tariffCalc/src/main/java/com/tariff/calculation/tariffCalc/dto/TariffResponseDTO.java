@@ -1,5 +1,4 @@
 package com.tariff.calculation.tariffCalc.dto;
-import  com.tariff.calculation.tariffCalc.dto.currentTariffApiDto.TariffRate;
 
 /** 
  * DTO for tariff query response. 
