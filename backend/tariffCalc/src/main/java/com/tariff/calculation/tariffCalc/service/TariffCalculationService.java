@@ -6,7 +6,6 @@ import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 public interface TariffCalculationService {
 
     // Getters 
-    public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO);
-    public TariffResponseDTO getPastTariffDetails(TariffCalculationQueryDTO tariffQueryDTO);
+    TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO);
 
 }

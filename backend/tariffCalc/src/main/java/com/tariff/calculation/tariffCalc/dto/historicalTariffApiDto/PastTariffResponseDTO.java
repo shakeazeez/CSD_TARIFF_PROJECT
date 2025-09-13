@@ -1,6 +1,5 @@
 package com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto;
 
-import java.time.LocalDate;
 import java.util.List;
 
 /* 
@@ -9,5 +8,5 @@ import java.util.List;
 public record PastTariffResponseDTO (
     String reportingCountry,
     String partnerCountry,
-    List<PastTariffData> tariffData
+    List<WitsDTO> tariffData
 ) {}

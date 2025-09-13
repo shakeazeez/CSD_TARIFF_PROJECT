@@ -2,8 +2,7 @@ package com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto;
 
 import java.time.LocalDate;
 
-public record PastTariffData (
-    LocalDate periodStart,
-    LocalDate periodEnd,
+public record WitsDTO (
+    LocalDate startDate,
     double tariffRate
 ) {}
