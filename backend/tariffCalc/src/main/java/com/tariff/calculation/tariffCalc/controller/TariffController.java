@@ -14,6 +14,7 @@ import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 
+
 @RequestMapping("/tariff")
 @RestController
 public class TariffController {

@@ -9,7 +9,7 @@ public record TariffResponseDTO(
     String reportingCountry,
     String partnerCountry,
     String item,
-    TariffRate tariffRate,
+    Double tariffRate,
     Double tariffAmount,
     Double itemCostWithTariff
 ) {}

@@ -1,14 +1,21 @@
 package com.tariff.calculation.tariffCalc;
-import com.tariff.calculation.tariffCalc.tariff.*;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
-public class TariffCalcApplication {
-
+public class TariffCalcApplication {    
+    private static final Dotenv dotenv = Dotenv.configure()
+                                               .directory("./")
+                                               .filename(".env")
+                                               .load();
 	public static void main(String[] args) {
+	    System.setProperty("DATABASE_PASSWORD", dotenv.get("DATABASE_PASSWORD"));
+	
 		SpringApplication.run(TariffCalcApplication.class, args);
 	}
-	
+
 }

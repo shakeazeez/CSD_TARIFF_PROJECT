@@ -9,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,13 +26,15 @@ public class Tariff {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @OneToMany(mappedBy = "reporting_country")
+    @ManyToOne
+    @JoinColumn(name = "reporting_country_id")
     private Country reportingCountry;
-
-    @OneToMany(mappedBy = "partner_country")
+    
+    @ManyToOne
+    @JoinColumn(name = "partner_country_id")
     private Country partnerCountry;
 
-    @OneToMany
+    @ManyToOne
     private Item item;
     private Double percentageRate;
     

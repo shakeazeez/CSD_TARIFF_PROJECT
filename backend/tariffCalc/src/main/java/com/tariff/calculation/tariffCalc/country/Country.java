@@ -1,8 +1,12 @@
 package com.tariff.calculation.tariffCalc.country;
 
-import org.springframework.data.annotation.Id;
+import java.util.List;
+
+import com.tariff.calculation.tariffCalc.tariff.Tariff;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,4 +21,9 @@ public class Country {
     private String countryName;
     private Boolean isDeveloping;
     
+    @OneToMany(mappedBy = "reportingCountry")
+    private List<Tariff> reportingTariff;
+    
+    @OneToMany(mappedBy = "partnerCountry")
+    private List<Tariff> partnerTariff;
 }
