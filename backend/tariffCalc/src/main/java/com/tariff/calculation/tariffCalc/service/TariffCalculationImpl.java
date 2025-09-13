@@ -82,10 +82,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * @return a list of tariff objects with that particular item and
      *         that particular country code 
     */
-    //api/import-duty?q=640411&dest_country=840&origin_country=156&token=YOUR_API_TOKEN
     private List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
         MoachDTO result = restClientMoach.get()
-                                         .uri("")
+                                         .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("gDNQ6zEr0rDjXguYX4SWtbtMT0Bo2FER"))
                                          .retrieve()
                                          .onStatus((status) -> status.value() == 404, (request, response) -> {
                                              throw new ApiFailureException (response.getStatusText());
@@ -194,7 +193,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * to conserve our amount of queries for the API. This also stores whateveer we 
      * get into our database with the item
      * 
-     * TODO: The actual API please
+     * TODO: Time to test :-) 
      *
      * @Param Item name
      * returns Item object with Hscode 
