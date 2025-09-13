@@ -2,6 +2,7 @@ package com.tariff.calculation.tariffCalc.country;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 
 import jakarta.persistence.Entity;
@@ -26,8 +27,10 @@ public class Country {
     private Boolean isDeveloping;
     
     @OneToMany(mappedBy = "reportingCountry")
+    @JsonIgnore
     private List<Tariff> reportingTariff;
     
     @OneToMany(mappedBy = "partnerCountry")
+    @JsonIgnore
     private List<Tariff> partnerTariff;
 }

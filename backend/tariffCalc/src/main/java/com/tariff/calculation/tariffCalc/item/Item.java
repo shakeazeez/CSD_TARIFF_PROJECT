@@ -2,6 +2,7 @@ package com.tariff.calculation.tariffCalc.item;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 
 import jakarta.persistence.Entity;
@@ -24,5 +25,6 @@ public class Item {
     private String itemName;
     
     @OneToMany
+    @JsonIgnore
     private List<Tariff> tariffs;
 }
