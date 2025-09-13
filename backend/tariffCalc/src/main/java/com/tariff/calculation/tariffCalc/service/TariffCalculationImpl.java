@@ -44,7 +44,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
     private final Logger log = LoggerFactory.getLogger(TariffCalculationImpl.class);
     private final RestClient restClientMoach;
-    private final RestClient restClientWits;
     private final CountryRepo countryRepo;
     private final ItemRepo itemRepo;
     private final TariffRepo tariffRepo;
@@ -62,9 +61,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
         this.restClientMoach = restClientBuilder.clone()
                                                 .baseUrl("")
                                                 .build();
-        this.restClientWits = restClientBuilder.clone()
-                                               .baseUrl("")
-                                               .build();
     }
     
     /*
