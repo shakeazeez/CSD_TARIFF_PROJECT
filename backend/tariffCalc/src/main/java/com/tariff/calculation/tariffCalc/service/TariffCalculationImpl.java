@@ -272,7 +272,31 @@ public class TariffCalculationImpl implements TariffCalculationService {
         return null;
     }
     
+    private List<Tariff> getHistoricalTariffFromApi(Country reportingCountry, Item item, LocalDate effectiveDate) throws ApiFailureException {
+        WitDTO result = restClientMoach.get()
+                                         .uri("")
+                                         .retrieve()
+                                         .onStatus((status) -> status.value() == 404, (request, response) -> {
+                                             throw new ApiFailureException (response.getStatusText());
+                                          })
+                                         .body(WitDTO.class);
+        
+        if (result == null || result.tariffData() == null) {
+            throw new ApiFailureException("Unable to call api properly");
+        }
+        
+        List<Tariff> res = new ArrayList<>();
+
+        
+
+        return res;
+    }
+
+    private Item loadItemFromHistricalApi(String itemName, LocalDate effectiveDate) throws ApiFailureException {
+        return null;
+    }
     
+   
     public TariffResponseDTO getPastTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) throws IllegalArgumentException, NoSuchElementException {
         // TODO: Add implementation for historical tariffs, remove exceptions thrown on signature
         return null;
