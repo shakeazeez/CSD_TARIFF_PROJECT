@@ -7,12 +7,16 @@ import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "country")
 public class Country {
     // temporary cause im not sure how I want to store this yet
     @Id

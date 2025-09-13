@@ -82,7 +82,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * @return a list of tariff objects with that particular item and
      *         that particular country code 
     */
-    private List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
+    public List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
         MoachDTO result = restClientMoach.get()
                                          .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("gDNQ6zEr0rDjXguYX4SWtbtMT0Bo2FER"))
                                          .retrieve()
@@ -199,7 +199,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * returns Item object with Hscode 
     */
     // https://mtech-api.com/client/api/hs-code-match?q=tennis+shoes&category=156&token=YOUR_API_TOKEN
-    private Item loadItemFromApi(String itemName) throws ApiFailureException {
+    public Item loadItemFromApi(String itemName) throws ApiFailureException {
         ItemRetrievalDTO result = restClientMoach.get()
                                          .uri("/hs-code-match?q=" + itemName + "&category=wto&token=" + dotenv.get("MOACH_API_KEY"))
                                          .retrieve()
@@ -211,14 +211,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                          //     return;
                                          // })
                                          .body(ItemRetrievalDTO.class); 
-                                         
         
-        if (result == null || result.codes() == null) {
+                                         
+        log.info("Query results" + result.toString());
+        if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
         }
         
-        int itemCode = Integer.parseInt(result.codes().get(0).itemCode());
+        int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
         return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>()));
+        
     }
     
     /*

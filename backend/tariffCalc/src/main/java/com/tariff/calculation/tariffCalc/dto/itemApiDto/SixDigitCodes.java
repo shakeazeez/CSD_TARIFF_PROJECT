@@ -13,10 +13,10 @@ public record SixDigitCodes (
     @JsonProperty("note")
     String notes,
     
-    @JsonProperty("wto_rank'")
+    @JsonProperty("AccuracyRank")
     String ranking,
     
-    @JsonProperty("6DigitCode")
+    @JsonProperty("HSCode")
     String itemCode,
     
     @JsonProperty("desc")

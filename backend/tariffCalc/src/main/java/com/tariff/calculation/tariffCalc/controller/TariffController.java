@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
+import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
+import com.tariff.calculation.tariffCalc.item.Item;
 
 
 @RequestMapping("/tariff")
@@ -45,7 +48,7 @@ public class TariffController {
 
         return ResponseEntity.ok(response);
     }
-
+    
     /*
      * Get tariff details for item between two countries of selected year
      */
