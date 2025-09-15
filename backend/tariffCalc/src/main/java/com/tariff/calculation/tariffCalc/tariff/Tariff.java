@@ -36,6 +36,7 @@ public class Tariff {
     private Country partnerCountry;
 
     @ManyToOne
+    @JoinColumn(name = "itemcode")
     private Item item;
     private Double percentageRate;
     

@@ -1,5 +1,6 @@
 package com.tariff.calculation.tariffCalc.controller;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
+import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 import com.tariff.calculation.tariffCalc.item.Item;
@@ -30,7 +32,12 @@ public class TariffController {
     public TariffController(TariffCalculationService tariffService) {
         this.tariffService = tariffService;
     }
-
+    
+    @GetMapping("all")
+    public List<Tariff> getAllTariffInDatabase() {
+        return tariffService.getAllTariffInDatabase();
+    }
+    
     /*
      * Get tariff details for item between two countries of default(current) year
      */
