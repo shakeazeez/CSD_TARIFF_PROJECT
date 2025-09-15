@@ -5,11 +5,10 @@ import { useEffect, useState } from 'react'
 
 
 export function Home(){
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     // const [list, setList] = useState([]);
-    const [report, setReport] = useState("000");
-    const [partner, setPartner] = useState("000");
-    const [hs, setHS] = useState("");
+    const [report, setReport] = useState("China");
+    const [partner, setPartner] = useState("Singapore");
+    const [hs, setHS] = useState("Slipper");
     
     // testing list - start here
     const list = [
@@ -41,7 +40,7 @@ export function Home(){
         reportingCountry: report,
         partnerCountry: partner,
         item: hs, 
-        itemCost: null,
+        itemCost: 1000.0,
         effectiveDate: null
     }
 
@@ -75,8 +74,9 @@ export function Home(){
         // try catch error
         try{
             // send to query
-            const response = await axios.post(`${backendUrl}/tariff/current`, tariffCalculationQueryDTO); //connect to backend sending query
-            console.log("Post Success", response.data);
+            console.log("Sending DTO:", tariffCalculationQueryDTO);
+            const response = await axios.post(`http://localhost:8080/tariff/current`, tariffCalculationQueryDTO); //connect to backend sending query
+            console.log("Post Success", response);
 
         } catch(error){
             console.log("Error", error);
@@ -109,7 +109,7 @@ export function Home(){
                 options={modhs}
                 onChange={e => setHS(e.code)}
             />
-            <button onClick={printout}> Search </button>
+            <button onClick={fetch}> Search </button>
         </div>
         </>
     );
