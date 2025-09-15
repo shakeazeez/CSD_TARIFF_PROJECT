@@ -6,6 +6,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.context.annotation.Bean;
 import io.github.cdimascio.dotenv.Dotenv;
+import jakarta.validation.constraints.NotNull;
 
 @SpringBootApplication
 public class TariffCalcApplication {    
