@@ -151,86 +151,75 @@ public class TariffCalculationImpl implements TariffCalculationService {
         List<Country> country = new ArrayList<>();
         
         
-        try {
-            tariffInformation.forEach((information) -> {
-                if ("MFN".equals(information.tariffRegion())) {
-                    log.info("Adding world");
-                    country.add(countryRepo.findByCountryName("world").get());
-                } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
-                    log.info("Adding devloping");
-                    country.add(countryRepo.findByCountryName("developing").get());
-                } else {
-                    Optional<Country> firstCountry = countryRepo.findByCountryName(information.tariffRegion());
-                    if (!firstCountry.isEmpty()) {
-                        log.info("Hehe haha");
-                        country.add(firstCountry.get());
-                    } else {
-                        log.info("Husten we have a problem");
-                    }
-                }
+        tariffInformation.forEach((information) -> {
+            if ("MFN".equals(information.tariffRegion())) {
+                log.info("Adding world");
+                country.add(countryRepo.findByCountryName("world").get());
+            } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
+                log.info("Adding devloping");
+                country.add(countryRepo.findByCountryName("developing").get());
+            } else {
+                Optional<Country> firstCountry = countryRepo.findByCountryName(information.tariffRegion());
+                if (!firstCountry.isEmpty()) {
+                    // log.info("Hehe haha");
+                    country.add(firstCountry.get());
+                } 
+                // else {
+                //     log.info("Husten we have a problem");
+                // }
+            }
                     
-                // This is wrong because it is not standard how these countries are described.....
-                // help ping me for the sample queries 
-                // TODO: Fix this garbage
-                List<String> countryNames = List.of(information.country().split(","));
-                log.info(countryNames.toString());    
-                try {
-                    countryNames.forEach((names) -> {
-                        // log.info(names);
-                        Optional<Country> temp = countryRepo.findByCountryName(names);
+            // This is wrong because it is not standard how these countries are described.....
+            // help ping me for the sample queries 
+            // TODO: Fix this garbage
+            List<String> countryNames = List.of(information.country().split(","));
+            log.info(countryNames.toString());    
+
+            countryNames.forEach((names) -> {
+                // log.info(names);
+                Optional<Country> temp = countryRepo.findByCountryName(names);
                         
-                        if (temp.isPresent()) {
-                            log.info("Found country for " + temp.get());
-                            country.add(temp.get());
-                        } else {
-                            log.info("Unable to find the country named" + names);
-                        }
-                    });
-                } catch (Exception e) {
-                    log.info("I have a problem with parsing names");
-                    throw new IllegalArgumentException("Whoops");
-                }
-                
-                try {
-                    countryNames.forEach((names) -> {
-                        // log.info(names);
-                        Optional<Country> temp = countryRepo.findByCountryName(names);
-                        
-                        if (temp.isPresent()) {
-                            log.info("Found country for " + temp.get());
-                            country.add(temp.get());
-                        } else {
-                            log.info("Unable to find the country named" + names);
-                        }
-                    });
-                } catch (Exception e) {
-                    log.info("" + e);
-                    throw new IllegalArgumentException("Unable to use name properly");
-                }
-                
-                log.info("No errors for parcing country names in the .country() part ");
-                                        
-                // Sorry about this line bear with me. I will maybe clean this up
-                String preProcessed = information.tariffRate();
-                log.info("Tariff before anything : " + preProcessed);
-                
-                String regionTariffRate = preProcessed.contains("%") ? preProcessed.substring(0, preProcessed.indexOf('%')) : "";
-                
-                log.info("Region tariff rate : " + regionTariffRate);
-                double regionTariffRateValue = (regionTariffRate == null || "".equals(regionTariffRate)) ? 0.0 : Double.parseDouble(regionTariffRate);
-                log.info("No problem with Tariff Loading" + regionTariffRateValue);                     
-                country.forEach((regionCountry) -> {
-                    res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue, LocalDate.now())));
-                });
-                log.info("No problem with Tariff Saving");                     
+                if (temp.isPresent()) {
+                    // log.info("Found country for " + temp.get());
+                    country.add(temp.get());
+                } 
+                // else {
+                //     log.info("Unable to find the country named" + names);
+                // }
             });
-        } catch (Exception e) {
-            log.info("Whoops at the highest level" + e);
-            // throw new IllegalArgumentException("Something went wrong");
-        }
+                
+            countryNames.forEach((names) -> {
+                // log.info(names);
+                Optional<Country> temp = countryRepo.findByCountryName(names);
+                        
+                if (temp.isPresent()) {
+                    // log.info("Found country for " + temp.get());
+                    country.add(temp.get());
+                } 
+                // else {
+                //     log.info("Unable to find the country named" + names);
+                // }
+             });
+
+                
+            // log.info("No errors for parcing country names in the .country() part ");
+                                        
+            // Sorry about this line bear with me. I will maybe clean this up
+            String preProcessed = information.tariffRate();
+            // log.info("Tariff before anything : " + preProcessed);
+                
+            String regionTariffRate = preProcessed.contains("%") ? preProcessed.substring(0, preProcessed.indexOf('%')) : "";
+                
+            // log.info("Region tariff rate : " + regionTariffRate);
+            double regionTariffRateValue = (regionTariffRate == null || "".equals(regionTariffRate)) ? 0.0 : Double.parseDouble(regionTariffRate);
+            // log.info("No problem with Tariff Loading" + regionTariffRateValue);                     
+            country.forEach((regionCountry) -> {
+                res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue, LocalDate.now())));
+            });
+            // log.info("No problem with Tariff Saving");                     
+        });
         
         
-        log.info("Please I wanna go home");
         return res;
     }
     
