@@ -119,7 +119,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                                                    
             // Stores rateInfo as decimal as it is a percentage initially
             if (customRateInfo.contains("%")) {
-                customRateInfo = customRateInfo.substring(customRateInfo.indexOf('%'));
+                customRateInfo = customRateInfo.substring(0, customRateInfo.indexOf('%'));
             }
     
             Double customRateValue =  customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
