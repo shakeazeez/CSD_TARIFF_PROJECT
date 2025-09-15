@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,8 +26,7 @@ public class TariffController {
     private final TariffCalculationService tariffService;
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
-
-    @Autowired
+    
     public TariffController(TariffCalculationService tariffService) {
         this.tariffService = tariffService;
     }
@@ -34,7 +34,7 @@ public class TariffController {
     /*
      * Get tariff details for item between two countries of default(current) year
      */
-    @GetMapping("/current")
+    @PostMapping("/current")
     public ResponseEntity<TariffResponseDTO> getCurrentTariffDetails(@RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffResponseDTO response = null;
