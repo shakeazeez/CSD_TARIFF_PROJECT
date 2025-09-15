@@ -317,7 +317,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                                                             });
                                         if (temp.getIsDeveloping() && developing.isPresent()) {
                                             return tariffList.stream()
-                                                             .filter((currTariff) -> currTariff.getReportingCountry().equals(developing.get()))
+                                            // 
+                                                             .filter((currTariff) -> currTariff.getPartnerCountry().equals(developing.get()))
                                                              .findFirst()
                                                              .orElseGet(() -> {
                                                                  log.info("Well for Developing");
@@ -325,7 +326,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                                              });
                                         } else {
                                             return tariffList.stream()
-                                                             .filter((currTariff) -> currTariff.getReportingCountry().equals(world))
+                                                             .filter((currTariff) -> currTariff.getPartnerCountry().equals(world))
                                                              .findFirst()
                                                              .orElseGet(() -> {
                                                                  log.info("Well for world");
