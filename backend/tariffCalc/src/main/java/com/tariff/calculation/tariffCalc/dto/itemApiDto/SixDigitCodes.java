@@ -1,5 +1,6 @@
 package com.tariff.calculation.tariffCalc.dto.itemApiDto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record SixDigitCodes (
@@ -13,10 +14,10 @@ public record SixDigitCodes (
     @JsonProperty("note")
     String notes,
     
-    @JsonProperty("wto_rank'")
+    @JsonProperty("AccuracyRank")
     String ranking,
     
-    @JsonProperty("6DigitCode")
+    @JsonAlias({"HSCode", "code", "6DigitCode"})
     String itemCode,
     
     @JsonProperty("desc")
