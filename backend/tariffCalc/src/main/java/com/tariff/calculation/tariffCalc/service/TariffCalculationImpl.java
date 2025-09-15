@@ -93,6 +93,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             throw new ApiFailureException("Unable to call api properly");
         }
         
+        log.info("Query results" + result.toString());
         List<Tariff> res = new ArrayList<>();
         
         // sigh... This is gna be disgusting. Also, IDK why is there multiple data.... 
