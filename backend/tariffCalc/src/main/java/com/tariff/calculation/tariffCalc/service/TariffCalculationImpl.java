@@ -133,7 +133,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 } 
             });
             // log.info("No issue finding by Code");
-                                    
+            // test
             // This is the world case 
             Country world = countryRepo.findByCountryName("world").get();
             // log.info("No issue finding world");
