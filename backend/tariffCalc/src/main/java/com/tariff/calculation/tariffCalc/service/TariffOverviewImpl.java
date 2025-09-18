@@ -123,7 +123,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         log.info("No problem with Item Query");
 
         // check if the tariffs are already in the database
-        final List<Tariff> tariffList = tariffRepo.findByReportingAndPartnerCountryAndItem(reportingCountry,
+        final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry,
                 partnerCountry, item);
 
         // if not, load from api
