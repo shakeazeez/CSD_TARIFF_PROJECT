@@ -9,7 +9,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,19 +20,23 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "tariff")
 public class Tariff {
     // for temporary purposes because idk how i planning on storing this
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @OneToMany(mappedBy = "reporting_country")
+    @ManyToOne
+    @JoinColumn(name = "reporting_country_id")
     private Country reportingCountry;
-
-    @OneToMany(mappedBy = "partner_country")
+    
+    @ManyToOne
+    @JoinColumn(name = "partner_country_id")
     private Country partnerCountry;
 
-    @OneToMany
+    @ManyToOne
+    @JoinColumn(name = "itemcode")
     private Item item;
     private Double percentageRate;
     

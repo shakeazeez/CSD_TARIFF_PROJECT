@@ -1,11 +1,14 @@
 package com.tariff.calculation.tariffCalc.controller;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +18,11 @@ import com.tariff.calculation.tariffCalc.dto.TariffOverviewQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
 import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
+import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
+import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
+import com.tariff.calculation.tariffCalc.item.Item;
+
 
 @RequestMapping("/tariff")
 @RestController
@@ -26,16 +33,22 @@ public class TariffController {
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
 
+
     @Autowired
     public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService) {
         this.tariffService = tariffService;
         this.tariffOverviewService = tariffOverviewService;
     }
-
+    
+    @GetMapping("all")
+    public List<Tariff> getAllTariffInDatabase() {
+        return tariffService.getAllTariffInDatabase();
+    }
+    
     /*
      * Get tariff details for item between two countries of default(current) year
      */
-    @GetMapping("/current")
+    @PostMapping("/current")
     public ResponseEntity<TariffResponseDTO> getCurrentTariffDetails(@RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffResponseDTO response = null;
@@ -49,7 +62,7 @@ public class TariffController {
 
         return ResponseEntity.ok(response);
     }
-
+    
     /*
      * Get tariff details for item between two countries of selected year
      */
