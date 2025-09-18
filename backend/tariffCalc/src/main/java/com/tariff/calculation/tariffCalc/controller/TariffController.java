@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
+import com.tariff.calculation.tariffCalc.dto.TariffOverviewQueryDTO;
+import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
+import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 
 @RequestMapping("/tariff")
@@ -19,12 +22,14 @@ import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 public class TariffController {
 
     private final TariffCalculationService tariffService;
+    private final TariffOverviewService tariffOverviewService;
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
 
     @Autowired
-    public TariffController(TariffCalculationService tariffService) {
+    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService) {
         this.tariffService = tariffService;
+        this.tariffOverviewService = tariffOverviewService;
     }
 
     /*
@@ -49,11 +54,11 @@ public class TariffController {
      * Get tariff details for item between two countries of selected year
      */
     @GetMapping("/past")
-    public ResponseEntity<TariffResponseDTO> getHistoricalTariffDetails(@RequestBody TariffCalculationQueryDTO queryDTO) {
+    public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(@RequestBody TariffOverviewQueryDTO queryDTO) {
 
-        TariffResponseDTO response = null;
+        TariffOverviewResponseDTO response = null;
         try {
-            response = tariffService.getPastTariffDetails(queryDTO);
+            response = tariffOverviewService.getTariffOverview(queryDTO);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         } catch (NoSuchElementException e) {

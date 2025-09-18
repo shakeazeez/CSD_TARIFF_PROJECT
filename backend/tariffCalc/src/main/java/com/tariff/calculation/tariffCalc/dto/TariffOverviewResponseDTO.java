@@ -1,12 +1,12 @@
-package com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto;
+package com.tariff.calculation.tariffCalc.dto;
 
 import java.util.List;
 
 /* 
  * DTO to display changes in tariff rates over a specific period.
  */
-public record PastTariffResponseDTO (
+public record TariffOverviewResponseDTO (
     String reportingCountry,
     String partnerCountry,
-    List<WitsDTO> tariffData
+    List<HistoricalTariffData> tariffData
 ) {}
