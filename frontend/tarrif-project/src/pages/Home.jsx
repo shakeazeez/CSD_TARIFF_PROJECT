@@ -1,6 +1,6 @@
-import Select from 'react-select'
 import axios from 'axios'
-import Dropdown from "../components/Dropdown";
+import Dropdown from "../components/Dropdown"
+import Chart from '../components/Chart'
 import { useEffect, useState } from 'react'
 
 

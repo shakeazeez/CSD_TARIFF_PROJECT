@@ -4,6 +4,9 @@ import Select from "react-select";
  * Dropdown component
  *
  * A reusable dropdown built on top of react-select.
+ * 
+ * @author Yong Huey
+ * @version 1.0.0
  *
  * @param {Object} props
  * @param {string} props.title - Label text shown above the dropdown.
