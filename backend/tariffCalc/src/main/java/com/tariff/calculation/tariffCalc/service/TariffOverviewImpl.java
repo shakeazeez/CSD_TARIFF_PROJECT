@@ -66,7 +66,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
                                        "/product/"  + item.getItemCode() + 
                                        "/year/all/datatype/reported?format=JSON")
                                    .retrieve()
-                                   .onStatus((status) -> status.value() == 400, (request, response) -> {
+                                   .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
                                        throw new IllegalArgumentException("Dont have for this specific combination");
                                    })
                                    .body(WitsDTO.class);
@@ -76,7 +76,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
                                     .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber()+ 
                                         "/partner/000/product/"  + item.getItemCode() + "/year/all/datatype/reported?format=JSON")
                                     .retrieve()
-                                    .onStatus((stat) -> stat.value() == 400, (req2, res1) -> {
+                                    .onStatus((stat) -> stat.value() == 400 || stat.value() == 404, (req2, res1) -> {
                                         throw new ApiFailureException("Api call failed");
                                     })
                                     .body(WitsDTO.class);
@@ -117,6 +117,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
 
             // get the corresponding date
             String startDateString = tariffStartDates.get(dateIndex).start();
+            log.info(startDateString);
             LocalDate startDate = LocalDateTime.parse(startDateString).toLocalDate();
 
             tariffs.add(new Tariff(reportingCountry, partnerCountry, item, tariffRate, startDate));
@@ -143,7 +144,8 @@ public class TariffOverviewImpl implements TariffOverviewService {
         // check if the tariffs are already in the database
         final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry,
                 partnerCountry, item);
-
+        
+        log.info(tariffList.toString());
         // if not, load from api
         if (tariffList.size() <= 1) {
             log.info("Attempting to load....");

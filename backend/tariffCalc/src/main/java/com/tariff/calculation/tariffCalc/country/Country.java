@@ -37,4 +37,12 @@ public class Country {
     public String toString() {
         return "countryNumber: " + countryNumber + "countryName: " + countryName;
     }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Country c) {
+            return c.countryNumber == this.countryNumber;
+        } 
+        return false;
+    }
 }
