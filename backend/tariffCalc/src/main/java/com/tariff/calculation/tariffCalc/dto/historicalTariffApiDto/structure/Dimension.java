@@ -1,5 +1,7 @@
 package com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.structure;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -13,5 +15,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record Dimension(
     @JsonProperty("observation")
-    Observation observation
+    List<Observation> observation
 ) {}

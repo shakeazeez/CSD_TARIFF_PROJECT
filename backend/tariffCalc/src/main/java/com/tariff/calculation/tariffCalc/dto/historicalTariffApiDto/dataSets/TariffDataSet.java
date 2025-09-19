@@ -27,4 +27,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record TariffDataSet(
     @JsonProperty("series")
     TariffSeries series
+    
 ) {}

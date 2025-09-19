@@ -33,4 +33,8 @@ public class Country {
     @OneToMany(mappedBy = "partnerCountry")
     @JsonIgnore
     private List<Tariff> partnerTariff;
+    
+    public String toString() {
+        return "countryNumber: " + countryNumber + "countryName: " + countryName;
+    }
 }
