@@ -67,6 +67,8 @@ public class TariffController {
             return ResponseEntity.badRequest().body(null);
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
+        } catch (ApiFailureException e) {
+            return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok(response);
@@ -84,6 +86,8 @@ public class TariffController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (ApiFailureException e) {
             return ResponseEntity.notFound().build();
         }
 

@@ -83,7 +83,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                          .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("MOACH_API_KEY"))
                                          .retrieve()
                                          .onStatus((status) -> status.value() == 404, (request, response) -> {
-                                             throw new ApiFailureException (response.getStatusText());
                                           })
                                          .body(MoachDTO.class);
         
