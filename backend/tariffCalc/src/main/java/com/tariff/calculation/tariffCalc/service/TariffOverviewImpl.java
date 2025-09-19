@@ -13,7 +13,7 @@ import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.dto.HistoricalTariffData;
-import com.tariff.calculation.tariffCalc.dto.TariffOverviewQueryDTO;
+import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.WitsDTO;
 import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffDataSet;
 import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffSeries;
@@ -128,7 +128,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         return tariffs;
     }
 
-    public TariffOverviewResponseDTO getTariffOverview(TariffOverviewQueryDTO queryDTO) {
+    public TariffOverviewResponseDTO getTariffOverview(TariffCalculationQueryDTO queryDTO) {
         Country reportingCountry = countryRepo.findByCountryName(queryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Reporting country not found"));
                     
@@ -153,7 +153,9 @@ public class TariffOverviewImpl implements TariffOverviewService {
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
                 .map(tariff -> new HistoricalTariffData(
                         tariff.getLocalDate(), // start period
-                        tariff.getPercentageRate()))
+                        tariff.getPercentageRate(), 
+                        tariff.getPercentageRate() * queryDTO.itemCost(), 
+                        queryDTO.itemCost() + tariff.getPercentageRate() * queryDTO.itemCost()))
                 .sorted((a, b) -> a.startPeriod().compareTo(b.startPeriod())) // sort start period by date
                 .toList();
         

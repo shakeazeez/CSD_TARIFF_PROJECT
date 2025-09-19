@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,14 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
-import com.tariff.calculation.tariffCalc.dto.TariffOverviewQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
 import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
-import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
-import com.tariff.calculation.tariffCalc.item.Item;
 
 
 @RequestMapping("/tariff")
@@ -78,7 +74,7 @@ public class TariffController {
      * Get tariff details for item between two countries of selected year
      */
     @PostMapping("/past")
-    public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(@RequestBody TariffOverviewQueryDTO queryDTO) {
+    public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(@RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffOverviewResponseDTO response = null;
         try {

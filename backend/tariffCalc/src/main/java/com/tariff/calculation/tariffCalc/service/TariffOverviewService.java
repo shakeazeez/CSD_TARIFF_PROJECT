@@ -5,9 +5,9 @@ import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import java.util.List;
 
 import com.tariff.calculation.tariffCalc.country.Country;
-import com.tariff.calculation.tariffCalc.dto.TariffOverviewQueryDTO;
+import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 
 public interface TariffOverviewService {
-    TariffOverviewResponseDTO getTariffOverview(TariffOverviewQueryDTO queryDTO);
+    TariffOverviewResponseDTO getTariffOverview(TariffCalculationQueryDTO queryDTO);
     List<Country> getAllCountries(); 
 }

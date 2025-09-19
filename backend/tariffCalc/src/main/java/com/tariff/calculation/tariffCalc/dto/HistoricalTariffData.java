@@ -4,5 +4,7 @@ import java.time.LocalDate;
 
 public record HistoricalTariffData(
     LocalDate startPeriod,
-    Double tariffRate
+    Double tariffRate,
+    Double tariffAmount,
+    Double itemCostWithTariff
 ) {}
