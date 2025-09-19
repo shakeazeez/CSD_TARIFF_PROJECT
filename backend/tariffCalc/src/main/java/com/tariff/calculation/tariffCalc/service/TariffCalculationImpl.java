@@ -78,7 +78,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
      *         that particular country code 
     */
     public List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
-        // log.info("Entered function");
+        // log.info("Entered function") 
         MoachDTO result = restClientMoach.get()
                                          .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("MOACH_API_KEY"))
                                          .retrieve()
@@ -281,7 +281,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                   // .orElseThrow(() -> new IllegalArgumentException("Unable to find the tariff"));
         
         double percentage = tariff.getPercentageRate();
-        double tariffAmount = percentage * tariffQueryDTO.itemCost();
+        double tariffAmount = percentage * tariffQueryDTO.itemCost() / 100.0;
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
         return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName(), percentage, tariffAmount, itemCostWithTariff);
     }

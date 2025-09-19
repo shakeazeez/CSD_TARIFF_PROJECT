@@ -154,8 +154,8 @@ public class TariffOverviewImpl implements TariffOverviewService {
                 .map(tariff -> new HistoricalTariffData(
                         tariff.getLocalDate(), // start period
                         tariff.getPercentageRate(), 
-                        tariff.getPercentageRate() * queryDTO.itemCost(), 
-                        queryDTO.itemCost() + tariff.getPercentageRate() * queryDTO.itemCost()))
+                        tariff.getPercentageRate() * queryDTO.itemCost() / 100.0, 
+                        queryDTO.itemCost() + tariff.getPercentageRate() * queryDTO.itemCost() / 100.0))
                 .sorted((a, b) -> a.startPeriod().compareTo(b.startPeriod())) // sort start period by date
                 .toList();
         
