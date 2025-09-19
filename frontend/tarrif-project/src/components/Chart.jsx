@@ -68,7 +68,7 @@ const Chart = ({ labels, value, title, legend }) => {
         data: value[i],
         borderColor,
         backgroundColor,
-        tension: 0.3
+        tension: 0
         };
     });
 

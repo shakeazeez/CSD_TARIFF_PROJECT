@@ -1,5 +1,5 @@
 import axios from 'axios'
-import Dropdown from "../components/Dropdown"
+import Dropdown from '../components/Dropdown'
 import Chart from '../components/Chart'
 import { useEffect, useState } from 'react'
 
@@ -34,6 +34,11 @@ export function Home(){
         id: item.stuff,
         code: item.code
     }));
+
+    const value = [[200, 100, 600, 1000]];
+    const labels = ["Jan", "Feb", "Mar", "Apr"];
+    const legend = ["Shop 1"];
+    const title = "Total sales";
     // testing list - ends here
 
     const tariffCalculationQueryDTO = {
@@ -44,14 +49,12 @@ export function Home(){
         effectiveDate: null
     }
 
-    const tariffRespondDTO = {
+    const tariffOverviewQueryDTO = {
         reportingCountry: report,
         partnerCountry: partner,
-        item: hs,
-        tariffRate: null,
-        tariffAmount: null,
-        itemCostWithTariff: null
-    };
+        item: hs
+    }
+    
 
     // on page load
     useEffect(() => {
@@ -66,16 +69,29 @@ export function Home(){
                 console.log("Error", error);
             }
         };
-
+        // fetchCountry();
     },[]);
     
     // on call
-    const fetch = async() =>{
+    const fetchCurrent = async() =>{
         // try catch error
         try{
             // send to query
             console.log("Sending DTO:", tariffCalculationQueryDTO);
             const response = await axios.post(`http://localhost:8080/tariff/current`, tariffCalculationQueryDTO); //connect to backend sending query
+            console.log("Post Success", response);
+
+        } catch(error){
+            console.log("Error", error);
+        }
+    };
+
+    const fetchPast = async() =>{
+        // try catch error
+        try{
+            // send to query
+            console.log("Sending DTO:", tariffOverviewQueryDTO);
+            const response = await axios.post(`http://localhost:8080/tariff/past`, tariffOverviewQueryDTO); //connect to backend sending query
             console.log("Post Success", response);
 
         } catch(error){
@@ -109,7 +125,9 @@ export function Home(){
                 options={modhs}
                 onChange={e => setHS(e.code)}
             />
-            <button onClick={fetch}> Search </button>
+            <button onClick={fetchCurrent}> current </button>
+            <button onClick={fetchPast}> past </button>
+            <Chart labels={labels} value={value} title={title} legend={legend}/>
         </div>
         </>
     );
