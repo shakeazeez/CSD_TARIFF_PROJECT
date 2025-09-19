@@ -62,7 +62,15 @@ public class TariffOverviewImpl implements TariffOverviewService {
                         "/year/all/datatype/reporter?format=JSON")
                 .retrieve()
                 .onStatus((status) -> status.value() == 404, (request, response) -> {
-                    throw new ApiFailureException(response.getStatusText());
+                    restClientWits.get()
+                                  .uri("datasource/TRN/reporter/" + reportingCountry.getCountryCode() +
+                                            "/partner/000" + 
+                                            "/product/" + item.getItemCode() +
+                                            "/year/all/datatype/reporter?format=JSON")
+                                  .retrieve()
+                                  .onStatus((stat) -> stat.value() == 404, (req2, res1) -> {
+                                      throw new ApiFailureException("Api call failed");
+                                  });
                 })
                 .body(WitsDTO.class);
 
