@@ -10,5 +10,4 @@ public interface TariffCalculationService {
 
     // Getters 
     public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO);
-    public List<Tariff> getAllTariffInDatabase();
 }

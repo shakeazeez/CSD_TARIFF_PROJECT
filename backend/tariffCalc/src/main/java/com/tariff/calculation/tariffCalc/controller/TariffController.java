@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
@@ -40,9 +41,17 @@ public class TariffController {
         this.tariffOverviewService = tariffOverviewService;
     }
     
-    @GetMapping("all")
-    public List<Tariff> getAllTariffInDatabase() {
-        return tariffService.getAllTariffInDatabase();
+    @GetMapping("/countries")
+    public ResponseEntity<List<Country>> getAllItems() {
+        List<Country> country = null;
+        
+        try {
+            country = tariffOverviewService.getAllCountries();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        return ResponseEntity.ok(country);
     }
     
     /*

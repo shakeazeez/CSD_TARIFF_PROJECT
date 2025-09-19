@@ -164,4 +164,9 @@ public class TariffOverviewImpl implements TariffOverviewService {
                 partnerCountry.getCountryName(),
                 historicalTariffData);
     }
+    
+    
+    public List<Country> getAllCountries() {
+        return countryRepo.findAll();
+    }
 }

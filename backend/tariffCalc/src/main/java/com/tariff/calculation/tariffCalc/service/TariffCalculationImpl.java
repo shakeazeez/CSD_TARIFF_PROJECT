@@ -286,16 +286,5 @@ public class TariffCalculationImpl implements TariffCalculationService {
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
         return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName(), percentage, tariffAmount, itemCostWithTariff);
     }
-   
-    
-    
-    public List<Tariff> getAllTariffInDatabase() {
-        return tariffRepo.findAll();
-    }
 
-    // @Override
-    // public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) {
-    //     // TODO Auto-generated method stub
-    //     throw new UnsupportedOperationException("Unimplemented method 'getCurrentTariffDetails'");
-    // }
 }
