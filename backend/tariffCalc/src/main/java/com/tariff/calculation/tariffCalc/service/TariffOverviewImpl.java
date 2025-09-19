@@ -56,14 +56,14 @@ public class TariffOverviewImpl implements TariffOverviewService {
     private List<Tariff> loadTariffsFromApi(Country reportingCountry, Country partnerCountry, Item item)
             throws ApiFailureException {
         WitsDTO result = restClientWits.get()
-                .uri("datasource/TRN/reporter/" + reportingCountry.getCountryCode() +
-                        "/partner/" + partnerCountry.getCountryCode() +
+                .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber() +
+                        "/partner/" + partnerCountry.getCountryNumber() +
                         "/product/" + item.getItemCode() +
                         "/year/all/datatype/reporter?format=JSON")
                 .retrieve()
                 .onStatus((status) -> status.value() == 404, (request, response) -> {
                     restClientWits.get()
-                                  .uri("datasource/TRN/reporter/" + reportingCountry.getCountryCode() +
+                                  .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber() +
                                             "/partner/000" + 
                                             "/product/" + item.getItemCode() +
                                             "/year/all/datatype/reporter?format=JSON")
