@@ -18,12 +18,10 @@ export function Home(){
         code: item.countryName
     }));
 
-    // testing list - start here
-    const value = [[200, 100, 600, 1000]];
-    const labels = ["Jan", "Feb", "Mar", "Apr"];
-    const legend = ["Shop 1"];
-    const title = "Total sales";
-    // testing list - ends here
+    const value = [(past.tariffData || []).map(item => item.tariffRate)];
+    const labels = (past.tariffData || []).map(item => item.startPeriod);
+    const legend = [past.item];
+    const title = past.reportingCountry + " Import from " + past.partnerCountry + " (in %)";
 
     const tariffCalculationQueryDTO = {
         reportingCountry: report,
@@ -120,7 +118,7 @@ export function Home(){
             /><br/>
             <button onClick={fetchCurrent}> current </button>
             <button onClick={fetchPast}> past </button>
-            <button onClick={testPrint}> testPrint </button>
+            <button onClick={testPrint}> testPrint </button><button onClick={testPrint}> testPrint </button><button onClick={testPrint}> testPrint </button><button onClick={testPrint}> testPrint </button>
 
             <p>Tariff Rate:</p><p>{current.tariffRate + "%"}</p>
             <p>Tariff Amount:</p><p>{"USD" + current.tariffAmount}</p>
