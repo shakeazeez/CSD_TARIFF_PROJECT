@@ -5,36 +5,20 @@ import { useEffect, useState } from 'react'
 
 
 export function Home(){
-    // const [list, setList] = useState([]);
-    const [report, setReport] = useState("China");
-    const [partner, setPartner] = useState("Singapore");
-    const [hs, setHS] = useState("Slipper");
+    const [list, setList] = useState([]);
+    const [report, setReport] = useState("");
+    const [partner, setPartner] = useState("");
+    const [hs, setHS] = useState("");
+    const [cost, setCost] = useState();
+    const [current, setCurrent] = useState([]);
+    const [past, setPast] = useState([]);
     
-    // testing list - start here
-    const list = [
-        {country : "Afghanistan", code : "004"},
-        {country : "Albania", code : "008"},
-        {country : "Andorra", code : "020"},
-        {country : "Angola", code : "024"},
-    ];
-
     const modList = list.map(item => ({
-        id: item.country,
-        code: item.code
+        id: item.countryName,
+        code: item.countryName
     }));
 
-    const hscode = [
-        {stuff : "Some stuff1", code : "HS100001"},
-        {stuff : "Some stuff2", code : "HS100002"},
-        {stuff : "Some stuff3", code : "HS100003"},
-        {stuff : "Some stuff4", code : "HS100004"}
-    ];
-
-    const modhs = hscode.map(item => ({
-        id: item.stuff,
-        code: item.code
-    }));
-
+    // testing list - start here
     const value = [[200, 100, 600, 1000]];
     const labels = ["Jan", "Feb", "Mar", "Apr"];
     const legend = ["Shop 1"];
@@ -45,8 +29,7 @@ export function Home(){
         reportingCountry: report,
         partnerCountry: partner,
         item: hs, 
-        itemCost: 1000.0,
-        effectiveDate: null
+        itemCost: cost
     }
 
     const tariffOverviewQueryDTO = {
@@ -55,21 +38,21 @@ export function Home(){
         item: hs
     }
     
-
     // on page load
     useEffect(() => {
         // get all country names
         const fetchCountry = async() => {
             try{
-                const response = await axios.get(`${backendUrl}/`); //connect to backend and do get request
+                const response = await axios.get(`http://localhost:8080/tariff/countries`); //connect to backend and do get request
+                console.log(response.data);
                 setList(response.data); //setting list to be data incoming from backend
-                console.log(list.country); //printing list.country should have list.code / list.short
+                // console.log(list.country); //printing list.country should have list.code / list.short
 
             } catch(error){
                 console.log("Error", error);
             }
         };
-        // fetchCountry();
+        fetchCountry();
     },[]);
     
     // on call
@@ -80,6 +63,8 @@ export function Home(){
             console.log("Sending DTO:", tariffCalculationQueryDTO);
             const response = await axios.post(`http://localhost:8080/tariff/current`, tariffCalculationQueryDTO); //connect to backend sending query
             console.log("Post Success", response);
+            setCurrent(response.data);
+            console.log(current);
 
         } catch(error){
             console.log("Error", error);
@@ -90,21 +75,22 @@ export function Home(){
         // try catch error
         try{
             // send to query
-            console.log("Sending DTO:", tariffOverviewQueryDTO);
-            const response = await axios.post(`http://localhost:8080/tariff/past`, tariffOverviewQueryDTO); //connect to backend sending query
+            console.log("Sending DTO:", tariffCalculationQueryDTO);
+            const response = await axios.post(`http://localhost:8080/tariff/past`, tariffCalculationQueryDTO); //connect to backend sending query
             console.log("Post Success", response);
+            setPast(response.data);
+            console.log(past);
 
         } catch(error){
             console.log("Error", error);
         }
     };
-
-    const printout = async() => {
-        console.log(report);
-        console.log(partner);
+    
+    const testPrint = async() => {
         console.log(hs);
+        console.log(partner);
+        console.log(report);
     };
-
 
     return(
         <>
@@ -120,13 +106,25 @@ export function Home(){
                 options={modList}
                 onChange={e => setPartner(e.code)}
             />
-            <Dropdown 
-                title="HS Code"
-                options={modhs}
-                onChange={e => setHS(e.code)}
+            <p>Item:</p>
+            <input
+                type="text"
+                id="hs"
+                onChange={e => setHS((e.target.value).toLowerCase())}
             />
+            <p>Cost:</p>
+            <input
+                type="number"
+                id="cost"
+                onChange={e => setCost(e.target.value)}
+            /><br/>
             <button onClick={fetchCurrent}> current </button>
             <button onClick={fetchPast}> past </button>
+            <button onClick={testPrint}> testPrint </button>
+
+            <p>Tariff Rate:</p><p>{current.tariffRate + "%"}</p>
+            <p>Tariff Amount:</p><p>{"USD" + current.tariffAmount}</p>
+            <p>Total Cost with Tariff:</p><p>{"USD" + current.itemCostWithTariff}</p>
             <Chart labels={labels} value={value} title={title} legend={legend}/>
         </div>
         </>
