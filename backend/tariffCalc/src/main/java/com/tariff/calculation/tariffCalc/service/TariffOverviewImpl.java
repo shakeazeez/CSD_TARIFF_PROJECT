@@ -132,17 +132,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
             tariffList.addAll(loadTariffsFromApi(reportingCountry, partnerCountry, item));
         }
 
-        LocalDate startPeriod = queryDTO.startPeriod();
-        LocalDate endPeriod = queryDTO.endPeriod();
-
-        log.info("Filtering tariffs for period: {} to {}", startPeriod, endPeriod);
-
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
-                .filter(tariff -> {
-                    LocalDate date = tariff.getLocalDate();
-                    return (date.isEqual(startPeriod) || date.isAfter(startPeriod)) &&
-                            (date.isEqual(endPeriod) || date.isBefore(endPeriod));
-                })
                 .map(tariff -> new HistoricalTariffData(
                         tariff.getLocalDate(), // start period
                         tariff.getPercentageRate()))

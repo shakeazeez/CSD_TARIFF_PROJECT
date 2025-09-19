@@ -9,7 +9,5 @@ import java.time.LocalDate;
 public record TariffOverviewQueryDTO (
     String reportingCountry,
     String partnerCountry,
-    String item, 
-    LocalDate startPeriod,
-    LocalDate endPeriod
+    String item
 ) {}

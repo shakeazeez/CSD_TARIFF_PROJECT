@@ -66,7 +66,7 @@ public class TariffController {
     /*
      * Get tariff details for item between two countries of selected year
      */
-    @GetMapping("/past")
+    @PostMapping("/past")
     public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(@RequestBody TariffOverviewQueryDTO queryDTO) {
 
         TariffOverviewResponseDTO response = null;
