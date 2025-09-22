@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 
 
 export function Home(){
+    const backendURL = import.meta.env.VITE_BACKEND_URL;
     const [list, setList] = useState([]);
     const [report, setReport] = useState("");
     const [partner, setPartner] = useState("");
@@ -59,7 +60,7 @@ export function Home(){
         try{
             // send to query
             console.log("Sending DTO:", tariffCalculationQueryDTO);
-            const response = await axios.post(`http://localhost:8080/tariff/current`, tariffCalculationQueryDTO); //connect to backend sending query
+            const response = await axios.post(`${backendURL}/tariff/current`, tariffCalculationQueryDTO); //connect to backend sending query
             console.log("Post Success", response);
             setCurrent(response.data);
             console.log(current);

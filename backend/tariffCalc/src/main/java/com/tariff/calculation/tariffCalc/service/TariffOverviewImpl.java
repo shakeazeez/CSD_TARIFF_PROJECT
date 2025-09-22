@@ -6,14 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
-import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.dto.HistoricalTariffData;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
+import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.WitsDTO;
 import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffDataSet;
 import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffSeries;
@@ -27,9 +29,6 @@ import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class TariffOverviewImpl implements TariffOverviewService {
@@ -96,7 +95,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         TariffSeries series = dataSet.series();
         Map<String, TariffSeriesData> seriesMap = series.getSeriesData();
         Map<String, List<Object>> dataObservation = seriesMap.get("0:0:0:0:0").observations(); // "0:0:0:0:0" should be the only
-                                                                                            // key in the series map
+                                                                                               // key in the series map
 
         // To get the dates, use the key from the dataObservation map 
         // to map to the tariffStartDates
