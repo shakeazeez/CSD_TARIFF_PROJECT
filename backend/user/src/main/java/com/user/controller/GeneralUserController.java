@@ -19,7 +19,7 @@ public class GeneralUserController {
         this.generalUserService = generalUserService;
     }
 
-    @PostMapping("/{userId}/pinned/add/{tariffId}")
+    @PostMapping("/{userId}/pinned-tariffs/{tariffId}")
     public ResponseEntity<List<Integer>> addPinnedTariff(@PathVariable Integer userId, @PathVariable Integer tariffId) {
         try {
             List<Integer> tariffIds = generalUserService.addPinnedTariff(userId, tariffId);
@@ -31,7 +31,7 @@ public class GeneralUserController {
         }
     }
 
-    @PostMapping("/{userId}/pinned/remove/{tariffId}")
+    @PostMapping("/{userId}/unpinned-tariffs/{tariffId}")
     public ResponseEntity<List<Integer>> removePinnedTariffs(@PathVariable Integer userId, @PathVariable Integer tariffId) {
         try {
             List<Integer> tariffIds = generalUserService.removePinnedTariff(userId, tariffId);

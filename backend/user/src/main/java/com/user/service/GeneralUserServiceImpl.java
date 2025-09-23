@@ -3,6 +3,7 @@ package com.user.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.user.generalUser.GeneralUser;
 import com.user.generalUser.GeneralUserRepo;
@@ -20,8 +21,9 @@ public class GeneralUserServiceImpl implements GeneralUserService {
 
     // }
 
+    @Transactional
     public List<Integer> addPinnedTariff(Integer userId, Integer tariffId) {
-        GeneralUser generalUser = generalUserRepo.findById(userId) // does this need to be optional?
+        GeneralUser generalUser = generalUserRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (generalUser.getTariffIds().size() >= 3) {
@@ -36,6 +38,7 @@ public class GeneralUserServiceImpl implements GeneralUserService {
         return generalUser.getTariffIds();
     }
 
+    @Transactional
     public List<Integer> removePinnedTariff(Integer userId, Integer tariffId) {
         GeneralUser generalUser = generalUserRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
