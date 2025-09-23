@@ -1,11 +1,12 @@
 /**
- * Autocomplete Dropdown Component - Enhanced Search Implementation
+ * Autocomplete Dropdown Component - Enhanced Search Implementation with Custom Theme
  *
- * A searchable dropdown with proper background styling and autocomplete functionality.
+ * A searchable dropdown with custom theme integration and proper background styling.
  * Built with Radix UI Popover for better control over positioning and styling.
  * 
  * Features:
  * - Real-time search filtering
+ * - Custom theme color integration
  * - Solid background with proper contrast
  * - Keyboard navigation support
  * - Click outside to close
@@ -22,8 +23,12 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 import { Check, ChevronDown, Search } from "lucide-react"
 import { cn } from "../lib/utils"
 import { Input } from "./ui/input"
+import { useTheme } from "../contexts/ThemeContext.jsx"
 
 const Dropdown = ({ title, options = [], onChange }) => {
+  // Get theme colors for custom styling
+  const { colors } = useTheme()
+  
   const [open, setOpen] = React.useState(false)
   const [searchValue, setSearchValue] = React.useState("")
   const [selectedValue, setSelectedValue] = React.useState("")
@@ -107,46 +112,78 @@ const Dropdown = ({ title, options = [], onChange }) => {
         <PopoverPrimitive.Trigger asChild>
           <button
             className={cn(
-              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-white/50 dark:bg-gray-800/50 px-3 py-2 text-sm ring-offset-background",
-              "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              "flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm",
+              "focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300",
               "disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
             )}
+            style={{
+              backgroundColor: colors.input,
+              borderColor: colors.border,
+              color: colors.foreground
+            }}
           >
-            <span className={selectedLabel ? "text-foreground" : "text-muted-foreground"}>
+            <span 
+              className="transition-colors duration-300"
+              style={{ 
+                color: selectedLabel ? colors.foreground : colors.muted 
+              }}
+            >
               {selectedLabel || title}
             </span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown 
+              className="h-4 w-4 opacity-50 transition-colors duration-300"
+              style={{ color: colors.muted }}
+            />
           </button>
         </PopoverPrimitive.Trigger>
         
         <PopoverPrimitive.Portal>
           <PopoverPrimitive.Content
             className={cn(
-              "z-50 w-[var(--radix-popover-trigger-width)] rounded-md border bg-white dark:bg-gray-800 p-0 text-gray-900 dark:text-gray-100 shadow-lg",
+              "z-50 w-[var(--radix-popover-trigger-width)] rounded-md border p-0 shadow-lg transition-colors duration-300",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
               "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
             )}
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              color: colors.foreground
+            }}
             side="bottom"
             align="start"
             sideOffset={4}
           >
-            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+            <div 
+              className="p-2 border-b transition-colors duration-300"
+              style={{ borderColor: colors.border }}
+            >
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search 
+                  className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-300"
+                  style={{ color: colors.muted }}
+                />
                 <Input
                   ref={searchInputRef}
                   placeholder="Search countries..."
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="pl-8 h-8 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                  className="pl-8 h-8 transition-colors duration-300"
+                  style={{
+                    backgroundColor: colors.input,
+                    borderColor: colors.border,
+                    color: colors.foreground
+                  }}
                 />
               </div>
             </div>
             
             <div className="max-h-60 overflow-auto p-1">
               {filteredOptions.length === 0 ? (
-                <div className="py-2 px-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                <div 
+                  className="py-2 px-3 text-sm text-center transition-colors duration-300"
+                  style={{ color: colors.muted }}
+                >
                   No countries found
                 </div>
               ) : (
@@ -155,15 +192,30 @@ const Dropdown = ({ title, options = [], onChange }) => {
                     key={option.code}
                     onClick={() => handleSelect(option)}
                     className={cn(
-                      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 pl-8 pr-2 text-sm outline-none",
-                      "hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700",
-                      (selectedValue === option.code || highlightedIndex === index) && "bg-blue-100 dark:bg-blue-900/30"
+                      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 pl-8 pr-2 text-sm outline-none transition-all duration-200"
                     )}
-                    onMouseEnter={() => setHighlightedIndex(index)}
+                    style={{
+                      backgroundColor: (selectedValue === option.code || highlightedIndex === index) 
+                        ? `${colors.accent}20` 
+                        : 'transparent',
+                      color: colors.foreground
+                    }}
+                    onMouseEnter={(e) => {
+                      setHighlightedIndex(index)
+                      e.target.style.backgroundColor = `${colors.accent}10`
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedValue !== option.code && highlightedIndex !== index) {
+                        e.target.style.backgroundColor = 'transparent'
+                      }
+                    }}
                   >
                     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                       {selectedValue === option.code && (
-                        <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <Check 
+                          className="h-4 w-4 transition-colors duration-300"
+                          style={{ color: colors.accent }}
+                        />
                       )}
                     </span>
                     <span className="block truncate">{option.id}</span>

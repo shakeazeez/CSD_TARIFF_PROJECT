@@ -17,14 +17,21 @@ import { Input } from '../components/ui/input' // Styled input component
 import { Label } from '../components/ui/label' // Form label component
 
 // Theme and icon components
-import { ThemeToggle } from '../components/ThemeToggle' // Dark/light mode toggle
-import { TrendingUp, Calculator, BarChart3, Globe } from 'lucide-react' // SVG icons
+import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
+import { TrendingUp, Calculator, BarChart3, Globe, Sun, Moon } from 'lucide-react' // SVG icons
 
 // ====================================
 // MAIN HOME COMPONENT
 // ====================================
 
 export function Home(){
+    // ====================================
+    // THEME INTEGRATION
+    // ====================================
+    
+    // Get theme context for component-level color management
+    const { colors, theme, toggleTheme, isDark } = useTheme();
+    
     // ====================================
     // STATE VARIABLES
     // ====================================
@@ -182,31 +189,77 @@ export function Home(){
     // ====================================
     
     return(
-        /* Main container with gradient background and dark mode support */
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        /* Main container with custom theme-aware gradient background */
+        <div 
+            className="min-h-screen transition-colors duration-300"
+            style={{ backgroundColor: colors.background }}
+        >
             
-            {/* Tailwind Test Box 
-            <div className="fixed top-4 right-4 z-50 bg-red-500 text-white p-4 rounded-lg shadow-lg">
-                <p className="text-sm font-bold">Tailwind Test</p>
-                <p className="text-xs">If you see this red box, Tailwind is working!</p>
-            </div> */}
-
             {/* HEADER: Sticky navigation bar with logo and theme toggle */}
-            <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50">
+            <header 
+                className="backdrop-blur-sm border-b sticky top-0 z-50 transition-colors duration-300"
+                style={{ 
+                    backgroundColor: `${colors.surface}cc`, // Add transparency
+                    borderColor: colors.border 
+                }}
+            >
                 <div className="w-full px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center py-4">
                         {/* Logo section with icon and site branding */}
                         <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-600 rounded-lg">
+                            <div 
+                                className="p-2 rounded-lg transition-colors duration-300"
+                                style={{ backgroundColor: colors.accent }}
+                            >
                                 <Globe className="h-6 w-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-bold text-gray-900 dark:text-white">TariffCalc</h1>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Global Trade Analysis</p>
+                                <h1 
+                                    className="text-xl font-bold transition-colors duration-300"
+                                    style={{ color: colors.foreground }}
+                                >
+                                    TariffCalc
+                                </h1>
+                                <p 
+                                    className="text-xs transition-colors duration-300"
+                                    style={{ color: colors.muted }}
+                                >
+                                    Global Trade Analysis
+                                </p>
                             </div>
                         </div>
-                        {/* Dark/Light mode toggle button */}
-                        <ThemeToggle />
+                        {/* Enhanced theme toggle button */}
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={toggleTheme}
+                            className="transition-all duration-300 hover:scale-105 shadow-md"
+                            style={{ 
+                                borderColor: colors.accent,
+                                backgroundColor: colors.surface,
+                                color: colors.accent,
+                                borderWidth: '2px',
+                                padding: '12px'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = colors.accent;
+                                e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = colors.surface;
+                                e.target.style.color = colors.accent;
+                            }}
+                        >
+                            {isDark ? (
+                                <Sun className="h-6 w-6" />
+                            ) : (
+                                <Moon className="h-6 w-6" />
+                            )}
+                            <span className="ml-2 hidden sm:inline font-medium">
+                                {isDark ? 'Light' : 'Dark'}
+                            </span>
+                            <span className="sr-only">Toggle theme</span>
+                        </Button>
                     </div>
                 </div>
             </header>
@@ -214,23 +267,45 @@ export function Home(){
             {/* MAIN LAYOUT: Responsive sidebar and content area */}
             <div className="flex flex-col lg:flex-row min-h-[calc(100vh-73px)]">
                 {/* LEFT SIDEBAR: Input controls with responsive width */}
-                <div className="w-full lg:w-80 xl:w-96 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm lg:border-r border-b lg:border-b-0 border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
+                <div 
+                    className="w-full lg:w-80 xl:w-96 backdrop-blur-sm lg:border-r border-b lg:border-b-0 p-4 sm:p-6 transition-colors duration-300"
+                    style={{ 
+                        backgroundColor: `${colors.surface}99`, // Add transparency
+                        borderColor: colors.border 
+                    }}
+                >
                     <div className="space-y-6">
                         {/* SETTINGS CARD: Main input form for tariff calculations */}
-                        <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                        <Card 
+                            className="shadow-lg border-0 backdrop-blur-sm transition-colors duration-300"
+                            style={{ backgroundColor: `${colors.surface}cc` }}
+                        >
                             <CardHeader className="pb-3">
-                                <CardTitle className="flex items-center space-x-2 text-lg">
-                                    <Calculator className="h-5 w-5 text-blue-600" />
+                                <CardTitle 
+                                    className="flex items-center space-x-2 text-lg transition-colors duration-300"
+                                    style={{ color: colors.foreground }}
+                                >
+                                    <Calculator 
+                                        className="h-5 w-5 transition-colors duration-300" 
+                                        style={{ color: colors.accent }}
+                                    />
                                     <span>Calculation Settings</span>
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription 
+                                    className="transition-colors duration-300"
+                                    style={{ color: colors.muted }}
+                                >
                                     Configure your tariff calculation parameters
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {/* REPORTING COUNTRY DROPDOWN: Country from which tariffs are being reported */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="reporting-country" className="text-sm font-medium flex items-center space-x-1">
+                                    <Label 
+                                        htmlFor="reporting-country" 
+                                        className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
                                         <span>Reporting Country</span>
                                         <span className="text-red-500">*</span>
                                     </Label>
@@ -243,7 +318,11 @@ export function Home(){
 
                                 {/* PARTNER COUNTRY DROPDOWN: Trading partner country for tariff calculation */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="partner-country" className="text-sm font-medium flex items-center space-x-1">
+                                    <Label 
+                                        htmlFor="partner-country" 
+                                        className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
                                         <span>Partner Country</span>
                                         <span className="text-red-500">*</span>
                                     </Label>
@@ -256,7 +335,11 @@ export function Home(){
 
                                 {/* HS CODE INPUT: Harmonized System code for product classification */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="hs" className="text-sm font-medium flex items-center space-x-1">
+                                    <Label 
+                                        htmlFor="hs" 
+                                        className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
                                         <span>HS Code / Item</span>
                                         <span className="text-red-500">*</span>
                                     </Label>
@@ -265,13 +348,22 @@ export function Home(){
                                         id="hs"
                                         placeholder="e.g., 8703 (Motor cars)"
                                         onChange={e => setHS((e.target.value).toLowerCase())}
-                                        className="bg-white/50 dark:bg-gray-800/50"
+                                        className="transition-colors duration-300"
+                                        style={{ 
+                                            backgroundColor: colors.input,
+                                            borderColor: colors.border,
+                                            color: colors.foreground
+                                        }}
                                     />
                                 </div>
 
                                 {/* COST INPUT: Product value in USD for tariff calculation */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="cost" className="text-sm font-medium flex items-center space-x-1">
+                                    <Label 
+                                        htmlFor="cost" 
+                                        className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
                                         <span>Item Cost (USD)</span>
                                         <span className="text-red-500">*</span>
                                     </Label>
@@ -280,7 +372,12 @@ export function Home(){
                                         id="cost"
                                         placeholder="Enter cost in USD"
                                         onChange={e => setCost(e.target.value)}
-                                        className="bg-white/50 dark:bg-gray-800/50"
+                                        className="transition-colors duration-300"
+                                        style={{ 
+                                            backgroundColor: colors.input,
+                                            borderColor: colors.border,
+                                            color: colors.foreground
+                                        }}
                                     />
                                 </div>
 
@@ -289,7 +386,13 @@ export function Home(){
                                     {/* Current tariff calculation button */}
                                     <Button 
                                         onClick={fetchCurrent}
-                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                        className="w-full text-white transition-all duration-300"
+                                        style={{ 
+                                            backgroundColor: colors.accent,
+                                            borderColor: colors.accent
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.hover}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.accent}
                                         size="lg"
                                     >
                                         <Calculator className="h-4 w-4 mr-2" />
@@ -299,7 +402,20 @@ export function Home(){
                                     <Button 
                                         onClick={fetchPast}
                                         variant="outline"
-                                        className="w-full"
+                                        className="w-full transition-all duration-300"
+                                        style={{ 
+                                            borderColor: colors.accent,
+                                            color: colors.accent,
+                                            backgroundColor: 'transparent'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.accent;
+                                            e.target.style.color = 'white';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                            e.target.style.color = colors.accent;
+                                        }}
                                         size="lg"
                                     >
                                         <BarChart3 className="h-4 w-4 mr-2" />
@@ -310,29 +426,63 @@ export function Home(){
                         </Card>
 
                         {/* QUICK STATS CARD: Display current form status and summary information */}
-                        <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                        <Card 
+                            className="shadow-lg border-0 backdrop-blur-sm transition-colors duration-300"
+                            style={{ backgroundColor: `${colors.surface}cc` }}
+                        >
                             <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                <CardTitle 
+                                    className="text-sm font-medium transition-colors duration-300"
+                                    style={{ color: colors.muted }}
+                                >
                                     Quick Info
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {/* Display total number of available countries */}
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-500">Available Countries:</span>
-                                    <span className="font-semibold text-blue-600">{list.length}</span>
+                                    <span 
+                                        className="transition-colors duration-300"
+                                        style={{ color: colors.muted }}
+                                    >
+                                        Available Countries:
+                                    </span>
+                                    <span 
+                                        className="font-semibold transition-colors duration-300"
+                                        style={{ color: colors.accent }}
+                                    >
+                                        {list.length}
+                                    </span>
                                 </div>
                                 {/* Show selected country pair for trade relationship */}
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-500">Selected Pair:</span>
-                                    <span className="font-semibold">
+                                    <span 
+                                        className="transition-colors duration-300"
+                                        style={{ color: colors.muted }}
+                                    >
+                                        Selected Pair:
+                                    </span>
+                                    <span 
+                                        className="font-semibold transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
                                         {report && partner ? `${report} → ${partner}` : 'None'}
                                     </span>
                                 </div>
                                 {/* Display current HS code if entered */}
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-500">HS Code:</span>
-                                    <span className="font-semibold">{hs || 'None'}</span>
+                                    <span 
+                                        className="transition-colors duration-300"
+                                        style={{ color: colors.muted }}
+                                    >
+                                        HS Code:
+                                    </span>
+                                    <span 
+                                        className="font-semibold transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
+                                        {hs || 'None'}
+                                    </span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -344,32 +494,56 @@ export function Home(){
                     <div className="w-full space-y-6">
                         {/* HERO SECTION: Welcome banner with app description */}
                         <div className="text-center mb-6 lg:mb-8">
-                            {/* Icon container with gradient background */}
+                            {/* Icon container with custom accent gradient */}
                             <div className="flex justify-center mb-4">
-                                <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg">
+                                <div 
+                                    className="p-3 sm:p-4 rounded-2xl shadow-lg transition-colors duration-300"
+                                    style={{ backgroundColor: colors.accent }}
+                                >
                                     <TrendingUp className="h-8 w-8 sm:h-12 sm:w-12 text-white" />
                                 </div>
                             </div>
                             {/* Main heading and description */}
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                            <h1 
+                                className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 transition-colors duration-300"
+                                style={{ color: colors.foreground }}
+                            >
                                 Global Tariff Calculator
                             </h1>
-                            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4 lg:px-0">
+                            <p 
+                                className="text-base sm:text-lg px-4 lg:px-0 transition-colors duration-300"
+                                style={{ color: colors.muted }}
+                            >
                                 Analyze import tariffs, compare historical trade data, and make informed business decisions with real-time tariff calculations.
                             </p>
                         </div>
 
                         {/* CURRENT RESULTS SECTION: Display tariff calculations when available */}
                         {(current.tariffRate || current.tariffAmount || current.itemCostWithTariff) && (
-                            <Card className="shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                            <Card 
+                                className="shadow-xl border-0 backdrop-blur-sm transition-colors duration-300"
+                                style={{ backgroundColor: `${colors.surface}cc` }}
+                            >
                                 <CardHeader>
-                                    <CardTitle className="text-2xl text-green-600 dark:text-green-400 flex items-center space-x-2">
-                                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                                            <Calculator className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                    <CardTitle 
+                                        className="text-2xl flex items-center space-x-2 transition-colors duration-300"
+                                        style={{ color: colors.accent }}
+                                    >
+                                        <div 
+                                            className="p-2 rounded-lg transition-colors duration-300"
+                                            style={{ backgroundColor: `${colors.accent}20` }}
+                                        >
+                                            <Calculator 
+                                                className="h-6 w-6 transition-colors duration-300"
+                                                style={{ color: colors.accent }}
+                                            />
                                         </div>
                                         <span>Current Tariff Results</span>
                                     </CardTitle>
-                                    <CardDescription className="text-base">
+                                    <CardDescription 
+                                        className="text-base transition-colors duration-300"
+                                        style={{ color: colors.muted }}
+                                    >
                                         Latest tariff calculations for {report} importing from {partner}
                                     </CardDescription>
                                 </CardHeader>
@@ -378,16 +552,31 @@ export function Home(){
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                                         
                                         {/* TARIFF RATE CARD: Shows percentage rate applied */}
-                                        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border-blue-200 dark:border-blue-800 shadow-lg">
+                                        <Card 
+                                            className="shadow-lg transition-colors duration-300"
+                                            style={{ 
+                                                backgroundColor: colors.surface,
+                                                borderColor: colors.border 
+                                            }}
+                                        >
                                             <CardContent className="pt-6">
                                                 <div className="text-center">
-                                                    <div className="p-3 bg-blue-600 rounded-xl inline-block mb-3">
+                                                    <div 
+                                                        className="p-3 rounded-xl inline-block mb-3 transition-colors duration-300"
+                                                        style={{ backgroundColor: colors.accent }}
+                                                    >
                                                         <TrendingUp className="h-6 w-6 text-white" />
                                                     </div>
-                                                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
+                                                    <p 
+                                                        className="text-sm font-medium mb-2 transition-colors duration-300"
+                                                        style={{ color: colors.accent }}
+                                                    >
                                                         Tariff Rate
                                                     </p>
-                                                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-700 dark:text-blue-300">
+                                                    <p 
+                                                        className="text-2xl sm:text-3xl lg:text-4xl font-bold transition-colors duration-300"
+                                                        style={{ color: colors.foreground }}
+                                                    >
                                                         {current.tariffRate ? `${current.tariffRate}%` : '—'}
                                                     </p>
                                                 </div>
@@ -395,16 +584,31 @@ export function Home(){
                                         </Card>
 
                                         {/* TARIFF AMOUNT CARD: Shows dollar amount of tariff */}
-                                        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800 shadow-lg">
+                                        <Card 
+                                            className="shadow-lg transition-colors duration-300"
+                                            style={{ 
+                                                backgroundColor: colors.surface,
+                                                borderColor: colors.border 
+                                            }}
+                                        >
                                             <CardContent className="pt-6">
                                                 <div className="text-center">
-                                                    <div className="p-3 bg-green-600 rounded-xl inline-block mb-3">
+                                                    <div 
+                                                        className="p-3 rounded-xl inline-block mb-3 transition-colors duration-300"
+                                                        style={{ backgroundColor: colors.accent }}
+                                                    >
                                                         <Calculator className="h-6 w-6 text-white" />
                                                     </div>
-                                                    <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
+                                                    <p 
+                                                        className="text-sm font-medium mb-2 transition-colors duration-300"
+                                                        style={{ color: colors.accent }}
+                                                    >
                                                         Tariff Amount
                                                     </p>
-                                                    <p className="text-4xl font-bold text-green-700 dark:text-green-300">
+                                                    <p 
+                                                        className="text-4xl font-bold transition-colors duration-300"
+                                                        style={{ color: colors.foreground }}
+                                                    >
                                                         {current.tariffAmount ? `$${Number(current.tariffAmount).toLocaleString()}` : '—'}
                                                     </p>
                                                 </div>
@@ -412,16 +616,31 @@ export function Home(){
                                         </Card>
 
                                         {/* TOTAL COST CARD: Shows final cost including tariff */}
-                                        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800 shadow-lg">
+                                        <Card 
+                                            className="shadow-lg transition-colors duration-300"
+                                            style={{ 
+                                                backgroundColor: colors.surface,
+                                                borderColor: colors.border 
+                                            }}
+                                        >
                                             <CardContent className="pt-6">
                                                 <div className="text-center">
-                                                    <div className="p-3 bg-purple-600 rounded-xl inline-block mb-3">
+                                                    <div 
+                                                        className="p-3 rounded-xl inline-block mb-3 transition-colors duration-300"
+                                                        style={{ backgroundColor: colors.accent }}
+                                                    >
                                                         <Globe className="h-6 w-6 text-white" />
                                                     </div>
-                                                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">
+                                                    <p 
+                                                        className="text-sm font-medium mb-2 transition-colors duration-300"
+                                                        style={{ color: colors.accent }}
+                                                    >
                                                         Total Cost
                                                     </p>
-                                                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-700 dark:text-purple-300">
+                                                    <p 
+                                                        className="text-2xl sm:text-3xl lg:text-4xl font-bold transition-colors duration-300"
+                                                        style={{ color: colors.foreground }}
+                                                    >
                                                         {current.itemCostWithTariff ? `$${Number(current.itemCostWithTariff).toLocaleString()}` : '—'}
                                                     </p>
                                                 </div>
@@ -434,15 +653,30 @@ export function Home(){
 
                         {/* HISTORICAL CHART SECTION: Display historical tariff trends when data is available */}
                         {past.tariffData && past.tariffData.length > 0 && (
-                            <Card className="shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                            <Card 
+                                className="shadow-xl border-0 backdrop-blur-sm transition-colors duration-300"
+                                style={{ backgroundColor: `${colors.surface}cc` }}
+                            >
                                 <CardHeader>
-                                    <CardTitle className="text-xl lg:text-2xl flex items-center space-x-2">
-                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                                            <BarChart3 className="h-5 w-5 lg:h-6 lg:w-6 text-indigo-600 dark:text-indigo-400" />
+                                    <CardTitle 
+                                        className="text-xl lg:text-2xl flex items-center space-x-2 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
+                                        <div 
+                                            className="p-2 rounded-lg transition-colors duration-300"
+                                            style={{ backgroundColor: `${colors.accent}20` }}
+                                        >
+                                            <BarChart3 
+                                                className="h-5 w-5 lg:h-6 lg:w-6 transition-colors duration-300"
+                                                style={{ color: colors.accent }}
+                                            />
                                         </div>
                                         <span>Historical Tariff Analysis</span>
                                     </CardTitle>
-                                    <CardDescription className="text-sm lg:text-base">
+                                    <CardDescription 
+                                        className="text-sm lg:text-base transition-colors duration-300"
+                                        style={{ color: colors.muted }}
+                                    >
                                         {title}
                                     </CardDescription>
                                 </CardHeader>
