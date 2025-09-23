@@ -211,14 +211,18 @@ export function Home(){
                                 className="p-2 rounded-lg transition-colors duration-300"
                                 style={{ backgroundColor: colors.accent }}
                             >
-                                <Globe className="h-6 w-6 text-white" />
+                                <img 
+                                    src="/tempGOAT.png" 
+                                    alt="GoatTariff Logo" 
+                                    className="h-20 w-20 object-contain"
+                                />
                             </div>
                             <div>
                                 <h1 
                                     className="text-xl font-bold transition-colors duration-300"
                                     style={{ color: colors.foreground }}
                                 >
-                                    TariffCalc
+                                    GoatTariff
                                 </h1>
                                 <p 
                                     className="text-xs transition-colors duration-300"
