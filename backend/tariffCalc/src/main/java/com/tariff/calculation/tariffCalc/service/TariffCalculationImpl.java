@@ -88,7 +88,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
         MoachDTO result = restClientMoach.get()
                                          .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("MOACH_API_KEY"))
                                          .retrieve()
-                                         .onStatus((status) -> status.value() == 404, (request, response) -> {
+                                         .onStatus((status) -> status.value() == 400, (request, response) -> {
+                                             // This one occurs if that country doesnt trade that item......
+                                             throw new ApiFailureException (response.getStatusText());
                                           })
                                          .body(MoachDTO.class);
 
