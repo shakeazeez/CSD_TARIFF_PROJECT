@@ -1,0 +1,687 @@
+// ====================================
+// IMPORTS SECTION
+// ====================================
+
+// External libraries
+import { useEffect, useState } from 'react' // React hooks for state management and side effects
+import { useNavigate } from 'react-router-dom' // Navigation hook
+import axios from 'axios' // HTTP client for API requests
+
+// Animation library for smooth transitions
+import { motion, AnimatePresence } from 'framer-motion'
+
+// shadcn/ui components - Modern, accessible UI components
+import { Button } from '../components/ui/button' // Customizable button component
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card' // Card components
+import { Progress } from '../components/ui/progress' // Progress bar component
+
+// Theme and icon components
+import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
+import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
+import {
+    Menu,
+    Sun,
+    Moon,
+    Calculator,
+    TrendingUp,
+    Globe,
+    BarChart3,
+    Activity,
+    Users,
+    DollarSign,
+    Clock,
+    Star,
+    Zap,
+    Target,
+    Award,
+    AlertCircle,
+    CheckCircle,
+    User,
+    Settings,
+    LogOut
+} from 'lucide-react' // SVG icons
+
+// Custom components
+import Chart from '../components/Chart.jsx' // Custom chart component
+
+// ====================================
+// ANIMATION VARIANTS
+// ====================================
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            duration: 0.6,
+            staggerChildren: 0.1
+        }
+    }
+}
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.5,
+            ease: "easeOut"
+        }
+    }
+}
+
+// ====================================
+// DASHBOARD COMPONENT
+// ====================================
+
+export function Dashboard({ onMenuClick }){
+    // ====================================
+    // THEME INTEGRATION
+    // ====================================
+
+    // Get theme context for component-level color management
+    const { colors, theme, toggleTheme, isDark } = useTheme();
+
+    // Get authentication context for user management
+    const { user, logout } = useAuth();
+
+    // Navigation hook
+    const navigate = useNavigate();
+
+    // ====================================
+    // STATE VARIABLES
+    // ====================================
+
+    // Get backend URL from environment variables (.env file)
+    const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+    // Dashboard data
+    const [stats, setStats] = useState({
+        totalCalculations: 0,
+        countriesCovered: 0,
+        avgTariffRate: 0,
+        recentActivity: []
+    });
+
+    // UI state
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    // ====================================
+    // UTILITY FUNCTIONS
+    // ====================================
+
+    // Clear messages after timeout
+    const clearMessages = () => {
+        setTimeout(() => {
+            setError("");
+            setSuccess("");
+        }, 5000);
+    };
+
+    // ====================================
+    // DATA FETCHING
+    // ====================================
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                // In a real app, you'd fetch actual dashboard data from the backend
+                // For now, we'll use mock data
+                setTimeout(() => {
+                    setStats({
+                        totalCalculations: 47,
+                        countriesCovered: 89,
+                        avgTariffRate: 8.3,
+                        recentActivity: [
+                            { id: 1, action: "Calculated tariff for USA → China", time: "2 hours ago", type: "calculation" },
+                            { id: 2, action: "Viewed historical trends for Singapore → Malaysia", time: "1 day ago", type: "analysis" },
+                            { id: 3, action: "Exported tariff report", time: "2 days ago", type: "export" },
+                            { id: 4, action: "Updated profile settings", time: "3 days ago", type: "settings" }
+                        ]
+                    });
+                    setLoading(false);
+                }, 1000);
+            } catch (error) {
+                console.log("Error fetching dashboard data:", error);
+                setError("Failed to load dashboard data. Please try again.");
+                clearMessages();
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    // ====================================
+    // EVENT HANDLERS
+    // ====================================
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
+
+    const quickActions = [
+        {
+            title: "New Calculation",
+            description: "Calculate tariffs for new trade routes",
+            icon: Calculator,
+            action: () => navigate('/calculator'),
+            color: colors.accent
+        },
+        {
+            title: "View Trends",
+            description: "Analyze historical tariff data",
+            icon: TrendingUp,
+            action: () => navigate('/calculator'),
+            color: "#3b82f6"
+        },
+        {
+            title: "Global Coverage",
+            description: "Explore countries and markets",
+            icon: Globe,
+            action: () => navigate('/'),
+            color: "#10b981"
+        },
+        {
+            title: "Settings",
+            description: "Manage your account preferences",
+            icon: Settings,
+            action: () => navigate('/settings'),
+            color: "#f59e0b"
+        }
+    ];
+
+    // ====================================
+    // COMPONENT RENDER (JSX)
+    // ====================================
+
+    return(
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="min-h-screen relative overflow-hidden"
+            style={{
+                background: 'transparent'
+            }}
+        >
+            {/* TOP NAVIGATION */}
+            <motion.header
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="backdrop-blur-sm border-b sticky top-0 z-50"
+                style={{
+                    backgroundColor: `${colors.surface}cc`,
+                    borderColor: colors.border
+                }}
+            >
+                <div className="w-full px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center py-4">
+                        {/* Logo and navigation buttons */}
+                      <div className="flex items-center space-x-4">
+                        {/* Menu button */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onMenuClick}
+                            className="text-white hover:bg-white/10"
+                        >
+                            <Menu className="h-5 w-5" />
+                        </Button>
+
+                        <motion.div
+                            className="flex items-center space-x-3"
+                            whileHover={{ scale: 1.05 }}
+                        >
+                        <div
+                            className="p-2 rounded-lg shadow-lg"
+                            style={{ backgroundColor: colors.accent }}
+                        >
+                            <img
+                                src="/tempGOAT.png"
+                                alt="GoatTariff Logo"
+                                className="h-12 w-12 object-contain"
+                            />
+                        </div>
+                        <span className="text-xl font-bold" style={{ color: colors.foreground }}>
+                            GoatTariff
+                        </span>
+                        </motion.div>
+                    </div>
+
+                        {/* Right side - User menu and theme toggle */}
+                        <div className="flex items-center space-x-3">
+                            {user && (
+                                <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-lg text-sm"
+                                     style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}` }}>
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                                        <span className="text-white text-xs font-semibold">
+                                            {user?.email?.charAt(0).toUpperCase() || 'U'}
+                                        </span>
+                                    </div>
+                                    <span style={{ color: colors.foreground }}>{user?.email || 'User'}</span>
+                                </div>
+                            )}
+
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={toggleTheme}
+                                    className="transition-all duration-300 shadow-md"
+                                    style={{
+                                        borderColor: colors.accent,
+                                        backgroundColor: colors.surface,
+                                        color: colors.accent,
+                                        borderWidth: '1px'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = colors.accent;
+                                        e.target.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.surface;
+                                        e.target.style.color = colors.accent;
+                                    }}
+                                >
+                                    {isDark ? (
+                                        <Sun className="h-4 w-4" />
+                                    ) : (
+                                        <Moon className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </motion.div>
+                        </div>
+                    </div>
+                </div>
+            </motion.header>
+
+            {/* SUCCESS/ERROR MESSAGES */}
+            <AnimatePresence>
+                {success && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        className="fixed top-20 right-4 z-50"
+                    >
+                        <Card className="border-green-500 bg-green-50 dark:bg-green-900/20 shadow-lg">
+                            <CardContent className="flex items-center space-x-2 p-4">
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                                <span className="text-green-800 dark:text-green-200">{success}</span>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        className="fixed top-20 right-4 z-50"
+                    >
+                        <Card className="border-red-500 bg-red-50 dark:bg-red-900/20 shadow-lg">
+                            <CardContent className="flex items-center space-x-2 p-4">
+                                <AlertCircle className="h-5 w-5 text-red-600" />
+                                <span className="text-red-800 dark:text-red-200">{error}</span>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* MAIN CONTENT */}
+            <div className="relative z-10 container mx-auto px-4 py-8">
+                <motion.div
+                    variants={itemVariants}
+                    className="max-w-7xl mx-auto space-y-8"
+                >
+                    {/* Welcome Section */}
+                    <motion.div
+                        variants={itemVariants}
+                        className="text-center mb-8"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            className="inline-block mb-4"
+                        >
+                            <div
+                                className="p-4 rounded-2xl shadow-2xl mx-auto w-fit"
+                                style={{ backgroundColor: colors.accent }}
+                            >
+                                <User className="h-12 w-12 text-white" />
+                            </div>
+                        </motion.div>
+
+                        <motion.h1
+                            variants={itemVariants}
+                            className="text-4xl font-bold mb-4"
+                            style={{ color: colors.foreground }}
+                        >
+                            Welcome back, {user?.email?.split('@')[0] || 'Trader'}! 👋
+                        </motion.h1>
+                        <motion.p
+                            variants={itemVariants}
+                            className="text-xl"
+                            style={{ color: colors.muted }}
+                        >
+                            Ready to optimize your global trade strategy?
+                        </motion.p>
+                    </motion.div>
+
+                    {/* Stats Overview */}
+                    <motion.div variants={itemVariants}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            {[
+                                {
+                                    title: "Total Calculations",
+                                    value: stats.totalCalculations,
+                                    icon: Calculator,
+                                    description: "Tariff calculations performed",
+                                    color: colors.accent
+                                },
+                                {
+                                    title: "Countries Covered",
+                                    value: stats.countriesCovered,
+                                    icon: Globe,
+                                    description: "Markets analyzed",
+                                    color: "#3b82f6"
+                                },
+                                {
+                                    title: "Avg Tariff Rate",
+                                    value: `${stats.avgTariffRate}%`,
+                                    icon: TrendingUp,
+                                    description: "Across all calculations",
+                                    color: "#10b981"
+                                },
+                                {
+                                    title: "Premium Member",
+                                    value: "Active",
+                                    icon: Star,
+                                    description: "Since account creation",
+                                    color: "#f59e0b"
+                                }
+                            ].map((stat, index) => (
+                                <motion.div
+                                    key={stat.title}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 * index }}
+                                >
+                                    <Card style={{
+                                        backgroundColor: `${colors.surface}95`,
+                                        borderColor: colors.border
+                                    }}>
+                                        <CardContent className="p-6">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-medium" style={{ color: colors.muted }}>
+                                                        {stat.title}
+                                                    </p>
+                                                    <p className="text-3xl font-bold" style={{ color: colors.foreground }}>
+                                                        {stat.value}
+                                                    </p>
+                                                    <p className="text-xs" style={{ color: colors.muted }}>
+                                                        {stat.description}
+                                                    </p>
+                                                </div>
+                                                <div
+                                                    className="p-3 rounded-lg"
+                                                    style={{ backgroundColor: stat.color + '20' }}
+                                                >
+                                                    <stat.icon
+                                                        className="h-6 w-6"
+                                                        style={{ color: stat.color }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    {/* Quick Actions */}
+                    <motion.div variants={itemVariants}>
+                        <Card style={{
+                            backgroundColor: `${colors.surface}95`,
+                            borderColor: colors.border
+                        }}>
+                            <CardHeader>
+                                <CardTitle style={{ color: colors.foreground }}>
+                                    <Zap className="h-6 w-6 inline mr-2" />
+                                    Quick Actions
+                                </CardTitle>
+                                <CardDescription style={{ color: colors.muted }}>
+                                    Jump into your most common tasks
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {quickActions.map((action, index) => (
+                                        <motion.div
+                                            key={action.title}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <Button
+                                                onClick={action.action}
+                                                className="w-full h-auto p-4 flex flex-col items-center space-y-2"
+                                                style={{
+                                                    backgroundColor: action.color + '10',
+                                                    borderColor: action.color,
+                                                    color: action.color
+                                                }}
+                                                variant="outline"
+                                            >
+                                                <action.icon className="h-8 w-8" />
+                                                <div className="text-center">
+                                                    <div className="font-semibold">{action.title}</div>
+                                                    <div className="text-xs opacity-75">{action.description}</div>
+                                                </div>
+                                            </Button>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
+                    {/* Recent Activity & Insights */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Recent Activity */}
+                        <motion.div variants={itemVariants}>
+                            <Card style={{
+                                backgroundColor: `${colors.surface}95`,
+                                borderColor: colors.border
+                            }}>
+                                <CardHeader>
+                                    <CardTitle style={{ color: colors.foreground }}>
+                                        <Clock className="h-6 w-6 inline mr-2" />
+                                        Recent Activity
+                                    </CardTitle>
+                                    <CardDescription style={{ color: colors.muted }}>
+                                        Your latest tariff analysis activities
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {stats.recentActivity.map((activity, index) => (
+                                            <motion.div
+                                                key={activity.id}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: 0.1 * index }}
+                                                className="flex items-center space-x-3 p-3 rounded-lg"
+                                                style={{ backgroundColor: colors.background }}
+                                            >
+                                                <div
+                                                    className="p-2 rounded-lg"
+                                                    style={{
+                                                        backgroundColor:
+                                                            activity.type === 'calculation' ? colors.accent + '20' :
+                                                            activity.type === 'analysis' ? '#3b82f620' :
+                                                            activity.type === 'export' ? '#10b98120' : '#f59e0b20'
+                                                    }}
+                                                >
+                                                    {activity.type === 'calculation' && <Calculator className="h-4 w-4" style={{ color: colors.accent }} />}
+                                                    {activity.type === 'analysis' && <TrendingUp className="h-4 w-4" style={{ color: '#3b82f6' }} />}
+                                                    {activity.type === 'export' && <BarChart3 className="h-4 w-4" style={{ color: '#10b981' }} />}
+                                                    {activity.type === 'settings' && <Settings className="h-4 w-4" style={{ color: '#f59e0b' }} />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium" style={{ color: colors.foreground }}>
+                                                        {activity.action}
+                                                    </p>
+                                                    <p className="text-xs" style={{ color: colors.muted }}>
+                                                        {activity.time}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+
+                        {/* Trade Insights */}
+                        <motion.div variants={itemVariants}>
+                            <Card style={{
+                                backgroundColor: `${colors.surface}95`,
+                                borderColor: colors.border
+                            }}>
+                                <CardHeader>
+                                    <CardTitle style={{ color: colors.foreground }}>
+                                        <Target className="h-6 w-6 inline mr-2" />
+                                        Trade Insights
+                                    </CardTitle>
+                                    <CardDescription style={{ color: colors.muted }}>
+                                        AI-powered recommendations for your business
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <motion.div
+                                        className="p-4 rounded-lg border-l-4"
+                                        style={{
+                                            backgroundColor: colors.background,
+                                            borderLeftColor: colors.accent
+                                        }}
+                                        whileHover={{ scale: 1.02 }}
+                                    >
+                                        <div className="flex items-start space-x-3">
+                                            <Award className="h-5 w-5 mt-0.5" style={{ color: colors.accent }} />
+                                            <div>
+                                                <h4 className="font-semibold" style={{ color: colors.foreground }}>
+                                                    Optimal Trade Route
+                                                </h4>
+                                                <p className="text-sm" style={{ color: colors.muted }}>
+                                                    Consider Singapore → Vietnam for electronics. Current average tariff: 2.1%
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        className="p-4 rounded-lg border-l-4"
+                                        style={{
+                                            backgroundColor: colors.background,
+                                            borderLeftColor: '#f59e0b'
+                                        }}
+                                        whileHover={{ scale: 1.02 }}
+                                    >
+                                        <div className="flex items-start space-x-3">
+                                            <Activity className="h-5 w-5 mt-0.5" style={{ color: '#f59e0b' }} />
+                                            <div>
+                                                <h4 className="font-semibold" style={{ color: colors.foreground }}>
+                                                    Market Trend Alert
+                                                </h4>
+                                                <p className="text-sm" style={{ color: colors.muted }}>
+                                                    EU tariffs on Chinese goods increased by 12% in Q4. Monitor closely.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        className="p-4 rounded-lg border-l-4"
+                                        style={{
+                                            backgroundColor: colors.background,
+                                            borderLeftColor: '#10b981'
+                                        }}
+                                        whileHover={{ scale: 1.02 }}
+                                    >
+                                        <div className="flex items-start space-x-3">
+                                            <DollarSign className="h-5 w-5 mt-0.5" style={{ color: '#10b981' }} />
+                                            <div>
+                                                <h4 className="font-semibold" style={{ color: colors.foreground }}>
+                                                    Cost Saving Opportunity
+                                                </h4>
+                                                <p className="text-sm" style={{ color: colors.muted }}>
+                                                    Switch to Malaysia for manufacturing could save 8.5% on total landed costs.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+
+                    {/* Usage Progress */}
+                    <motion.div variants={itemVariants}>
+                        <Card style={{
+                            backgroundColor: `${colors.surface}95`,
+                            borderColor: colors.border
+                        }}>
+                            <CardHeader>
+                                <CardTitle style={{ color: colors.foreground }}>
+                                    <BarChart3 className="h-6 w-6 inline mr-2" />
+                                    Monthly Usage
+                                </CardTitle>
+                                <CardDescription style={{ color: colors.muted }}>
+                                    Your tariff calculation usage this month
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span style={{ color: colors.foreground }}>Calculations Used</span>
+                                        <span style={{ color: colors.muted }}>47 / 100</span>
+                                    </div>
+                                    <Progress value={47} className="h-2" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span style={{ color: colors.foreground }}>Reports Generated</span>
+                                        <span style={{ color: colors.muted }}>12 / 50</span>
+                                    </div>
+                                    <Progress value={24} className="h-2" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span style={{ color: colors.foreground }}>Data Exports</span>
+                                        <span style={{ color: colors.muted }}>3 / 25</span>
+                                    </div>
+                                    <Progress value={12} className="h-2" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </motion.div>
+            </div>
+        </motion.div>
+    );
+}
