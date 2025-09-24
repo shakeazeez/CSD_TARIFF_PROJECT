@@ -53,12 +53,14 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = () => {
             const token = localStorage.getItem('authToken');
+            const storedUser = localStorage.getItem('userData');
             if (token) {
                 // Here you could validate the token with your backend
                 // For now, we'll just check if it exists
                 setIsAuthenticated(true);
-                // You can decode user info from token or fetch user data
-                // setUser(decodedUser);
+                if (storedUser) {
+                    setUser(JSON.parse(storedUser));
+                }
             }
             setLoading(false);
         };
@@ -73,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     const login = (userData) => {
         setIsAuthenticated(true);
         setUser(userData);
+        localStorage.setItem('userData', JSON.stringify(userData));
         // Token is already stored in Login component
     };
 
@@ -83,6 +86,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
         setUser(null);
         localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
         // You might want to call logout API endpoint here
     };
 

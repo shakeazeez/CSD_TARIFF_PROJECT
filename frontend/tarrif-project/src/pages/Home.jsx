@@ -29,6 +29,9 @@ import {
     Menu
 } from 'lucide-react' // SVG icons
 
+// Custom components
+import { Header } from '../components/Header.jsx' // Header component
+
 // ====================================
 // ANIMATION VARIANTS
 // ====================================
@@ -139,130 +142,12 @@ export function Home({ onMenuClick }){
 
 
             {/* TOP NAVIGATION */}
-            <motion.header
-                initial={{ y: -100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6 }}
-                className="backdrop-blur-sm border-b sticky top-0 z-50"
-                style={{
-                    backgroundColor: `${colors.surface}cc`,
-                    borderColor: colors.border
-                }}
-            >
-                <div className="w-full px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                        {/* Logo and navigation buttons */}
-                      <div className="flex items-center space-x-4">
-                        {/* Menu button */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onMenuClick}
-                            className="text-white hover:bg-white/10"
-                        >
-                            <Menu className="h-5 w-5" />
-                        </Button>
-
-                        <motion.div
-                            className="flex items-center space-x-3"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                        <div
-                            className="p-2 rounded-lg shadow-lg"
-                            style={{ backgroundColor: colors.accent }}
-                        >
-                            <img
-                                src="/tempGOAT.png"
-                                alt="GoatTariff Logo"
-                                className="h-12 w-12 object-contain"
-                            />
-                        </div>
-                        <span className="text-xl font-bold" style={{ color: colors.foreground }}>
-                            GoatTariff
-                        </span>
-                        </motion.div>
-                    </div>
-
-                        {/* Right side - User/Login + Theme toggle */}
-                        <div className="flex items-center space-x-3">
-                            {user ? (
-                                <div className="flex items-center space-x-3">
-                                    <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-lg text-sm"
-                                         style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}` }}>
-                                        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                                            <span className="text-white text-xs font-semibold">
-                                                {user?.email?.charAt(0).toUpperCase() || 'U'}
-                                            </span>
-                                        </div>
-                                        <span style={{ color: colors.foreground }}>{user?.email || 'User'}</span>
-                                    </div>
-                                    <Button
-                                        onClick={() => navigate('/calculator')}
-                                        className="transition-all duration-300 text-white"
-                                        style={{
-                                            backgroundColor: colors.accent,
-                                            borderColor: colors.accent
-                                        }}
-                                        size="sm"
-                                    >
-                                        <Calculator className="h-4 w-4 mr-2" />
-                                        Calculator
-                                    </Button>
-                                </div>
-                            ) : (
-                                <Button
-                                    onClick={() => navigate('/login')}
-                                    className="transition-all duration-300 text-white"
-                                    style={{
-                                        backgroundColor: colors.accent,
-                                        borderColor: colors.accent
-                                    }}
-                                    size="sm"
-                                >
-                                    Login
-                                </Button>
-                            )}
-
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={toggleTheme}
-                                    className="transition-all duration-300 shadow-md"
-                                    style={{
-                                        borderColor: colors.accent,
-                                        backgroundColor: colors.surface,
-                                        color: colors.accent,
-                                        borderWidth: '1px'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = colors.accent;
-                                        e.target.style.color = 'white';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = colors.surface;
-                                        e.target.style.color = colors.accent;
-                                    }}
-                                >
-                                    {isDark ? (
-                                        <Sun className="h-4 w-4" />
-                                    ) : (
-                                        <Moon className="h-4 w-4" />
-                                    )}
-                                </Button>
-                            </motion.div>
-                        </div>
-                    </div>
-                </div>
-            </motion.header>
+            <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
             {/* HERO SECTION */}
             <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)]">
-                <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 p-8 rounded-3xl shadow-2xl backdrop-blur-md" style={{
-                    backgroundColor: `${colors.surface}90`,
+                <div className="backdrop-blur-sm max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 p-8 rounded-3xl shadow-2xl backdrop-blur-md" style={{
+                    backgroundColor: `${colors.surface}40`,
                     border: `1px solid ${colors.border}50`
                 }}>
                     <motion.div
@@ -382,7 +267,7 @@ export function Home({ onMenuClick }){
                                 transition={{ delay: 0.8 + index * 0.1 }}
                                 className="p-6 rounded-xl backdrop-blur-sm shadow-lg"
                                 style={{
-                                    backgroundColor: `${colors.surface}80`,
+                                    backgroundColor: `${colors.surface}40`,
                                     border: `1px solid ${colors.border}`
                                 }}
                             >

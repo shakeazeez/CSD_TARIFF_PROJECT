@@ -87,13 +87,20 @@ export function Login(){
     const { colors, toggleTheme, isDark } = useTheme();
 
     // Get authentication context
-    const { login } = useAuth();
+    const { isAuthenticated, login } = useAuth();
 
     // ====================================
     // NAVIGATION
     // ====================================
 
     const navigate = useNavigate();
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard');
+        }
+    }, [isAuthenticated, navigate]);
 
     // ====================================
     // STATE VARIABLES
@@ -171,11 +178,6 @@ export function Login(){
             if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
                 console.log("Demo login successful");
 
-                // Simulate successful authentication for demo
-                const action = isSignUp ? 'Account created' : 'Login successful';
-                setSuccess(`${action}! Redirecting...`);
-                clearMessages();
-
                 // Store demo authentication token
                 const demoToken = "demo-token-" + Date.now();
                 localStorage.setItem('authToken', demoToken);
@@ -191,9 +193,7 @@ export function Login(){
                 login(demoUser);
 
                 // Redirect to dashboard page after successful authentication
-                setTimeout(() => {
-                    navigate('/dashboard');
-                }, 1500);
+                navigate('/dashboard');
 
                 setIsLoading(false);
                 return;
@@ -208,10 +208,6 @@ export function Login(){
             console.log(`${isSignUp ? 'Signup' : 'Login'} success:`, response);
 
             // Handle successful authentication
-            const action = isSignUp ? 'Account created' : 'Login successful';
-            setSuccess(`${action}! Redirecting...`);
-            clearMessages();
-
             // Store authentication token (you can modify this based on your API response)
             if (response.data.token) {
                 localStorage.setItem('authToken', response.data.token);
@@ -221,9 +217,7 @@ export function Login(){
             login(response.data.user || { email: email });
 
             // Redirect to dashboard page after successful authentication
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1500);
+            navigate('/dashboard');
 
         } catch(error){
             console.log(`${isSignUp ? 'Signup' : 'Login'} error:`, error);

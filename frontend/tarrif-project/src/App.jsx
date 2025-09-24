@@ -11,6 +11,7 @@ import Sidebar from './components/Sidebar.jsx'
 import WorldMapRoutes from './components/worldmaproutes.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import { Footer } from './components/Footer.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 
 /**
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
+    return isAuthenticated ? children : <Navigate to="/" replace />;
 };
 
 /**
@@ -79,11 +80,7 @@ function App() {
           {/* Main Content */}
           <div className="relative z-10">
             <Routes>
-              <Route path="/login" element={
-                <PublicRoute>
-                  <Login/>
-                </PublicRoute>
-              }/>
+              <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard onMenuClick={() => setSidebarOpen(true)} />
@@ -104,6 +101,7 @@ function App() {
             </Routes>
           </div>
         </Router>
+        <Footer />
       </AuthProvider>
     </ThemeProvider>
   )

@@ -32,13 +32,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       description: 'Landing page with global trade overview'
     },
     {
-      icon: BarChart3,
-      label: 'Dashboard',
-      path: '/dashboard',
-      description: 'Your personalized trade analytics',
-      requiresAuth: true
-    },
-    {
       icon: Calculator,
       label: 'Tariff Calculator',
       path: '/calculator',
@@ -49,7 +42,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       label: 'FAQ',
       path: '/faq',
       description: 'Frequently asked questions'
-    }
+    },
+    ...(user ? [
+      {
+        icon: BarChart3,
+        label: 'My Dashboard',
+        path: '/dashboard',
+        description: 'View your tariff calculations and history'
+      },
+      {
+        icon: User,
+        label: 'Settings',
+        path: '/settings',
+        description: 'Account settings and preferences'
+      }
+    ] : [])
   ];
 
   const handleNavigation = (path, requiresAuth, comingSoon) => {
