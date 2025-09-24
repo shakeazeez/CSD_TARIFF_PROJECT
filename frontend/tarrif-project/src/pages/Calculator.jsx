@@ -375,7 +375,7 @@ export function Calculator({ onMenuClick }){
                                         <Dropdown
                                             options={modList}
                                             value={report}
-                                            onChange={setReport}
+                                            onChange={(option) => setReport(option ? option.code : "")}
                                             placeholder="Select reporting country"
                                             className="w-full"
                                         />
@@ -387,7 +387,7 @@ export function Calculator({ onMenuClick }){
                                         <Dropdown
                                             options={modList}
                                             value={partner}
-                                            onChange={setPartner}
+                                            onChange={(option) => setPartner(option ? option.code : "")}
                                             placeholder="Select partner country"
                                             className="w-full"
                                         />
