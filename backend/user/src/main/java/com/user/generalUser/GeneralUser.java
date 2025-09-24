@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.List;
+
+import com.user.security.enums.Role;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,6 +38,9 @@ public class GeneralUser {
     @CollectionTable(name = "user_tariff_ids", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "tariff_id")
     private List<Integer> tariffIds;
+    
+    // Will add all the ontop stuff on here
+    private List<Role> role;
 
     public GeneralUser(String username, String hashedPassword, List<Integer> history, List<Integer> tariffIds) {
         this.username = username;
