@@ -22,7 +22,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggleTheme, colors } = useTheme();
-  const { user, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const menuItems = [
     {
@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/faq',
       description: 'Frequently asked questions'
     },
-    ...(user ? [
+    ...(isAuthenticated ? [
       {
         icon: BarChart3,
         label: 'My Dashboard',
@@ -214,7 +214,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </Button>
 
           {/* Auth Buttons */}
-          {user ? (
+          {isAuthenticated ? (
             <Button
               variant="outline"
               onClick={handleLogout}

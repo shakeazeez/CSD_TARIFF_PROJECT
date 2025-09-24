@@ -250,10 +250,10 @@ export function Calculator({ onMenuClick }){
 
         try{
             // Log the data being sent for debugging
-            console.log("Sending DTO:", tariffOverviewQueryDTO);
+            console.log("Sending DTO:", tariffCalculationQueryDTO);
 
             // POST request to get historical tariff data
-            const response = await axios.post(`${backendURL}/tariff/past`, tariffOverviewQueryDTO);
+            const response = await axios.post(`${backendURL}/tariff/past`, tariffCalculationQueryDTO);
             console.log("Historical tariff data success:", response);
 
             // Update state with historical tariff data
@@ -294,7 +294,7 @@ export function Calculator({ onMenuClick }){
             }}
         >
             {/* TOP NAVIGATION */}
-            <Header onMenuClick={onMenuClick} showUserInfo={false} />
+            <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
             {/* SUCCESS/ERROR MESSAGES */}
             <AnimatePresence>

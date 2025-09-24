@@ -17,7 +17,7 @@ import {
 
 export function Header({ onMenuClick, showUserInfo = true }) {
     const { colors, toggleTheme, isDark } = useTheme()
-    const { user, logout } = useAuth()
+    const { isAuthenticated, user, logout } = useAuth()
     const navigate = useNavigate()
 
     return (
@@ -72,7 +72,7 @@ export function Header({ onMenuClick, showUserInfo = true }) {
 
                     {/* Right side - User/Login + Theme toggle */}
                     <div className="flex items-center space-x-3">
-                        {showUserInfo && user ? (
+                        {showUserInfo && isAuthenticated ? (
                             <div className="flex items-center space-x-3">
                                 <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-lg text-sm"
                                      style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}` }}>
@@ -99,7 +99,7 @@ export function Header({ onMenuClick, showUserInfo = true }) {
                                     Logout
                                 </Button>
                             </div>
-                        ) : showUserInfo && !user ? (
+                        ) : showUserInfo && !isAuthenticated ? (
                             <Button
                                 onClick={() => navigate('/login')}
                                 className="transition-all duration-300 text-white"
