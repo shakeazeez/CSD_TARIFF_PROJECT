@@ -40,12 +40,16 @@ public class GeneralUser {
     private List<Integer> tariffIds;
     
     // Will add all the ontop stuff on here
+    @ElementCollection
+    @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "user_role")
     private List<Role> role;
 
-    public GeneralUser(String username, String hashedPassword, List<Integer> history, List<Integer> tariffIds) {
+    public GeneralUser(String username, String hashedPassword, List<Integer> history, List<Integer> tariffIds, List<Role> role) {
         this.username = username;
         this.hashedPassword = hashedPassword;
         this.history = history;
         this.tariffIds = tariffIds;
+        this.role = role;
     }
 }

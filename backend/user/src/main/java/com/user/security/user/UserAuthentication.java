@@ -1,7 +1,9 @@
-package com.user.security;
+package com.user.security.user;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
+
+import com.user.security.user.AuthUser;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

@@ -15,11 +15,12 @@ public class UserApplication {
     private static final Dotenv dotenv = Dotenv.configure()
                                         .directory("./")
                                         .filename(".env")
-                                        .load();;
+                                        .load();
 
 	public static void main(String[] args) {
         System.setProperty("DATABASE_PASSWORD", dotenv.get("DATABASE_PASSWORD"));
         System.setProperty("DATABASE_URL", dotenv.get("DATABASE_URL"));
+        // System.setProperty("YOUR_SIGNING_SECRET", dotenv.get("SIGNING_SECRET"));
 		SpringApplication.run(UserApplication.class, args);
 	}
 	
@@ -29,7 +30,7 @@ public class UserApplication {
         @Override
         public void addCorsMappings(@NotNull CorsRegistry registry) {
            	registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:5173");
+                    .allowedOrigins(dotenv.get("FRONTEND_URL"));
             }
         };
     }

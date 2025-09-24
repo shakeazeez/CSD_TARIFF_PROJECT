@@ -1,14 +1,20 @@
 package com.user.service;
 
+import java.util.ArrayList;
+import java.util.Optional;
+
 import com.user.dto.TokenDTO;
 import com.user.generalUser.GeneralUser;
 import com.user.generalUser.GeneralUserRepo;
-import com.user.security.AuthUser;
 import com.user.security.exception.ApplicationAuthenticationException;
 import com.user.security.service.JwtService;
+import com.user.security.user.AuthUser;
+import com.user.security.enums.Role;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AuthUserServiceImpl implements AuthUserService {
     
     private final GeneralUserRepo generalUserRepo;
@@ -21,11 +27,27 @@ public class AuthUserServiceImpl implements AuthUserService {
         this.jwtService = jwtService;
     }
     
+    public void createUser(String username, String password, String role) {
+        Optional<GeneralUser> preCheck = generalUserRepo.findByUsername(username);
+        
+        if (preCheck.isPresent()) {
+            throw new IllegalArgumentException("User with that username already exists");
+        }
+        
+        String passwordHash = passwordEncoder.encode(password);
+        
+        // gay
+        GeneralUser creation = new GeneralUser(username, passwordHash, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        creation.getRole().add(Role.valueOf(role.toUpperCase()));
+        generalUserRepo.save(creation);
+    }
+    
     public TokenDTO login(String username, String password) {
         GeneralUser user = generalUserRepo.findByUsername(username)
                                           .orElseThrow(() -> new IllegalArgumentException("User not found"));
         
         if (!passwordEncoder.matches(password, user.getHashedPassword())) {
+            // System.out.println("Wrong password");
             throw new ApplicationAuthenticationException("Incorrect password");
         }
         

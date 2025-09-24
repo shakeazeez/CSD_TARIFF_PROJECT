@@ -8,18 +8,23 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.user.security.AuthUser;
 import com.user.security.enums.Role;
+import com.user.security.user.AuthUser;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-
+@Service
 public class JwtService {
     private static final String ROLES_CLAIM = "roles";
     
     private final Algorithm signingAlgo;
     
     public JwtService(@Value("${jwt.signing-secret}") String signingSecret) {
+        // System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" + signingSecret);
+        if (signingSecret == null) {
+            throw new IllegalArgumentException("WHoops"); 
+        }
         this.signingAlgo = Algorithm.HMAC512(signingSecret);
     }
     

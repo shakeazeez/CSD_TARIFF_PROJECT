@@ -2,11 +2,11 @@ package com.user.security.filter;
 
 import java.io.IOException;
 
-import com.user.security.AuthUser;
-import com.user.security.UserAuthentication;
 import com.user.security.enums.AuthConstants;
 import com.user.security.exception.TokenAuthenticationException;
 import com.user.security.service.JwtService;
+import com.user.security.user.AuthUser;
+import com.user.security.user.UserAuthentication;
 
 import org.springframework.boot.autoconfigure.webservices.WebServicesProperties.Servlet;
 import org.springframework.security.core.context.SecurityContext;
