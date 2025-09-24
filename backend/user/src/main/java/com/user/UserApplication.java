@@ -20,7 +20,7 @@ public class UserApplication {
 	public static void main(String[] args) {
         System.setProperty("DATABASE_PASSWORD", dotenv.get("DATABASE_PASSWORD"));
         System.setProperty("DATABASE_URL", dotenv.get("DATABASE_URL"));
-        // System.setProperty("YOUR_SIGNING_SECRET", dotenv.get("SIGNING_SECRET"));
+        System.setProperty("SIGNING_SECRET", dotenv.get("SIGNING_SECRET"));
 		SpringApplication.run(UserApplication.class, args);
 	}
 	

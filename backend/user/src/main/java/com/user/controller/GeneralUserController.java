@@ -3,6 +3,7 @@ package com.user.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.user.dto.TokenDTO;
+import com.user.generalUser.GeneralUser;
 import com.user.security.exception.ApplicationAuthenticationException;
 import com.user.service.AuthUserService;
 import com.user.service.GeneralUserService;
@@ -71,4 +73,9 @@ public class GeneralUserController {
         
         return ResponseEntity.accepted().build();
     }
+    
+    // @GetMapping("/hi/details")
+    // public Integer returnUsers() {
+    //     return 1;
+    // }
 }
