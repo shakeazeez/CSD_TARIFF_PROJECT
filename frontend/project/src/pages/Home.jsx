@@ -6,19 +6,8 @@
 import axios from 'axios' // HTTP client for API calls
 import { useEffect, useState } from 'react' // React hooks for state management and side effects
 
-// Custom components
-import Dropdown from '../components/Dropdown' // Custom dropdown for country selection
-import Chart from '../components/Chart' // Chart component for historical data visualization
-
-// shadcn/ui components - Modern, accessible UI components
-import { Button } from '../components/ui/button' // Customizable button component
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card' // Card layout components
-import { Input } from '../components/ui/input' // Styled input component
-import { Label } from '../components/ui/label' // Form label component
-
 // Theme and icon components
 import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
-import { TrendingUp, Calculator, BarChart3, Globe, Sun, Moon } from 'lucide-react' // SVG icons
 
 // ====================================
 // MAIN HOME COMPONENT
