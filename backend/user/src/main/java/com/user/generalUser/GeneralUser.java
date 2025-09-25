@@ -9,6 +9,7 @@ import java.util.Map;
 import com.user.security.enums.Role;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,6 +45,7 @@ public class GeneralUser {
 
     // Will add all the ontop stuff on here
     @ElementCollection
+    @Enumerated
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "user_role")
     private List<Role> role;

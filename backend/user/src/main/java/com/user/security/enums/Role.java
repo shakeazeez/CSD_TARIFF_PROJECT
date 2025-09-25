@@ -1,6 +1,6 @@
 package com.user.security.enums;
 
 public enum Role {
-    GENERAL,
+    MEMBER,
     ADMIN
 }
