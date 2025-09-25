@@ -44,6 +44,7 @@ import {
 // Custom components
 import Chart from '../components/Chart.jsx' // Custom chart component
 import { Header } from '../components/Header.jsx' // Header component
+import { useToast } from '../hooks/use-toast'
 
 // ====================================
 // ANIMATION VARIANTS
@@ -111,16 +112,24 @@ export function Dashboard({ onMenuClick }){
     const [success, setSuccess] = useState("");
 
     // ====================================
-    // UTILITY FUNCTIONS
+    // EFFECTS
     // ====================================
 
-    // Clear messages after timeout
-    const clearMessages = () => {
-        setTimeout(() => {
-            setError("");
-            setSuccess("");
-        }, 5000);
-    };
+    // Auto-dismiss error message after 5 seconds
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+
+    // Auto-dismiss success message after 5 seconds
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
 
     // ====================================
     // DATA FETCHING
@@ -145,6 +154,31 @@ export function Dashboard({ onMenuClick }){
                         ]
                     });
                     setLoading(false);
+
+                    // Show market alerts as toasts
+                    setTimeout(() => {
+                        toast({
+                            title: "Optimal Trade Route",
+                            description: "Consider Singapore → Vietnam for electronics. Current average tariff: 2.1%",
+                            variant: "default",
+                        });
+                    }, 1000);
+
+                    setTimeout(() => {
+                        toast({
+                            title: "Market Trend Alert",
+                            description: "EU tariffs on Chinese goods increased by 12% in Q4. Monitor closely.",
+                            variant: "warning",
+                        });
+                    }, 2000);
+
+                    setTimeout(() => {
+                        toast({
+                            title: "Cost Saving Opportunity",
+                            description: "Switch to Malaysia for manufacturing could save 8.5% on total landed costs.",
+                            variant: "success",
+                        });
+                    }, 4000);
                 }, 1000);
             } catch (error) {
                 console.log("Error fetching dashboard data:", error);
@@ -214,7 +248,7 @@ export function Dashboard({ onMenuClick }){
             {/* TOP NAVIGATION */}
             <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
-            {/* SUCCESS/ERROR MESSAGES */}
+            {/* NOTIFICATIONS */}
             <AnimatePresence>
                 {success && (
                     <motion.div
@@ -223,10 +257,22 @@ export function Dashboard({ onMenuClick }){
                         exit={{ opacity: 0, y: -50 }}
                         className="fixed top-20 right-4 z-50"
                     >
-                        <Card className="border-green-500 bg-green-50 dark:bg-green-900/20 shadow-lg">
+                        <Card 
+                            className="shadow-lg"
+                            style={{
+                                borderColor: colors.success,
+                                backgroundColor: `${colors.success}20`,
+                                borderWidth: '1px'
+                            }}
+                        >
                             <CardContent className="flex items-center space-x-2 p-4">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                                <span className="text-green-800 dark:text-green-200">{success}</span>
+                                <CheckCircle 
+                                    className="h-5 w-5" 
+                                    style={{ color: colors.success }} 
+                                />
+                                <span style={{ color: colors.foreground }}>
+                                    {success}
+                                </span>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -239,10 +285,22 @@ export function Dashboard({ onMenuClick }){
                         exit={{ opacity: 0, y: -50 }}
                         className="fixed top-20 right-4 z-50"
                     >
-                        <Card className="border-red-500 bg-red-50 dark:bg-red-900/20 shadow-lg">
+                        <Card 
+                            className="shadow-lg"
+                            style={{
+                                borderColor: colors.error,
+                                backgroundColor: `${colors.error}20`,
+                                borderWidth: '1px'
+                            }}
+                        >
                             <CardContent className="flex items-center space-x-2 p-4">
-                                <AlertCircle className="h-5 w-5 text-red-600" />
-                                <span className="text-red-800 dark:text-red-200">{error}</span>
+                                <AlertCircle 
+                                    className="h-5 w-5" 
+                                    style={{ color: colors.error }} 
+                                />
+                                <span style={{ color: colors.foreground }}>
+                                    {error}
+                                </span>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -482,68 +540,7 @@ export function Dashboard({ onMenuClick }){
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <motion.div
-                                        className="p-4 rounded-lg border-l-4"
-                                        style={{
-                                            backgroundColor: colors.background,
-                                            borderLeftColor: colors.accent
-                                        }}
-                                        whileHover={{ scale: 1.02 }}
-                                    >
-                                        <div className="flex items-start space-x-3">
-                                            <Award className="h-5 w-5 mt-0.5" style={{ color: colors.accent }} />
-                                            <div>
-                                                <h4 className="font-semibold" style={{ color: colors.foreground }}>
-                                                    Optimal Trade Route
-                                                </h4>
-                                                <p className="text-sm" style={{ color: colors.muted }}>
-                                                    Consider Singapore → Vietnam for electronics. Current average tariff: 2.1%
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-
-                                    <motion.div
-                                        className="p-4 rounded-lg border-l-4"
-                                        style={{
-                                            backgroundColor: colors.background,
-                                            borderLeftColor: '#f59e0b'
-                                        }}
-                                        whileHover={{ scale: 1.02 }}
-                                    >
-                                        <div className="flex items-start space-x-3">
-                                            <Activity className="h-5 w-5 mt-0.5" style={{ color: '#f59e0b' }} />
-                                            <div>
-                                                <h4 className="font-semibold" style={{ color: colors.foreground }}>
-                                                    Market Trend Alert
-                                                </h4>
-                                                <p className="text-sm" style={{ color: colors.muted }}>
-                                                    EU tariffs on Chinese goods increased by 12% in Q4. Monitor closely.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-
-                                    <motion.div
-                                        className="p-4 rounded-lg border-l-4"
-                                        style={{
-                                            backgroundColor: colors.background,
-                                            borderLeftColor: '#10b981'
-                                        }}
-                                        whileHover={{ scale: 1.02 }}
-                                    >
-                                        <div className="flex items-start space-x-3">
-                                            <DollarSign className="h-5 w-5 mt-0.5" style={{ color: '#10b981' }} />
-                                            <div>
-                                                <h4 className="font-semibold" style={{ color: colors.foreground }}>
-                                                    Cost Saving Opportunity
-                                                </h4>
-                                                <p className="text-sm" style={{ color: colors.muted }}>
-                                                    Switch to Malaysia for manufacturing could save 8.5% on total landed costs.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </motion.div>
+                                    {/* Alerts moved to toasts */}
                                 </CardContent>
                             </Card>
                         </motion.div>

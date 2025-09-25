@@ -35,6 +35,7 @@ import {
 import Dropdown from '../components/Dropdown.jsx' // Custom dropdown component
 import Chart from '../components/Chart.jsx' // Custom chart component
 import { Header } from '../components/Header.jsx' // Header component
+import { useToast } from '../hooks/use-toast'
 
 // ====================================
 // ANIMATION VARIANTS
@@ -75,6 +76,7 @@ export function Calculator({ onMenuClick }){
     // Get theme context for component-level color management
     const { colors, theme, toggleTheme, isDark } = useTheme();
 
+    // Toast hook
     // ====================================
     // STATE VARIABLES
     // ====================================
@@ -102,6 +104,26 @@ export function Calculator({ onMenuClick }){
     // Error and success messages
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
+    // ====================================
+    // EFFECTS
+    // ====================================
+
+    // Auto-dismiss error message after 5 seconds
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+
+    // Auto-dismiss success message after 5 seconds
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
 
     // ====================================
     // DATA PROCESSING & TRANSFORMATION
@@ -152,14 +174,6 @@ export function Calculator({ onMenuClick }){
     // UTILITY FUNCTIONS
     // ====================================
 
-    // Clear messages after timeout
-    const clearMessages = () => {
-        setTimeout(() => {
-            setError("");
-            setSuccess("");
-        }, 5000);
-    };
-
     // useEffect hook: Runs once when component mounts to fetch country data
     useEffect(() => {
         // Async function to fetch all available countries from backend
@@ -204,7 +218,6 @@ export function Calculator({ onMenuClick }){
     const fetchCurrent = async() => {
         if (!report || !partner || !hs || !cost) {
             setError("Please fill in all fields before calculating.");
-            clearMessages();
             return;
         }
 
@@ -225,12 +238,10 @@ export function Calculator({ onMenuClick }){
             console.log("Current tariff data:", current);
 
             setSuccess("Tariff calculation completed successfully!");
-            clearMessages();
 
         } catch(error){
             console.log("Error fetching current tariff:", error);
             setError(error.response?.data?.message || "Error calculating tariff. Please check your inputs and try again.");
-            clearMessages();
         } finally {
             setLoadingCurrent(false);
         }
@@ -240,7 +251,6 @@ export function Calculator({ onMenuClick }){
     const fetchPast = async() =>{
         if (!report || !partner || !hs) {
             setError("Please fill in reporting country, partner country, and HS code before viewing historical data.");
-            clearMessages();
             return;
         }
 
@@ -261,12 +271,10 @@ export function Calculator({ onMenuClick }){
             console.log("Historical tariff data:", past);
 
             setSuccess("Historical data loaded successfully!");
-            clearMessages();
 
         } catch(error){
             console.log("Error fetching historical tariff data:", error);
             setError(error.response?.data?.message || "Error fetching historical data. Please check your inputs and try again.");
-            clearMessages();
         } finally {
             setLoadingPast(false);
         }
@@ -296,7 +304,7 @@ export function Calculator({ onMenuClick }){
             {/* TOP NAVIGATION */}
             <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
-            {/* SUCCESS/ERROR MESSAGES */}
+            {/* NOTIFICATIONS */}
             <AnimatePresence>
                 {success && (
                     <motion.div
@@ -305,10 +313,22 @@ export function Calculator({ onMenuClick }){
                         exit={{ opacity: 0, y: -50 }}
                         className="fixed top-20 right-4 z-50"
                     >
-                        <Card className="border-green-500 bg-green-50 dark:bg-green-900/20 shadow-lg">
+                        <Card 
+                            className="shadow-lg"
+                            style={{
+                                borderColor: colors.success,
+                                backgroundColor: `${colors.success}20`,
+                                borderWidth: '1px'
+                            }}
+                        >
                             <CardContent className="flex items-center space-x-2 p-4">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                                <span className="text-green-800 dark:text-green-200">{success}</span>
+                                <CheckCircle 
+                                    className="h-5 w-5" 
+                                    style={{ color: colors.success }} 
+                                />
+                                <span style={{ color: colors.foreground }}>
+                                    {success}
+                                </span>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -321,10 +341,22 @@ export function Calculator({ onMenuClick }){
                         exit={{ opacity: 0, y: -50 }}
                         className="fixed top-20 right-4 z-50"
                     >
-                        <Card className="border-red-500 bg-red-50 dark:bg-red-900/20 shadow-lg">
+                        <Card 
+                            className="shadow-lg"
+                            style={{
+                                borderColor: colors.error,
+                                backgroundColor: `${colors.error}20`,
+                                borderWidth: '1px'
+                            }}
+                        >
                             <CardContent className="flex items-center space-x-2 p-4">
-                                <AlertCircle className="h-5 w-5 text-red-600" />
-                                <span className="text-red-800 dark:text-red-200">{error}</span>
+                                <AlertCircle 
+                                    className="h-5 w-5" 
+                                    style={{ color: colors.error }} 
+                                />
+                                <span style={{ color: colors.foreground }}>
+                                    {error}
+                                </span>
                             </CardContent>
                         </Card>
                     </motion.div>
