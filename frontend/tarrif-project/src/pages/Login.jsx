@@ -33,7 +33,8 @@ import {
     CheckCircle,
     AlertCircle,
     Loader2,
-    ArrowRight
+    ArrowRight,
+    X
 } from 'lucide-react' // SVG icons
 
 import { useToast } from '../hooks/use-toast'
@@ -116,16 +117,22 @@ export function Login(){
     const backendURL = import.meta.env.VITE_BACKEND_URL;
 
     // Login form data
-    const [form, setForm] = useState({ username: "", password: "" }); // Form data
+    const [form, setForm] = useState({ username: "", password: "", rePassword: "" }); // Form data
     const [userType, setUserType] = useState(""); // User type for signup
     const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
+    const [showRePassword, setShowRePassword] = useState(false); // Re-enter password visibility toggle
     const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign up
 
     // UI state
     const [isLoading, setIsLoading] = useState(false); // Loading state for login/signup
-    const [error, setError] = useState({username: "", password: ""}); // Error messages for fields
+    const [error, setError] = useState({username: "", password: "", rePassword: ""}); // Error messages for fields
     const [allow, setAllow] = useState(""); // General error message
     const [success, setSuccess] = useState(""); // Success messages
+    const [passwordReqs, setPasswordReqs] = useState({
+        length: false,
+        number: false,
+        special: false
+    }); // Password requirements status
 
     // ====================================
     // EFFECTS
@@ -164,7 +171,17 @@ export function Login(){
 
     // Handle form input changes
     const handleChange = (e) => {
-        setForm({...form, [e.target.name]: e.target.value})
+        const { name, value } = e.target;
+        setForm({...form, [name]: value});
+        
+        // Update password requirements in real-time
+        if (name === 'password') {
+            setPasswordReqs({
+                length: value.length >= 8 && value.length <= 20,
+                number: /(?=.*\d)/.test(value),
+                special: /(?=.*[#@$!%*?&])/.test(value)
+            });
+        }
     };
 
     // Validate form inputs
@@ -173,6 +190,7 @@ export function Login(){
         if (!form.password) return "Please enter your password";
         if (form.password.length < 6) return "Password must be at least 6 characters long";
         if (isSignUp && !userType) return "Please select a user type";
+        if (isSignUp && form.password !== form.rePassword) return "Passwords do not match";
         return null;
     };
 
@@ -180,7 +198,7 @@ export function Login(){
      *  Method performs basic validation for username and password. 
      */
     function validateForm (form) {
-        let tempErrors = ({username: "", password: ""});
+        let tempErrors = ({username: "", password: "", rePassword: ""});
 
         const usernameValidChars = /^[a-zA-Z0-9._]+$/;
         const passwordValidChars = /^[a-zA-Z0-9#$]+$/;
@@ -199,8 +217,14 @@ export function Login(){
         } else if (form.password.length < 8 || form.password.length > 20) {
             tempErrors.password = "Password must be between 8 and 20 characters";   
 
-        } else if (!passwordValidChars.test(form.password)) {
-            tempErrors.password = "Password can only contain letters, numbers, #, and $";   
+        } else if (!/(?=.*\d)/.test(form.password)) {
+            tempErrors.password = "Password must contain at least one number";
+
+        } else if (!/(?=.*[#@$!%*?&])/.test(form.password)) {
+            tempErrors.password = "Password must contain at least one special character (#@$!%*?&)";
+
+        } else if (isSignUp && form.password !== form.rePassword) {
+            tempErrors.rePassword = "Passwords do not match";
         }
 
         setError(tempErrors);
@@ -258,9 +282,19 @@ export function Login(){
             // Log the data being sent for debugging
             console.log(`Sending ${isSignUp ? 'signup' : 'login'} DTO:`, authDTO);
 
+            // Prepare form data for backend
+            const params = new URLSearchParams();
+            params.append('username', form.username);
+            params.append('password', form.password);
+            if (isSignUp) params.append('userType', userType);
+
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
-            const response = await axios.post(`${backendURL}${endpoint}`, authDTO);
+            const response = await axios.post(`${backendURL}${endpoint}`, params, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
             console.log(`${isSignUp ? 'Signup' : 'Login'} success:`, response);
 
             // Handle successful authentication
@@ -592,7 +626,97 @@ export function Login(){
                                     </Button>
                                 </div>
                                 {error.password && <p className='error-message-password' style={{ color: colors.error }}>{error.password}</p>}
+                                {isSignUp && !error.password && (
+                                    <div className='password-requirements' style={{ color: colors.muted, fontSize: '0.75rem', marginTop: '0.5rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                            {passwordReqs.length ? (
+                                                <CheckCircle className="h-3 w-3" style={{ color: colors.success, marginRight: '0.5rem' }} />
+                                            ) : (
+                                                <X className="h-3 w-3" style={{ color: colors.error, marginRight: '0.5rem' }} />
+                                            )}
+                                            <span>8-20 characters</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                            {passwordReqs.number ? (
+                                                <CheckCircle className="h-3 w-3" style={{ color: colors.success, marginRight: '0.5rem' }} />
+                                            ) : (
+                                                <X className="h-3 w-3" style={{ color: colors.error, marginRight: '0.5rem' }} />
+                                            )}
+                                            <span>At least one number</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            {passwordReqs.special ? (
+                                                <CheckCircle className="h-3 w-3" style={{ color: colors.success, marginRight: '0.5rem' }} />
+                                            ) : (
+                                                <X className="h-3 w-3" style={{ color: colors.error, marginRight: '0.5rem' }} />
+                                            )}
+                                            <span>At least one special character (#@$!%*?&)</span>
+                                        </div>
+                                    </div>
+                                )}
                             </motion.div>
+
+                            {/* RE-ENTER PASSWORD INPUT - Only for signup */}
+                            {isSignUp && (
+                                <motion.div
+                                    variants={itemVariants}
+                                    className="space-y-2"
+                                >
+                                    <Label
+                                        htmlFor="rePassword"
+                                        className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
+                                        <Lock className="h-4 w-4" />
+                                        <span>Re-enter Password</span>
+                                    </Label>
+                                    <div className="relative">
+                                        <Input
+                                            type={showRePassword ? "text" : "password"}
+                                            id="rePassword"
+                                            name="rePassword"
+                                            placeholder="Re-enter your password"
+                                            value={form.rePassword}
+                                            onChange={handleChange}
+                                            className="transition-colors duration-300 pr-10"
+                                            style={{
+                                                backgroundColor: colors.input,
+                                                borderColor: colors.border,
+                                                color: colors.foreground
+                                            }}
+                                            disabled={isLoading}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                            onClick={() => setShowRePassword(!showRePassword)}
+                                            disabled={isLoading}
+                                            style={{
+                                                backgroundColor: 'transparent',
+                                                color: colors.foreground,
+                                                border: 'none'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.target.style.backgroundColor = colors.hover || colors.accent + '20';
+                                                
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.target.style.backgroundColor = 'transparent';
+                                                
+                                            }}
+                                        >
+                                            {showRePassword ? (
+                                                <EyeOff className="h-4 w-4" style={{ color: colors.muted }} />
+                                            ) : (
+                                                <Eye className="h-4 w-4" style={{ color: colors.muted }} />
+                                            )}
+                                        </Button>
+                                    </div>
+                                    {error.rePassword && <p className='error-message-repassword' style={{ color: colors.error }}>{error.rePassword}</p>}
+                                </motion.div>
+                            )}
 
                             {/* USER TYPE SELECT - Only for signup */}
                             {isSignUp && (
@@ -679,10 +803,10 @@ export function Login(){
                                     variant="ghost"
                                     onClick={() => {
                                         setIsSignUp(!isSignUp);
-                                        setError({username: "", password: ""});
+                                        setError({username: "", password: "", rePassword: ""});
                                         setAllow("");
                                         setSuccess("");
-                                        setForm({ username: "", password: "" });
+                                        setForm({ username: "", password: "", rePassword: "" });
                                         setUserType("");
                                     }}
                                     className="text-sm transition-colors duration-300"
