@@ -118,7 +118,7 @@ export function Login(){
 
     // Login form data
     const [form, setForm] = useState({ username: "", password: "", rePassword: "" }); // Form data
-    const [userType, setUserType] = useState(""); // User type for signup
+    const [role, setRole] = useState(""); // User role for signup
     const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
     const [showRePassword, setShowRePassword] = useState(false); // Re-enter password visibility toggle
     const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign up
@@ -159,10 +159,11 @@ export function Login(){
     // ====================================
 
     // DTO for login/signup API call
+    // DTO for login/signup API call
     const authDTO = {
         username: form.username,
         password: form.password,
-        userType: userType
+        role: role
     }
 
     // ====================================
@@ -188,8 +189,9 @@ export function Login(){
     const validateInputs = () => {
         if (!form.username) return "Please enter your username";
         if (!form.password) return "Please enter your password";
-        if (form.password.length < 6) return "Password must be at least 6 characters long";
-        if (isSignUp && !userType) return "Please select a user type";
+        if (form.password.length < 8) return "Password must be at least 8 characters long";
+        if (form.password.length > 20) return "Password must be at most 20 characters long";
+        if (isSignUp && !role) return "Please select a role";
         if (isSignUp && form.password !== form.rePassword) return "Passwords do not match";
         return null;
     };
@@ -252,7 +254,7 @@ export function Login(){
         try{
             // DEMO CREDENTIALS - Remove in production
             const DEMO_USERNAME = "testuser";
-            const DEMO_PASSWORD = "testpass123";
+            const DEMO_PASSWORD = "testpass123#";
 
             // Check for demo credentials first
             if (form.username === DEMO_USERNAME && form.password === DEMO_PASSWORD) {
@@ -286,7 +288,7 @@ export function Login(){
             const params = new URLSearchParams();
             params.append('username', form.username);
             params.append('password', form.password);
-            if (isSignUp) params.append('userType', userType);
+            if (isSignUp) params.append('role', role);
 
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
@@ -725,14 +727,14 @@ export function Login(){
                                     className="space-y-2"
                                 >
                                     <Label
-                                        htmlFor="userType"
+                                        htmlFor="role"
                                         className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
                                         style={{ color: colors.foreground }}
                                     >
                                         <User className="h-4 w-4" />
-                                        <span>User Type</span>
+                                        <span>Role</span>
                                     </Label>
-                                    <Select value={userType} onValueChange={setUserType} disabled={isLoading}>
+                                    <Select value={role} onValueChange={setRole} disabled={isLoading}>
                                         <SelectTrigger
                                             className="transition-colors duration-300"
                                             style={{
@@ -749,7 +751,7 @@ export function Login(){
                                                 borderColor: colors.border
                                             }}
                                         >
-                                            <SelectItem value="member" style={{ color: colors.foreground }}>Member</SelectItem>
+                                            <SelectItem value="Member" style={{ color: colors.foreground }}>Member</SelectItem>
                                             <SelectItem value="Bank" style={{ color: colors.foreground }}>Bank</SelectItem>
                                             <SelectItem value="Business" style={{ color: colors.foreground }}>Business</SelectItem>
                                         </SelectContent>
@@ -807,7 +809,7 @@ export function Login(){
                                         setAllow("");
                                         setSuccess("");
                                         setForm({ username: "", password: "", rePassword: "" });
-                                        setUserType("");
+                                        setRole("");
                                     }}
                                     className="text-sm transition-colors duration-300"
                                     style={{
@@ -844,8 +846,8 @@ export function Login(){
                                         Demo Credentials:
                                     </p>
                                     <div className="text-xs space-y-1">
-                                        <p style={{ color: colors.muted }}>Username: testuser</p>
-                                        <p style={{ color: colors.muted }}>Password: testpass123</p>
+                                        <p style={{ color: colors.muted }}>Username: demo_user</p>
+                                        <p style={{ color: colors.muted }}>Password: DemoPass123!</p>
                                     </div>
                                 </motion.div>
                             )}
