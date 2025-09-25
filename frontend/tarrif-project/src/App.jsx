@@ -12,6 +12,7 @@ import WorldMapRoutes from './components/worldmaproutes.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { Footer } from './components/Footer.jsx'
+import { NotFound } from './pages/NotFound.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 
 /**
@@ -98,6 +99,8 @@ function App() {
               <Route path="/" element={
                 <Home onMenuClick={() => setSidebarOpen(true)} />
               }/>
+
+              <Route path="*" element={<NotFound/>}/>
             </Routes>
           </div>
         </Router>
