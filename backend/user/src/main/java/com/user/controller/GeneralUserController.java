@@ -10,9 +10,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.user.dto.TokenDTO;
-import com.user.security.exception.ApplicationAuthenticationException;
-import com.user.service.AuthUserService;
 import com.user.service.GeneralUserService;
 
 
