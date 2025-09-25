@@ -102,9 +102,10 @@ public class TariffCalculationImpl implements TariffCalculationService {
         List<Tariff> res = new ArrayList<>();
 
         // sigh... This is gna be disgusting. Also, IDK why is there multiple data....
+        log.info(result.tariffData().toString());
         TariffData tariffData = result.tariffData().get(0);
         TariffRate tariffRate = tariffData.tariffRate();
-
+        
         // This is the US case where it is abit confusing since it stores general tariff
         // and seperate tariffs differently. This is why we dont try to be special
         if (tariffRate != null) {
@@ -126,9 +127,10 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
             Double customRateValue =  customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
             // log.info("Attempting to finding by Code");
+            log.info(countries.toString());
             countries.forEach((code) ->  {
                 Optional<Country> country = countryRepo.findByCountryCode(code);
-
+                
                 if (country.isPresent()) {
                     Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue, LocalDate.now()));
                     res.add(tariff);
@@ -150,7 +152,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         List<TableData> tariffInformation = tariffData.countryInformation();
 
         List<Country> country = new ArrayList<>();
-
+        log.info(tariffInformation.toString());
         tariffInformation.forEach((information) -> {
             if ("MFN".equals(information.tariffRegion())) {
                 country.add(countryRepo.findByCountryName("world").get());
