@@ -51,34 +51,33 @@ public class TariffOverviewImpl implements TariffOverviewService {
                 .baseUrl("https://wits.worldbank.org/API/V1/SDMX/V21/")
                 .build();
     }
-    
-    
+
     // https://wits.worldbank.org/API/V1/SDMX/V21/datasource/TRN/reporter/840/partner/156/product/020110/year/all/datatype/reported?format=JSON
     private List<Tariff> loadTariffsFromApi(Country reportingCountry, Country partnerCountry, Item item)
             throws ApiFailureException {
-        
-        WitsDTO result = null;  
+
+        WitsDTO result = null;
         try {
             result = restClientWits.get()
-                                   .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber()+ 
-                                       "/partner/"+ partnerCountry.getCountryNumber() + 
-                                       "/product/"  + item.getItemCode() + 
-                                       "/year/all/datatype/reported?format=JSON")
-                                   .retrieve()
-                                   .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
-                                       throw new IllegalArgumentException("Dont have for this specific combination");
-                                   })
-                                   .body(WitsDTO.class);
+                    .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber() +
+                            "/partner/" + partnerCountry.getCountryNumber() +
+                            "/product/" + item.getItemCode() +
+                            "/year/all/datatype/reported?format=JSON")
+                    .retrieve()
+                    .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
+                        throw new IllegalArgumentException("Dont have for this specific combination");
+                    })
+                    .body(WitsDTO.class);
         } catch (IllegalArgumentException e) {
             log.info("Exception found at " + e.getMessage());
             result = restClientWits.get()
-                                    .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber()+ 
-                                        "/partner/000/product/"  + item.getItemCode() + "/year/all/datatype/reported?format=JSON")
-                                    .retrieve()
-                                    .onStatus((stat) -> stat.value() == 400 || stat.value() == 404, (req2, res1) -> {
-                                        throw new ApiFailureException("Api call failed");
-                                    })
-                                    .body(WitsDTO.class);
+                    .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber() +
+                            "/partner/000/product/" + item.getItemCode() + "/year/all/datatype/reported?format=JSON")
+                    .retrieve()
+                    .onStatus((stat) -> stat.value() == 400 || stat.value() == 404, (req2, res1) -> {
+                        throw new ApiFailureException("Api call failed");
+                    })
+                    .body(WitsDTO.class);
         }
 
         if (result == null || result.dataSets() == null || result.structure() == null) {
@@ -94,10 +93,11 @@ public class TariffOverviewImpl implements TariffOverviewService {
         TariffDataSet dataSet = result.dataSets().get(0);
         TariffSeries series = dataSet.series();
         Map<String, TariffSeriesData> seriesMap = series.getSeriesData();
-        Map<String, List<Object>> dataObservation = seriesMap.get("0:0:0:0:0").observations(); // "0:0:0:0:0" should be the only
+        Map<String, List<Object>> dataObservation = seriesMap.get("0:0:0:0:0").observations(); // "0:0:0:0:0" should be
+                                                                                               // the only
                                                                                                // key in the series map
 
-        // To get the dates, use the key from the dataObservation map 
+        // To get the dates, use the key from the dataObservation map
         // to map to the tariffStartDates
         Structure structure = result.structure();
         Dimension timeDimension = structure.dimensions();
@@ -121,7 +121,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
 
             tariffs.add(new Tariff(reportingCountry, partnerCountry, item, tariffRate, startDate));
         }
-        
+
         tariffs.forEach((tariff) -> tariffRepo.save(tariff));
 
         log.info("Successfully processed {} tariff observations from API", tariffs.size());
@@ -131,19 +131,19 @@ public class TariffOverviewImpl implements TariffOverviewService {
     public TariffOverviewResponseDTO getTariffOverview(TariffCalculationQueryDTO queryDTO) {
         Country reportingCountry = countryRepo.findByCountryName(queryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Reporting country not found"));
-                    
+
         Country partnerCountry = countryRepo.findByCountryName(queryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Partner country not found"));
 
         Item item = itemRepo.findByItemName(queryDTO.item())
-                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Item not found for item " + queryDTO.item()));
 
         log.info("No problem with Item Query");
 
         // check if the tariffs are already in the database
         final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry,
                 partnerCountry, item);
-        
+
         log.info(tariffList.toString());
         // if not, load from api
         if (tariffList.size() <= 1) {
@@ -154,12 +154,12 @@ public class TariffOverviewImpl implements TariffOverviewService {
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
                 .map(tariff -> new HistoricalTariffData(
                         tariff.getLocalDate(), // start period
-                        tariff.getPercentageRate(), 
-                        tariff.getPercentageRate() * queryDTO.itemCost() / 100.0, 
+                        tariff.getPercentageRate(),
+                        tariff.getPercentageRate() * queryDTO.itemCost() / 100.0,
                         queryDTO.itemCost() + tariff.getPercentageRate() * queryDTO.itemCost() / 100.0))
                 .sorted((a, b) -> a.startPeriod().compareTo(b.startPeriod())) // sort start period by date
                 .toList();
-        
+
         log.info("Returning {} historical tariff data points after filtering", historicalTariffData.size());
 
         return new TariffOverviewResponseDTO(
@@ -167,8 +167,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
                 partnerCountry.getCountryName(),
                 historicalTariffData);
     }
-    
-    
+
     public List<Country> getAllCountries() {
         return countryRepo.findAll();
     }
