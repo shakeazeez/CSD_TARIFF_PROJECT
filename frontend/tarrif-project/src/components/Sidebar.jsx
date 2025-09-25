@@ -25,12 +25,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const { isAuthenticated, user, logout } = useAuth();
 
   const menuItems = [
-    {
-      icon: Home,
-      label: 'Home',
-      path: '/',
-      description: 'Landing page with global trade overview'
-    },
+    ...(isAuthenticated ? [] : [
+      {
+        icon: Home,
+        label: 'Home',
+        path: '/',
+        description: 'Landing page with global trade overview'
+      }
+    ]),
     {
       icon: Calculator,
       label: 'Tariff Calculator',

@@ -486,6 +486,14 @@ export function Calculator({ onMenuClick }){
                                             backgroundColor: colors.accent,
                                             borderColor: colors.accent
                                         }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.hover;
+                                            e.target.style.color = '#ffffff';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor =  `${colors.accent}20`;
+                                            e.target.style.color = colors.accent;
+                                        }}
                                     >
                                         {loadingCurrent ? (
                                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -502,6 +510,14 @@ export function Calculator({ onMenuClick }){
                                         style={{
                                             borderColor: colors.accent,
                                             color: colors.accent
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.hover;
+                                            e.target.style.color = '#ffffff';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = `${colors.accent}20`;
+                                            e.target.style.color = colors.accent;
                                         }}
                                     >
                                         {loadingPast ? (
