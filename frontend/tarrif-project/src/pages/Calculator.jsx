@@ -449,7 +449,7 @@ export function Calculator({ onMenuClick }){
                                             type="text"
                                             placeholder="Enter HS code (e.g., 123456)"
                                             value={hs}
-                                            onChange={(e) => setHS((e.target.value).toLowerCase())}
+                                            onChange={(e) => setHS(e.target.value)}
                                             style={{
                                                 backgroundColor: colors.background,
                                                 borderColor: colors.border,
@@ -486,6 +486,14 @@ export function Calculator({ onMenuClick }){
                                             backgroundColor: colors.accent,
                                             borderColor: colors.accent
                                         }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.hover;
+                                            e.target.style.color = '#ffffff';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor =  `${colors.accent}20`;
+                                            e.target.style.color = colors.accent;
+                                        }}
                                     >
                                         {loadingCurrent ? (
                                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -502,6 +510,14 @@ export function Calculator({ onMenuClick }){
                                         style={{
                                             borderColor: colors.accent,
                                             color: colors.accent
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.hover;
+                                            e.target.style.color = '#ffffff';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = `${colors.accent}20`;
+                                            e.target.style.color = colors.accent;
                                         }}
                                     >
                                         {loadingPast ? (
@@ -529,8 +545,8 @@ export function Calculator({ onMenuClick }){
                                         Current Tariff Results
                                     </CardTitle>
                                     {/* add to pin button */}
-                                    <Button className="w-10" onClick={() => togglePin(current.tariffId)}>
-                                        {pinned.find(p => p.id === (current.tariffId).id) ? "Unpin" : "Pin"}
+                                    <Button className="w-5" onClick={() => togglePin(item)}>
+                                        {pinned.find(p => p.id === item.id) ? "Unpin" : "Pin"}
                                     </Button>
                                 </CardHeader>
                                 <CardContent>

@@ -116,15 +116,15 @@ export function Login(){
     const backendURL = import.meta.env.VITE_BACKEND_URL;
 
     // Login form data
-    const [email, setEmail] = useState(""); // User email
-    const [password, setPassword] = useState(""); // User password
+    const [form, setForm] = useState({ username: "", password: "" }); // Form data
     const [userType, setUserType] = useState(""); // User type for signup
     const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
     const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign up
 
     // UI state
     const [isLoading, setIsLoading] = useState(false); // Loading state for login/signup
-    const [error, setError] = useState(""); // Error messages
+    const [error, setError] = useState({username: "", password: ""}); // Error messages for fields
+    const [allow, setAllow] = useState(""); // General error message
     const [success, setSuccess] = useState(""); // Success messages
 
     // ====================================
@@ -133,11 +133,11 @@ export function Login(){
 
     // Auto-dismiss error message after 5 seconds
     useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => setError(''), 5000);
+        if (allow) {
+            const timer = setTimeout(() => setAllow(''), 5000);
             return () => clearTimeout(timer);
         }
-    }, [error]);
+    }, [allow]);
 
     // Auto-dismiss success message after 5 seconds
     useEffect(() => {
@@ -153,8 +153,8 @@ export function Login(){
 
     // DTO for login/signup API call
     const authDTO = {
-        email: email,
-        password: password,
+        username: form.username,
+        password: form.password,
         userType: userType
     }
 
@@ -162,16 +162,52 @@ export function Login(){
     // UTILITY FUNCTIONS
     // ====================================
 
+    // Handle form input changes
+    const handleChange = (e) => {
+        setForm({...form, [e.target.name]: e.target.value})
+    };
+
     // Validate form inputs
     const validateInputs = () => {
-        if (!email) return "Please enter your email address";
-        if (!password) return "Please enter your password";
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) return "Please enter a valid email address";
-        if (password.length < 6) return "Password must be at least 6 characters long";
+        if (!form.username) return "Please enter your username";
+        if (!form.password) return "Please enter your password";
+        if (form.password.length < 6) return "Password must be at least 6 characters long";
         if (isSignUp && !userType) return "Please select a user type";
         return null;
     };
+
+    /*
+     *  Method performs basic validation for username and password. 
+     */
+    function validateForm (form) {
+        let tempErrors = ({username: "", password: ""});
+
+        const usernameValidChars = /^[a-zA-Z0-9._]+$/;
+        const passwordValidChars = /^[a-zA-Z0-9#$]+$/;
+
+        if (form.username == "" || form.password == "") {
+            console.log("User submitted an empty form.");
+            tempErrors.username = "Username is required";
+            tempErrors.password = "Password is required";  
+
+        } else if (form.username.includes(" ")) {
+            tempErrors.username = "Username cannot contain spaces";            
+
+        } else if (!usernameValidChars.test(form.username)) {
+            tempErrors.username = "Username can only contain letters, numbers, dots, and underscores";
+ 
+        } else if (form.password.length < 8 || form.password.length > 20) {
+            tempErrors.password = "Password must be between 8 and 20 characters";   
+
+        } else if (!passwordValidChars.test(form.password)) {
+            tempErrors.password = "Password can only contain letters, numbers, #, and $";   
+        }
+
+        setError(tempErrors);
+
+        return Object.values(tempErrors).every((msg) => (msg) == "");
+
+    }
 
     // ====================================
     // AUTHENTICATION FUNCTIONS
@@ -181,21 +217,21 @@ export function Login(){
     const handleAuth = async() => {
         const validationError = validateInputs();
         if (validationError) {
-            setError(validationError);
+            setAllow(validationError);
             return;
         }
 
         setIsLoading(true);
-        setError("");
+        setAllow("");
         setSuccess("");
 
         try{
             // DEMO CREDENTIALS - Remove in production
-            const DEMO_EMAIL = "demo@tariff.com";
-            const DEMO_PASSWORD = "demo123";
+            const DEMO_USERNAME = "testuser";
+            const DEMO_PASSWORD = "testpass123";
 
             // Check for demo credentials first
-            if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+            if (form.username === DEMO_USERNAME && form.password === DEMO_PASSWORD) {
                 console.log("Demo login successful");
 
                 // Store demo authentication token
@@ -204,7 +240,7 @@ export function Login(){
 
                 // Set demo user data
                 const demoUser = {
-                    email: DEMO_EMAIL,
+                    username: DEMO_USERNAME,
                     name: "Demo User",
                     role: "member"
                 };
@@ -233,24 +269,44 @@ export function Login(){
                 localStorage.setItem('authToken', response.data.token);
             }
 
-            // Update auth context with user data
-            login(response.data.user || { email: email });
+            // For login, store additional data
+            if (!isSignUp) {
+                localStorage.setItem('username', response.data.username);
+                localStorage.setItem('userId', response.data.userId);
+                localStorage.setItem('token', response.data.token);
+            }
 
-            // Redirect to dashboard page after successful authentication
-            navigate('/dashboard');
+            // Update auth context with user data
+            login(response.data.user || { username: form.username });
+
+            // Redirect
+            if (!isSignUp) {
+                window.location.href = "/";
+            } else {
+                navigate('/dashboard');
+            }
 
         } catch(error){
             console.log(`${isSignUp ? 'Signup' : 'Login'} error:`, error);
             const action = isSignUp ? 'signup' : 'login';
-            setError(error.response?.data?.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
+            const errorMessage = error.response?.status === 401 ? "Username or password is invalid." : (error.response?.data?.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
+            setAllow(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
     // Handle form submission
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = async(e) => {
+        e.preventDefault(); // prevent the page from reloading
+
+        if (!isSignUp) {
+            if (!validateForm(form)) {
+                console.log("Validation failed:", error);
+                return;
+            }
+        }
+
         handleAuth();
     };
 
@@ -291,10 +347,12 @@ export function Login(){
                     onMouseEnter={(e) => {
                         e.target.style.backgroundColor = colors.accent;
                         e.target.style.color = 'white';
+                        e.target.style.transform = 'scale(1.05)';
                     }}
                     onMouseLeave={(e) => {
                         e.target.style.backgroundColor = colors.surface;
                         e.target.style.color = colors.accent;
+                        e.target.style.transform = 'scale(1)';
                     }}
                 >
                     ← Back
@@ -321,10 +379,12 @@ export function Login(){
                     onMouseEnter={(e) => {
                         e.target.style.backgroundColor = colors.accent;
                         e.target.style.color = 'white';
+                        e.target.style.transform = 'scale(1.05)';
                     }}
                     onMouseLeave={(e) => {
                         e.target.style.backgroundColor = colors.surface;
                         e.target.style.color = colors.accent;
+                        e.target.style.transform = 'scale(1)';
                     }}
                 >
                     {isDark ? (
@@ -365,7 +425,7 @@ export function Login(){
                     </motion.div>
                 )}
 
-                {error && (
+                {allow && (
                     <motion.div
                         initial={{ opacity: 0, y: -50 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -386,7 +446,7 @@ export function Login(){
                                     style={{ color: colors.error }} 
                                 />
                                 <span style={{ color: colors.foreground }}>
-                                    {error}
+                                    {allow}
                                 </span>
                             </CardContent>
                         </Card>
@@ -443,25 +503,26 @@ export function Login(){
 
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* EMAIL INPUT */}
+                            {/* USERNAME INPUT */}
                             <motion.div
                                 variants={itemVariants}
                                 className="space-y-2"
                             >
                                 <Label
-                                    htmlFor="email"
+                                    htmlFor="username"
                                     className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
                                     style={{ color: colors.foreground }}
                                 >
                                     <User className="h-4 w-4" />
-                                    <span>Email Address</span>
+                                    <span>Username</span>
                                 </Label>
                                 <Input
-                                    type="email"
-                                    id="email"
-                                    placeholder="Enter your email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    placeholder="Enter your username"
+                                    value={form.username}
+                                    onChange={handleChange}
                                     className="transition-colors duration-300"
                                     style={{
                                         backgroundColor: colors.input,
@@ -470,6 +531,7 @@ export function Login(){
                                     }}
                                     disabled={isLoading}
                                 />
+                                {error.username && <p className='error-message-username' style={{ color: colors.error }}>{error.username}</p>}
                             </motion.div>
 
                             {/* PASSWORD INPUT */}
@@ -489,9 +551,10 @@ export function Login(){
                                     <Input
                                         type={showPassword ? "text" : "password"}
                                         id="password"
+                                        name="password"
                                         placeholder="Enter your password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        value={form.password}
+                                        onChange={handleChange}
                                         className="transition-colors duration-300 pr-10"
                                         style={{
                                             backgroundColor: colors.input,
@@ -507,6 +570,19 @@ export function Login(){
                                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                                         onClick={() => setShowPassword(!showPassword)}
                                         disabled={isLoading}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            color: colors.foreground,
+                                            border: 'none'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.hover || colors.accent + '20';
+                                            
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                            
+                                        }}
                                     >
                                         {showPassword ? (
                                             <EyeOff className="h-4 w-4" style={{ color: colors.muted }} />
@@ -515,6 +591,7 @@ export function Login(){
                                         )}
                                     </Button>
                                 </div>
+                                {error.password && <p className='error-message-password' style={{ color: colors.error }}>{error.password}</p>}
                             </motion.div>
 
                             {/* USER TYPE SELECT - Only for signup */}
@@ -570,8 +647,16 @@ export function Login(){
                                             backgroundColor: colors.accent,
                                             borderColor: colors.accent
                                         }}
-                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.hover}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.accent}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.hover || colors.accent;
+                                            e.target.style.borderColor = colors.hover || colors.accent;
+                                            e.target.style.transform = 'scale(1.02)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = colors.accent;
+                                            e.target.style.borderColor = colors.accent;
+                                            e.target.style.transform = 'scale(1)';
+                                        }}
                                         size="lg"
                                     >
                                         {isLoading ? (
@@ -591,18 +676,31 @@ export function Login(){
                             >
                                 <Button
                                     type="button"
-                                    variant="link"
+                                    variant="ghost"
                                     onClick={() => {
                                         setIsSignUp(!isSignUp);
-                                        setError("");
+                                        setError({username: "", password: ""});
+                                        setAllow("");
                                         setSuccess("");
-                                        setEmail("");
-                                        setPassword("");
+                                        setForm({ username: "", password: "" });
                                         setUserType("");
                                     }}
                                     className="text-sm transition-colors duration-300"
-                                    style={{ color: colors.accent }}
+                                    style={{
+                                        color: colors.accent,
+                                        backgroundColor: `${colors.accent}20`,
+                                        border: 'none',
+                                        textDecoration: 'none'
+                                    }}
                                     disabled={isLoading}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.color = colors.hover || colors.foreground;
+                                        e.target.style.transform = 'scale(1.05)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.color = colors.accent;
+                                        e.target.style.transform = 'scale(1)';
+                                    }}
                                 >
                                     {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                                 </Button>
@@ -622,8 +720,8 @@ export function Login(){
                                         Demo Credentials:
                                     </p>
                                     <div className="text-xs space-y-1">
-                                        <p style={{ color: colors.muted }}>Email: demo@tariff.com</p>
-                                        <p style={{ color: colors.muted }}>Password: demo123</p>
+                                        <p style={{ color: colors.muted }}>Username: testuser</p>
+                                        <p style={{ color: colors.muted }}>Password: testpass123</p>
                                     </div>
                                 </motion.div>
                             )}
