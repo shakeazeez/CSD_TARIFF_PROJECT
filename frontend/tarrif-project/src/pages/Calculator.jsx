@@ -105,6 +105,9 @@ export function Calculator({ onMenuClick }){
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
+    // Pinning
+    const [pinned, setPinned] = useState([]);
+
     // ====================================
     // EFFECTS
     // ====================================
@@ -277,6 +280,15 @@ export function Calculator({ onMenuClick }){
             setError(error.response?.data?.message || "Error fetching historical data. Please check your inputs and try again.");
         } finally {
             setLoadingPast(false);
+        }
+    };
+
+    // Function to add to pin
+    const togglePin = (item) => {
+        if (pinned.find(p => p.id === item.id)) {
+            setPinned(pinned.filter(p => p.id !== item.id));
+        } else {
+            setPinned([...pinned, item]);
         }
     };
 
@@ -516,6 +528,10 @@ export function Calculator({ onMenuClick }){
                                         <Globe className="h-6 w-6 inline mr-2" />
                                         Current Tariff Results
                                     </CardTitle>
+                                    {/* add to pin button */}
+                                    <Button className="w-5" onClick={() => togglePin(item)}>
+                                        {pinned.find(p => p.id === item.id) ? "Unpin" : "Pin"}
+                                    </Button>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useTheme } from '../contexts/ThemeContext';
+import underConstruction from '../assets/UnderConstruction.png'
 
 const ComingSoon = ({ feature = "This feature" }) => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const ComingSoon = ({ feature = "This feature" }) => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
+          <img src={underConstruction}/>
         </motion.div>
 
         {/* Main content */}

@@ -219,7 +219,7 @@ export function Login(){
             console.log(`Sending ${isSignUp ? 'signup' : 'login'} DTO:`, authDTO);
 
             // POST request to appropriate endpoint
-            const endpoint = isSignUp ? '/auth/signup' : '/auth/login';
+            const endpoint = isSignUp ? '/auth/register' : '/auth/login';
             const response = await axios.post(`${backendURL}${endpoint}`, authDTO);
             console.log(`${isSignUp ? 'Signup' : 'Login'} success:`, response);
 
