@@ -109,7 +109,8 @@ export function Login () {
             </div>
 
             <button 
-                type='submit'>
+                type='submit'
+                className='login-button'>
                 Log In
             </button>
 

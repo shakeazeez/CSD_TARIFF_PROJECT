@@ -1,4 +1,6 @@
+/* Need to edit some small things */
 import axios from 'axios'
+import { Link } from 'react-router-dom'
 import { useState } from 'react';
 import '../login.css'
 
@@ -20,7 +22,7 @@ export function Register () {
         }
 
         try {
-            const postResponse = await axios.post(`${backendUrl}/api/auth/login`, form);
+            const postResponse = await axios.post(`${backendUrl}/api/auth/register`, form);
             console.log("User successfully logs in.", response);
 
             // saving information on the webpage (?)
@@ -75,7 +77,7 @@ export function Register () {
 
     return (
         <div className='login-page'>
-            <h1>Welcome Back!</h1>
+            <h1>Create an Account</h1>
             <form className='login-form' onSubmit={handleSubmit}>
 
             <div className='login-section'>
@@ -109,11 +111,19 @@ export function Register () {
             </div>
 
             <button 
-                type='submit'>
-                Log In
+                type='submit'
+                className='login-button'>
+                Sign Up
             </button>
 
             </form>
+
+            <p>
+                Already have an account?
+                <Link to="/login" className='login-link'>
+                Log in here
+                </Link>
+            </p>
         </div>
     )
 

@@ -2,6 +2,8 @@ import axios from 'axios'
 import Dropdown from '../components/Dropdown'
 import Chart from '../components/Chart'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Register } from './Register.jsx'
 
 
 export function Home(){
@@ -125,6 +127,16 @@ export function Home(){
             <p>Tariff Amount:</p><p>{"USD" + current.tariffAmount}</p>
             <p>Total Cost with Tariff:</p><p>{"USD" + current.itemCostWithTariff}</p>
             <Chart labels={labels} value={value} title={title} legend={legend}/>
+
+
+            {/* Link to Register, Can remove anyhow */}
+            <p>
+                Explore more,
+                <Link to="/register" className='register-link'>
+                Create an account.
+                </Link>
+            </p>
+
         </div>
         </>
     );

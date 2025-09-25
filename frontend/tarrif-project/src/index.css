@@ -19,6 +19,11 @@
     margin-bottom: 5px;
 }
 
+.login-page p {
+  margin-top: 20px;
+  font-size: 13px;
+}
+
 .credentials-box {
     width: 300px;
     padding: 10px 15px;

@@ -1,60 +1,62 @@
 /* Login page container */
 .login-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #F0FFF4; 
-    font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0fff4;
+  font-family: Arial, sans-serif;
+}
+
+.login-page h1 {
+    margin-bottom: 40px;
 }
 
 .credentials-box {
-    width: 300px;
-    padding: 10px 15px;
-    margin: 5px 0 10px 0;
-    border: 2px solid #A3D9A5;        
-    border-radius: 8px;                
-    background-color: #E6F4EA;       
-    color: #1B5E20;                   
-    font-size: 16px;
-    outline: none;
-    transition: all 0.3s ease;
+  width: 300px;
+  padding: 10px 15px;
+  margin: 5px 0 10px 0;
+  border: 2px solid #a3d9a5;
+  border-radius: 8px;
+  background-color: #e6f4ea;
+  color: #1b5e20;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease;
 }
 
 .credentials-box::placeholder {
-    color: #81C784;                    
-    font-style: italic;
+  color: #81c784;
+  font-style: italic;
 }
 
 .credentials-box:focus {
-    border-color: #4CAF50;          
-    box-shadow: 0 0 5px #4CAF50;       
+  border-color: #4caf50;
+  box-shadow: 0 0 5px #4caf50;
 }
 
 .error-message-username,
 .error-message-password {
-    color: #D32F2F;                     
-    font-size: 14px;
-    margin: 0 0 10px 0;
-    font-style: italic;
+  color: #d32f2f;
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  font-style: italic;
 }
 
 .login-button {
-    width: 320px;
-    padding: 12px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 12px;
-    background-color: #4CAF50;        
-    color: #FFFFFF;                     
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  width: 150px;
+  padding: 12px;
+  margin-top: 60px;
+  border: none;
+  border-radius: 12px;
+  background-color: #4caf50;
+  color: #ffffff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .login-button:hover {
-    background-color: #388E3C;        
+  background-color: #388e3c;
 }
-
-
