@@ -78,10 +78,13 @@ public class TariffController {
         try {
             response = tariffService.getCurrentTariffDetails(queryDTO);
         } catch (IllegalArgumentException e) {
+            log.info(e.getMessage());
             return ResponseEntity.badRequest().body(null);
         } catch (NoSuchElementException e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         } catch (ApiFailureException e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
 
