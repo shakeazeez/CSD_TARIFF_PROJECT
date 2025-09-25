@@ -47,8 +47,8 @@ public class GeneralUserServiceImpl implements GeneralUserService {
     }
 
     @Transactional
-    public List<Integer> addPinnedTariff(Integer userId, Integer tariffId) {
-        GeneralUser generalUser = generalUserRepo.findById(userId)
+    public List<Integer> addPinnedTariff(String username, Integer tariffId) {
+        GeneralUser generalUser = generalUserRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (generalUser.getTariffIds().size() >= 3) {
@@ -64,8 +64,8 @@ public class GeneralUserServiceImpl implements GeneralUserService {
     }
 
     @Transactional
-    public List<Integer> removePinnedTariff(Integer userId, Integer tariffId) {
-        GeneralUser generalUser = generalUserRepo.findById(userId)
+    public List<Integer> removePinnedTariff(String username, Integer tariffId) {
+        GeneralUser generalUser = generalUserRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (generalUser.getTariffIds().contains(tariffId)) {

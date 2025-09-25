@@ -9,8 +9,8 @@ public interface GeneralUserService {
 
     public Map<Integer, Integer> retrieveHistory(String username, Integer tariffId);
 
-    public List<Integer> addPinnedTariff(Integer userId, Integer tariffId);
+    public List<Integer> addPinnedTariff(String username, Integer tariffId);
 
-    public List<Integer> removePinnedTariff(Integer userId, Integer tariffId);
+    public List<Integer> removePinnedTariff(String username, Integer tariffId);
 
 }

@@ -45,10 +45,10 @@ public class GeneralUserController {
         }
     }
 
-    @PostMapping("/{userId}/pinned-tariffs/{tariffId}")
-    public ResponseEntity<List<Integer>> addPinnedTariff(@PathVariable Integer userId, @PathVariable Integer tariffId) {
+    @PostMapping("/{username}/pinned-tariffs/{tariffId}")
+    public ResponseEntity<List<Integer>> addPinnedTariff(@PathVariable String username, @PathVariable Integer tariffId) {
         try {
-            List<Integer> tariffIds = generalUserService.addPinnedTariff(userId, tariffId);
+            List<Integer> tariffIds = generalUserService.addPinnedTariff(username, tariffId);
             return ResponseEntity.ok(tariffIds);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
@@ -57,10 +57,10 @@ public class GeneralUserController {
         }
     }
 
-    @PostMapping("/{userId}/unpinned-tariffs/{tariffId}")
-    public ResponseEntity<List<Integer>> removePinnedTariffs(@PathVariable Integer userId, @PathVariable Integer tariffId) {
+    @PostMapping("/{username}/unpinned-tariffs/{tariffId}")
+    public ResponseEntity<List<Integer>> removePinnedTariffs(@PathVariable String username, @PathVariable Integer tariffId) {
         try {
-            List<Integer> tariffIds = generalUserService.removePinnedTariff(userId, tariffId);
+            List<Integer> tariffIds = generalUserService.removePinnedTariff(username, tariffId);
             return ResponseEntity.ok(tariffIds);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
