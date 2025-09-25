@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 
+import com.user.dto.CreateUserDTO;
+import com.user.dto.LoginDTO;
 import com.user.dto.TokenDTO;
 import com.user.generalUser.GeneralUser;
 import com.user.generalUser.GeneralUserRepo;
@@ -28,26 +30,26 @@ public class AuthUserServiceImpl implements AuthUserService {
         this.jwtService = jwtService;
     }
     
-    public void createUser(String username, String password, String role) {
-        Optional<GeneralUser> preCheck = generalUserRepo.findByUsername(username);
+    public void createUser(CreateUserDTO createUserDTO) {
+        Optional<GeneralUser> preCheck = generalUserRepo.findByUsername(createUserDTO.username());
         
         if (preCheck.isPresent()) {
             throw new IllegalArgumentException("User with that username already exists");
         }
         
-        String passwordHash = passwordEncoder.encode(password);
+        String passwordHash = passwordEncoder.encode(createUserDTO.password());
         
         // gay
-        GeneralUser creation = new GeneralUser(username, passwordHash, new HashMap<>(), new ArrayList<>(), new ArrayList<>());
-        creation.getRole().add(Role.valueOf(role.toUpperCase()));
+        GeneralUser creation = new GeneralUser(createUserDTO.username(), passwordHash, new HashMap<>(), new ArrayList<>(), new ArrayList<>());
+        creation.getRole().add(Role.valueOf(createUserDTO.role().toUpperCase()));
         generalUserRepo.save(creation);
     }
     
-    public TokenDTO login(String username, String password) {
-        GeneralUser user = generalUserRepo.findByUsername(username)
+    public TokenDTO login(LoginDTO loginDTO) {
+        GeneralUser user = generalUserRepo.findByUsername(loginDTO.username())
                                           .orElseThrow(() -> new IllegalArgumentException("User not found"));
         
-        if (!passwordEncoder.matches(password, user.getHashedPassword())) {
+        if (!passwordEncoder.matches(loginDTO.password(), user.getHashedPassword())) {
             // System.out.println("Wrong password");
             throw new ApplicationAuthenticationException("Incorrect password");
         }
@@ -61,7 +63,7 @@ public class AuthUserServiceImpl implements AuthUserService {
         String jwtToken = jwtService.createJwtToken(authUser);
         
         return new TokenDTO(
-            username, 
+            loginDTO.username(), 
             jwtToken,
             user.getTariffIds()
         );
