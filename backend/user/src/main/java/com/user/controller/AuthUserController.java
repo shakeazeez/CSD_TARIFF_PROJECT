@@ -37,7 +37,7 @@ public class AuthUserController {
     
     
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestParam String username, @RequestParam String password, @RequestParam String role) {
+    public ResponseEntity<?> registerUser(@RequestParam("username") String username, @RequestParam("password") String password, @RequestParam("role") String role) {
         
         try {
             authUserService.createUser(username, password, role);
