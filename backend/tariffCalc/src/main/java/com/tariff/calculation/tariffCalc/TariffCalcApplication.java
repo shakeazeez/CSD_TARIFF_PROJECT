@@ -27,7 +27,7 @@ public class TariffCalcApplication {
 			@Override
 			public void addCorsMappings(@NotNull CorsRegistry registry) {
 				registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:8080");
+                        .allowedOrigins("http://localhost:5173");
 			}
 		};
 	}
