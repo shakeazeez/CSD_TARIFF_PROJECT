@@ -7,7 +7,7 @@ const Login = () => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const { login } = useAuth();
-  const { isDarkMode } = useTheme();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const handleChange = (e) => {

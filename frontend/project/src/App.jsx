@@ -6,7 +6,6 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Settings from './pages/Settings.jsx'
-import { NotFound } from './components/NotFound.jsx'
 import Layout from './components/Layout.jsx'
 
 function App() {
