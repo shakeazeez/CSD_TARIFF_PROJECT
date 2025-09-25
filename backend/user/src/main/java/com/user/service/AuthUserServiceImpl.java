@@ -1,6 +1,7 @@
 package com.user.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 
 import com.user.dto.TokenDTO;
@@ -37,7 +38,7 @@ public class AuthUserServiceImpl implements AuthUserService {
         String passwordHash = passwordEncoder.encode(password);
         
         // gay
-        GeneralUser creation = new GeneralUser(username, passwordHash, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        GeneralUser creation = new GeneralUser(username, passwordHash, new HashMap<>(), new ArrayList<>(), new ArrayList<>());
         creation.getRole().add(Role.valueOf(role.toUpperCase()));
         generalUserRepo.save(creation);
     }

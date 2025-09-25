@@ -307,7 +307,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         double percentage = tariff.getPercentageRate();
         double tariffAmount = percentage * tariffQueryDTO.itemCost() / 100.0;
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
-        return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName(), percentage, tariffAmount, itemCostWithTariff);
+        return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName(), percentage, tariffAmount, itemCostWithTariff, tariff.getId());
     }
 
 }
