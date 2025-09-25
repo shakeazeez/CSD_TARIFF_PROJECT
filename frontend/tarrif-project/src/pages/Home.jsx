@@ -44,7 +44,7 @@ export function Home(){
         // get all country names
         const fetchCountry = async() => {
             try{
-                const response = await axios.get(`http://localhost:8080/tariff/countries`); //connect to backend and do get request
+                const response = await axios.get(`${backendURL}/tariff/countries`); //connect to backend and do get request
                 console.log(response.data);
                 setList(response.data); //setting list to be data incoming from backend
                 // console.log(list.country); //printing list.country should have list.code / list.short
@@ -77,7 +77,7 @@ export function Home(){
         try{
             // send to query
             console.log("Sending DTO:", tariffCalculationQueryDTO);
-            const response = await axios.post(`http://localhost:8080/tariff/past`, tariffCalculationQueryDTO); //connect to backend sending query
+            const response = await axios.post(`${backendURL}/tariff/past`, tariffCalculationQueryDTO); //connect to backend sending query
             console.log("Post Success", response);
             setPast(response.data);
             console.log(past);
