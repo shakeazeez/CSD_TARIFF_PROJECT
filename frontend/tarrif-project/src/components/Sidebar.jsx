@@ -148,7 +148,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   {user?.email || 'User'}
                 </p>
                 <p className="text-xs" style={{ color: colors.muted }}>
-                  Premium User
+                  {user?.userType || user?.role || 'User'}
                 </p>
               </div>
             </div>

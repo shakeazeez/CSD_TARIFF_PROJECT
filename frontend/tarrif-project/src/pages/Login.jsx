@@ -15,6 +15,7 @@ import { Button } from '../components/ui/button' // Customizable button componen
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card' // Card layout components
 import { Input } from '../components/ui/input' // Styled input component
 import { Label } from '../components/ui/label' // Form label component
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select' // Select component
 
 // Theme and icon components
 import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
@@ -117,6 +118,7 @@ export function Login(){
     // Login form data
     const [email, setEmail] = useState(""); // User email
     const [password, setPassword] = useState(""); // User password
+    const [userType, setUserType] = useState(""); // User type for signup
     const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
     const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign up
 
@@ -152,7 +154,8 @@ export function Login(){
     // DTO for login/signup API call
     const authDTO = {
         email: email,
-        password: password
+        password: password,
+        userType: userType
     }
 
     // ====================================
@@ -166,6 +169,7 @@ export function Login(){
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) return "Please enter a valid email address";
         if (password.length < 6) return "Password must be at least 6 characters long";
+        if (isSignUp && !userType) return "Please select a user type";
         return null;
     };
 
@@ -202,7 +206,7 @@ export function Login(){
                 const demoUser = {
                     email: DEMO_EMAIL,
                     name: "Demo User",
-                    role: "Premium User"
+                    role: "member"
                 };
 
                 // Update auth context
@@ -513,6 +517,45 @@ export function Login(){
                                 </div>
                             </motion.div>
 
+                            {/* USER TYPE SELECT - Only for signup */}
+                            {isSignUp && (
+                                <motion.div
+                                    variants={itemVariants}
+                                    className="space-y-2"
+                                >
+                                    <Label
+                                        htmlFor="userType"
+                                        className="text-sm font-medium flex items-center space-x-1 transition-colors duration-300"
+                                        style={{ color: colors.foreground }}
+                                    >
+                                        <User className="h-4 w-4" />
+                                        <span>User Type</span>
+                                    </Label>
+                                    <Select value={userType} onValueChange={setUserType} disabled={isLoading}>
+                                        <SelectTrigger
+                                            className="transition-colors duration-300"
+                                            style={{
+                                                backgroundColor: colors.input,
+                                                borderColor: colors.border,
+                                                color: colors.foreground
+                                            }}
+                                        >
+                                            <SelectValue placeholder="Select user type" />
+                                        </SelectTrigger>
+                                        <SelectContent
+                                            style={{
+                                                backgroundColor: colors.surface,
+                                                borderColor: colors.border
+                                            }}
+                                        >
+                                            <SelectItem value="member" style={{ color: colors.foreground }}>Member</SelectItem>
+                                            <SelectItem value="Bank" style={{ color: colors.foreground }}>Bank</SelectItem>
+                                            <SelectItem value="Business" style={{ color: colors.foreground }}>Business</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </motion.div>
+                            )}
+
                             {/* AUTH BUTTON */}
                             <motion.div
                                 variants={itemVariants}
@@ -555,6 +598,7 @@ export function Login(){
                                         setSuccess("");
                                         setEmail("");
                                         setPassword("");
+                                        setUserType("");
                                     }}
                                     className="text-sm transition-colors duration-300"
                                     style={{ color: colors.accent }}
