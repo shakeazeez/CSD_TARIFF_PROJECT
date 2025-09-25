@@ -1,50 +1,40 @@
+/* Login page container */
 .login-page {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    background-color: #E6F4EA;
+    height: 100vh;
+    background-color: #F0FFF4; 
     font-family: Arial, sans-serif;
-    color: #1B5E20;
-}
-
-.login-page h1 {
-    font-size: px;
-    margin-bottom: 20px;
-}
-
-.login-page h3 {
-    font-size: 18px;
-    margin-bottom: 5px;
 }
 
 .credentials-box {
     width: 300px;
     padding: 10px 15px;
     margin: 5px 0 10px 0;
-    border: 2px solid #A3D9A5;
-    border-radius: 8px;
-    background-color: #FFFFFF;
-    color: #1B5E20;
+    border: 2px solid #A3D9A5;        
+    border-radius: 8px;                
+    background-color: #E6F4EA;       
+    color: #1B5E20;                   
     font-size: 16px;
     outline: none;
     transition: all 0.3s ease;
 }
 
 .credentials-box::placeholder {
-    color: #81C784;
+    color: #81C784;                    
     font-style: italic;
 }
 
 .credentials-box:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px #4CAF50;
+    border-color: #4CAF50;          
+    box-shadow: 0 0 5px #4CAF50;       
 }
 
 .error-message-username,
 .error-message-password {
-    color: #D32F2F;
+    color: #D32F2F;                     
     font-size: 14px;
     margin: 0 0 10px 0;
     font-style: italic;
@@ -56,13 +46,15 @@
     margin-top: 10px;
     border: none;
     border-radius: 12px;
-    background-color: #4CAF50;       
-    color: #FFFFFF;                    
+    background-color: #4CAF50;        
+    color: #FFFFFF;                     
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
 .login-button:hover {
-    background-color: #388E3C;
+    background-color: #388E3C;        
 }
+
+
