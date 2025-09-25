@@ -449,7 +449,7 @@ export function Calculator({ onMenuClick }){
                                             type="text"
                                             placeholder="Enter HS code (e.g., 123456)"
                                             value={hs}
-                                            onChange={(e) => setHS(e.target.value)}
+                                            onChange={(e) => setHS((e.target.value).toLowerCase())}
                                             style={{
                                                 backgroundColor: colors.background,
                                                 borderColor: colors.border,
@@ -529,8 +529,8 @@ export function Calculator({ onMenuClick }){
                                         Current Tariff Results
                                     </CardTitle>
                                     {/* add to pin button */}
-                                    <Button className="w-5" onClick={() => togglePin(item)}>
-                                        {pinned.find(p => p.id === item.id) ? "Unpin" : "Pin"}
+                                    <Button className="w-10" onClick={() => togglePin(current.tariffId)}>
+                                        {pinned.find(p => p.id === (current.tariffId).id) ? "Unpin" : "Pin"}
                                     </Button>
                                 </CardHeader>
                                 <CardContent>
