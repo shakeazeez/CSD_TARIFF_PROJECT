@@ -135,7 +135,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         Country partnerCountry = countryRepo.findByCountryName(queryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Partner country not found"));
 
-        Item item = itemRepo.findByItemName(queryDTO.item())
+        Item item = itemRepo.findByItemName(queryDTO.item().toLowerCase().trim())
                 .orElseThrow(() -> new IllegalArgumentException("Item not found for item " + queryDTO.item()));
 
         log.info("No problem with Item Query");
