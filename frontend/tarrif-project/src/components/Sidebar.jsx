@@ -119,6 +119,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 className="h-12 w-12 object-contain"
               />
             </div>
+            <div>
+              <h2 className="text-m font-bold" style={{ color: colors.foreground }}>GoatTariff</h2>
+              <p className="text-xs" style={{ color: colors.muted }}>Tariff Calculator</p>
+            </div>
           </div>
 
           <Button
@@ -142,15 +146,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                 <span className="text-white text-sm font-semibold">
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate" style={{ color: colors.foreground }}>
-                  {user?.email || 'User'}
+                  {user?.username || 'User'}
                 </p>
                 <p className="text-xs" style={{ color: colors.muted }}>
-                  {user?.userType || user?.role || 'User'}
+                  {user?.role || 'User'}
                 </p>
               </div>
             </div>

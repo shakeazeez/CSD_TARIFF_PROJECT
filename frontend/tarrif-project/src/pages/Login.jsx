@@ -253,10 +253,11 @@ export function Login(){
 
         try{
             // DEMO CREDENTIALS - Remove in production
-            const DEMO_USERNAME = "testuser";
-            const DEMO_PASSWORD = "testpass123#";
+            const DEMO_USERNAME = "demo_user";
+            const DEMO_PASSWORD = "DemoPass123!";
 
             // Check for demo credentials first
+            console.log("Checking demo:", form.username, "===", DEMO_USERNAME, "&&", form.password, "===", DEMO_PASSWORD);
             if (form.username === DEMO_USERNAME && form.password === DEMO_PASSWORD) {
                 console.log("Demo login successful");
 
@@ -285,16 +286,19 @@ export function Login(){
             console.log(`Sending ${isSignUp ? 'signup' : 'login'} DTO:`, authDTO);
 
             // Prepare form data for backend
-            const params = new URLSearchParams();
-            params.append('username', form.username);
-            params.append('password', form.password);
-            if (isSignUp) params.append('role', role);
+            const data = {
+                username: form.username,
+                password: form.password,
+                ...(isSignUp && { role })
+            };
+
+            console.log('Sending data:', data);
 
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
-            const response = await axios.post(`${backendURL}${endpoint}`, params, {
+            const response = await axios.post(`${backendURL}${endpoint}`, data, {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/json'
                 }
             });
             console.log(`${isSignUp ? 'Signup' : 'Login'} success:`, response);
@@ -310,6 +314,7 @@ export function Login(){
                 localStorage.setItem('username', response.data.username);
                 localStorage.setItem('userId', response.data.userId);
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('pin', JSON.stringify(response.data.pin)); // Pinned tariffs
             }
 
             // Update auth context with user data
@@ -317,9 +322,9 @@ export function Login(){
 
             // Redirect
             if (!isSignUp) {
-                window.location.href = "/";
-            } else {
                 navigate('/dashboard');
+            } else {
+                navigate('/login');
             }
 
         } catch(error){

@@ -88,6 +88,9 @@ export function Dashboard({ onMenuClick }){
     // Get authentication context for user management
     const { user, logout } = useAuth();
 
+    // Toast hook
+    const { toast } = useToast();
+
     // Navigation hook
     const navigate = useNavigate();
 
@@ -158,25 +161,28 @@ export function Dashboard({ onMenuClick }){
                     // Show market alerts as toasts
                     setTimeout(() => {
                         toast({
-                            title: "Optimal Trade Route",
+                            title: "💡 Optimal Trade Route",
                             description: "Consider Singapore → Vietnam for electronics. Current average tariff: 2.1%",
                             variant: "default",
+                            duration: 3000,
                         });
                     }, 1000);
 
                     setTimeout(() => {
                         toast({
-                            title: "Market Trend Alert",
+                            title: "⚠️ Market Trend Alert",
                             description: "EU tariffs on Chinese goods increased by 12% in Q4. Monitor closely.",
-                            variant: "warning",
+                            variant: "destructive",
+                            duration: 3000,
                         });
                     }, 2000);
 
                     setTimeout(() => {
                         toast({
-                            title: "Cost Saving Opportunity",
+                            title: "💰 Cost Saving Opportunity",
                             description: "Switch to Malaysia for manufacturing could save 8.5% on total landed costs.",
                             variant: "success",
+                            duration: 3000,
                         });
                     }, 4000);
                 }, 1000);
@@ -337,7 +343,7 @@ export function Dashboard({ onMenuClick }){
                             className="text-4xl font-bold mb-4"
                             style={{ color: colors.foreground }}
                         >
-                            Welcome back, {user?.email?.split('@')[0] || 'Trader'}! 👋
+                            Welcome back, {user?.username || 'Trader'}! 👋
                         </motion.h1>
                         <motion.p
                             variants={itemVariants}
