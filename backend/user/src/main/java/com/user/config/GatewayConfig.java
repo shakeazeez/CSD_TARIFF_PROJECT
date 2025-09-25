@@ -20,7 +20,7 @@ public class GatewayConfig {
     public GatewayConfig() {
         dotenv = Dotenv.load();
     }
-    
+
     @Bean
     public RouterFunction<ServerResponse> routing() {
         // This needs to be added as the project grows 
