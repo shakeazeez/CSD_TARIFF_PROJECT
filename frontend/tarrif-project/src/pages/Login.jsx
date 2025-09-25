@@ -35,6 +35,8 @@ import {
     ArrowRight
 } from 'lucide-react' // SVG icons
 
+import { useToast } from '../hooks/use-toast'
+
 // ====================================
 // ANIMATION VARIANTS
 // ====================================
@@ -89,6 +91,9 @@ export function Login(){
     // Get authentication context
     const { isAuthenticated, login } = useAuth();
 
+    // Toast hook
+    const { toast } = useToast();
+
     // ====================================
     // NAVIGATION
     // ====================================
@@ -121,6 +126,26 @@ export function Login(){
     const [success, setSuccess] = useState(""); // Success messages
 
     // ====================================
+    // EFFECTS
+    // ====================================
+
+    // Auto-dismiss error message after 5 seconds
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+
+    // Auto-dismiss success message after 5 seconds
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    // ====================================
     // USER DTO
     // ====================================
 
@@ -133,14 +158,6 @@ export function Login(){
     // ====================================
     // UTILITY FUNCTIONS
     // ====================================
-
-    // Clear messages after timeout
-    const clearMessages = () => {
-        setTimeout(() => {
-            setError("");
-            setSuccess("");
-        }, 5000);
-    };
 
     // Validate form inputs
     const validateInputs = () => {
@@ -161,7 +178,6 @@ export function Login(){
         const validationError = validateInputs();
         if (validationError) {
             setError(validationError);
-            clearMessages();
             return;
         }
 
@@ -223,7 +239,6 @@ export function Login(){
             console.log(`${isSignUp ? 'Signup' : 'Login'} error:`, error);
             const action = isSignUp ? 'signup' : 'login';
             setError(error.response?.data?.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
-            clearMessages();
         } finally {
             setIsLoading(false);
         }
@@ -316,7 +331,7 @@ export function Login(){
                 </Button>
             </motion.div>
 
-            {/* SUCCESS/ERROR MESSAGES */}
+            {/* NOTIFICATIONS */}
             <AnimatePresence>
                 {success && (
                     <motion.div
@@ -325,10 +340,22 @@ export function Login(){
                         exit={{ opacity: 0, y: -50 }}
                         className="fixed top-20 right-4 z-50"
                     >
-                        <Card className="border-green-500 bg-green-50 dark:bg-green-900/20 shadow-lg">
+                        <Card 
+                            className="shadow-lg"
+                            style={{
+                                borderColor: colors.success,
+                                backgroundColor: `${colors.success}20`,
+                                borderWidth: '1px'
+                            }}
+                        >
                             <CardContent className="flex items-center space-x-2 p-4">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                                <span className="text-green-800 dark:text-green-200">{success}</span>
+                                <CheckCircle 
+                                    className="h-5 w-5" 
+                                    style={{ color: colors.success }} 
+                                />
+                                <span style={{ color: colors.foreground }}>
+                                    {success}
+                                </span>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -341,10 +368,22 @@ export function Login(){
                         exit={{ opacity: 0, y: -50 }}
                         className="fixed top-20 right-4 z-50"
                     >
-                        <Card className="border-red-500 bg-red-50 dark:bg-red-900/20 shadow-lg">
+                        <Card 
+                            className="shadow-lg"
+                            style={{
+                                borderColor: colors.error,
+                                backgroundColor: `${colors.error}20`,
+                                borderWidth: '1px'
+                            }}
+                        >
                             <CardContent className="flex items-center space-x-2 p-4">
-                                <AlertCircle className="h-5 w-5 text-red-600" />
-                                <span className="text-red-800 dark:text-red-200">{error}</span>
+                                <AlertCircle 
+                                    className="h-5 w-5" 
+                                    style={{ color: colors.error }} 
+                                />
+                                <span style={{ color: colors.foreground }}>
+                                    {error}
+                                </span>
                             </CardContent>
                         </Card>
                     </motion.div>

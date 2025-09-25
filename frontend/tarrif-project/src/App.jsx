@@ -13,6 +13,7 @@ import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { Footer } from './components/Footer.jsx'
 import { NotFound } from './pages/NotFound.jsx'
+import { Toaster } from './components/Toaster.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 
 /**
@@ -105,6 +106,7 @@ function App() {
           </div>
         </Router>
         <Footer />
+        <Toaster />
       </AuthProvider>
     </ThemeProvider>
   )
