@@ -9,6 +9,7 @@ import {
   Legend
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import { useTheme } from "../contexts/ThemeContext.jsx"; // Import theme context
 
 // Register components
 ChartJS.register(
@@ -22,12 +23,13 @@ ChartJS.register(
 );
 
 /**
- * Chart component
+ * Chart component with Theme Integration
  *
  * A reusable chart built on top of react-chartjs-2 and chart.js.
+ * Now includes dark/light mode support with custom theme colors.
  * 
  * @author Yong Huey
- * @version 1.0.1
+ * @version 1.1.0 - Added theme integration
  * 
  * @param {Object} props
  * @param {Array<string>} props.labels - Array of labels for the x-axis.
@@ -54,34 +56,155 @@ ChartJS.register(
  */
 
 const Chart = ({ labels, value, title, legend }) => {
-    function randomColor() {
-        const r = Math.floor(Math.random() * 255);
-        const g = Math.floor(Math.random() * 255);
-        const b = Math.floor(Math.random() * 255);
-        return {borderColor : `rgba(${r},${g},${b},1)`,
-                backgroundColor : `rgba(${r},${g},${b},0.2)`};
+    // Get theme colors for chart styling
+    const { colors, isDark } = useTheme();
+    
+    // Theme-aware color palette for chart lines
+    function getThemeColors(index) {
+        const themeColorPalette = [
+            colors.accent,        // Primary accent color
+            colors.info,          // Info blue
+            colors.success,       // Success green
+            colors.warning,       // Warning orange
+            colors.error,         // Error red
+            '#8b5cf6',           // Purple
+            '#ec4899',           // Pink
+            '#06b6d4',           // Cyan
+        ];
+        
+        const baseColor = themeColorPalette[index % themeColorPalette.length];
+        
+        return {
+            borderColor: baseColor,
+            backgroundColor: `${baseColor}20`, // 20% opacity
+            pointBackgroundColor: baseColor,
+            pointBorderColor: colors.background,
+            pointHoverBackgroundColor: colors.background,
+            pointHoverBorderColor: baseColor
+        };
     }
 
     const datasets = legend.map((name, i) => {
-        const { borderColor, backgroundColor } = randomColor();
-        return {label: name,
-        data: value[i],
-        borderColor,
-        backgroundColor,
-        tension: 0
+        const themeColors = getThemeColors(i);
+        return {
+            label: name,
+            data: value[i],
+            ...themeColors,
+            tension: 0.1, // Slight curve for smoother lines
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
         };
     });
 
-    const data = {labels, datasets};
+    const data = { labels, datasets };
 
     const options = {
-    responsive: true,
-    plugins: {
-            legend: { position: "top" },
-            title: { display: true, text: title }
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: title,
+                color: colors.foreground,
+                font: {
+                    size: 16,
+                    weight: 'bold'
+                },
+                padding: {
+                    top: 10,
+                    bottom: 20
+                }
+            },
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    color: colors.foreground,
+                    usePointStyle: true,
+                    padding: 20,
+                    font: {
+                        size: 12
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: colors.surface,
+                titleColor: colors.foreground,
+                bodyColor: colors.foreground,
+                borderColor: colors.border,
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: true,
+                titleFont: {
+                    size: 14,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    size: 13
+                }
+            }
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Time Period',
+                    color: colors.foreground,
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                },
+                ticks: {
+                    color: colors.muted,
+                    font: {
+                        size: 11
+                    }
+                },
+                grid: {
+                    color: `${colors.border}80`, // Semi-transparent grid lines
+                    drawBorder: false
+                }
+            },
+            y: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Tariff Rate (%)',
+                    color: colors.foreground,
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                },
+                ticks: {
+                    color: colors.muted,
+                    font: {
+                        size: 11
+                    },
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                },
+                grid: {
+                    color: `${colors.border}80`, // Semi-transparent grid lines
+                    drawBorder: false
+                }
+            }
         }
     };
-    return(<Line data={data} options={options} />);
+    
+    return (
+        <div style={{ height: '400px', width: '100%' }}>
+            <Line data={data} options={options} />
+        </div>
+    );
 }
 
 export default Chart;
