@@ -90,10 +90,12 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                          .retrieve()
                                          .onStatus((status) -> status.value() == 400, (request, response) -> {
                                              // This one occurs if that country doesnt trade that item......
+                                             log.info("Api not found");
                                              throw new ApiFailureException (response.getStatusText());
                                           })
                                          .body(MoachDTO.class);
 
+        log.info("The result: " + result);
         if (result == null || result.tariffData() == null) {
             throw new ApiFailureException("Unable to call api properly");
         }
