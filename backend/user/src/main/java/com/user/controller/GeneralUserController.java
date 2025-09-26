@@ -70,6 +70,11 @@ public class GeneralUserController {
         }
     }
     
+    @GetMapping("/testauth/multilevel")
+    public String testAuth() {
+        return "Hello from authenticated";
+    }
+    
     // @GetMapping("/hi/details")
     // public Integer returnUsers() {
     //     return 1;
