@@ -124,6 +124,12 @@ export function Home({ onMenuClick }){
         setAnimatedElements(elements);
     }, []);
 
+    useEffect(() => {
+        if(localStorage.getItem("authToken") != null){
+            navigate("/dashboard");
+        }
+    },[]);
+
     // ====================================
     // COMPONENT RENDER (JSX)
     // ====================================
