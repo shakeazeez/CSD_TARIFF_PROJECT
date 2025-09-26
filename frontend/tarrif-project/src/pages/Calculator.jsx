@@ -143,10 +143,10 @@ export function Calculator({ onMenuClick }){
 
     // Transform country list for dropdown component compatibility
     // Converts backend format to {id, code} format expected by Dropdown component
-    const modList = list.map(item => ({
+    const modList = (list && Array.isArray(list)) ? list.map(item => ({
         id: item.countryName,   // Display name for dropdown
         code: item.countryName  // Value sent to backend
-    }));
+    })) : [];
 
     // Chart data preparation from historical tariff data
     // Extract tariff rates for chart visualization
