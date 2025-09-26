@@ -107,6 +107,14 @@ export function Calculator({ onMenuClick }){
 
     // Pinning
     const [pinned, setPinned] = useState([]);
+    useEffect(() => {
+        if (localStorage.getItem("authToken") != null) {
+            const storedPins = localStorage.getItem("pin"); // "1,2"
+            if (storedPins) {
+            setPinned(storedPins.split(",").map(p => Number(p.trim()))); // [1,2]
+            }
+        }
+    }, []);
 
     // ====================================
     // EFFECTS
@@ -285,15 +293,22 @@ export function Calculator({ onMenuClick }){
 
     // Function to add to pin
     const togglePin = (item) => {
-        if (pinned.find(p => p.id === item.id)) {
-            setPinned(pinned.filter(p => p.id !== item.id));
-            console.log("removing " + item);
-            delPin(item);
+        let updatedPins;
+        if (pinned.includes(item)) {
+            // Remove the item
+            updatedPins = pinned.filter(p => p !== item);
+            console.log("removing", item);
+            delPin(item); // optional, if you handle backend
         } else {
-            setPinned([...pinned, item]);
-            console.log("adding " + item);
-            addPin(item);
+            // Add the item
+            updatedPins = [...pinned, item];
+            console.log("adding", item);
+            addPin(item); // optional, if you handle backend
         }
+        // Update state
+        setPinned(updatedPins);
+        // Sync to localStorage as string
+        localStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
     };
 
     const addPin = async(item) => {
@@ -321,6 +336,7 @@ export function Calculator({ onMenuClick }){
         console.log("HS Code:", hs);
         console.log("Partner Country:", partner);
         console.log("Reporting Country:", report);
+        console.log("pinned: ", pinned);
     };
 
     // ====================================
@@ -569,9 +585,11 @@ export function Calculator({ onMenuClick }){
                                         Current Tariff Results
                                     </CardTitle>
                                     {/* add to pin button */}
+                                    {(localStorage.getItem("authToken") != null) ? (
                                     <Button className="w-5" onClick={() => togglePin(current.tariffId)}>
                                         {pinned.find(p => p.id === (current.tariffId).id) ? "Unpin" : "Pin"}
                                     </Button>
+                                    ): null}
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
