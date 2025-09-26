@@ -81,8 +81,9 @@ export function Calculator({ onMenuClick }){
     // STATE VARIABLES
     // ====================================
 
-    // Get backend URL from environment variables (.env file)
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
+    // Get backend URLs from environment variables (.env file)
+    const tariffURL = import.meta.env.VITE_TARIFF_API_URL;
+    const userURL = import.meta.env.VITE_USER_API_URL;
 
     // Country data and user selections
     const [list, setList] = useState([]); // Array of all available countries from backend
@@ -183,7 +184,7 @@ export function Calculator({ onMenuClick }){
         const fetchCountry = async() => {
             try{
                 // Make GET request to backend countries endpoint
-                const response = await axios.get(`${backendURL}/tariff/countries`);
+                const response = await axios.get(`${tariffURL}/tariff/countries`);
                 console.log("Fetched countries:", response.data);
 
                 // Update state with fetched country list
@@ -233,7 +234,7 @@ export function Calculator({ onMenuClick }){
             console.log("Sending DTO:", tariffCalculationQueryDTO);
 
             // POST request to get current tariff calculation
-            const response = await axios.post(`${backendURL}/tariff/current`, tariffCalculationQueryDTO);
+            const response = await axios.post(`${tariffURL}/tariff/current`, tariffCalculationQueryDTO);
             console.log("Current tariff calculation success:", response);
 
             // Update state with current tariff results
@@ -266,7 +267,7 @@ export function Calculator({ onMenuClick }){
             console.log("Sending DTO:", tariffCalculationQueryDTO);
 
             // POST request to get historical tariff data
-            const response = await axios.post(`${backendURL}/tariff/past`, tariffCalculationQueryDTO);
+            const response = await axios.post(`${tariffURL}/tariff/past`, tariffCalculationQueryDTO);
             console.log("Historical tariff data success:", response);
 
             // Update state with historical tariff data
@@ -298,7 +299,7 @@ export function Calculator({ onMenuClick }){
 
     const addPin = async(item) => {
         try {
-            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
+            const response = await axios.post(`${userURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
@@ -308,7 +309,7 @@ export function Calculator({ onMenuClick }){
 
     const delPin = async(item) => {
         try {
-            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
+            const response = await axios.post(`${userURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {

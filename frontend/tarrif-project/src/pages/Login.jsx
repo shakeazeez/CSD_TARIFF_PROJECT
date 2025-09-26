@@ -114,7 +114,7 @@ export function Login(){
     // ====================================
 
     // Get backend URL from environment variables (.env file)
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
+    const backendURL = import.meta.env.VITE_USER_API_URL;
 
     // Login form data
     const [form, setForm] = useState({ username: "", password: "", rePassword: "" }); // Form data
