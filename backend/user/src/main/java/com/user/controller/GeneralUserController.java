@@ -3,6 +3,8 @@ package com.user.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +18,7 @@ import com.user.service.GeneralUserService;
 @RequestMapping("/user")
 @RestController
 public class GeneralUserController {
+    private final Logger log = LoggerFactory.getLogger(GeneralUserController.class);
     private final GeneralUserService generalUserService;
 
     public GeneralUserController(GeneralUserService generalUserService) {
@@ -48,8 +51,10 @@ public class GeneralUserController {
             List<Integer> tariffIds = generalUserService.addPinnedTariff(username, tariffId);
             return ResponseEntity.ok(tariffIds);
         } catch (IllegalArgumentException e) {
+            log.info(e.getMessage());
             return ResponseEntity.badRequest().body(null);
         } catch (IllegalStateException e) {
+            log.info(e.getMessage());
             return ResponseEntity.status(409).build();
         }
     }
@@ -60,6 +65,7 @@ public class GeneralUserController {
             List<Integer> tariffIds = generalUserService.removePinnedTariff(username, tariffId);
             return ResponseEntity.ok(tariffIds);
         } catch (IllegalArgumentException e) {
+            log.info(e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
