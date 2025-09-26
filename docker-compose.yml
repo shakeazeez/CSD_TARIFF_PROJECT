@@ -43,8 +43,8 @@ services:
       - tariffcalc
       - user
     environment:
-      VITE_USER_API_URL: ''
-      VITE_TARIFF_API_URL: ''
+      VITE_USER_API_URL: ${VITE_USER_API_URL}
+      VITE_TARIFF_API_URL: ${VITE_TARIFF_API_URL}
 
 volumes:
   postgres_data:
