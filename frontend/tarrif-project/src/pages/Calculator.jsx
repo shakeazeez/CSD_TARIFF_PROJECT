@@ -586,8 +586,8 @@ export function Calculator({ onMenuClick }){
                                     </CardTitle>
                                     {/* add to pin button */}
                                     {(localStorage.getItem("authToken") != null) ? (
-                                    <Button className="w-5" onClick={() => togglePin(current.tariffId)}>
-                                        {pinned.find(p => p.id === (current.tariffId).id) ? "Unpin" : "Pin"}
+                                    <Button className="w-5" onClick={() => togglePin(Number(current.tariffId))}>
+                                        {pinned.includes(Number(current.tariffId)) ? "Unpin" : "Pin"}
                                     </Button>
                                     ): null}
                                 </CardHeader>
@@ -662,6 +662,7 @@ export function Calculator({ onMenuClick }){
                     )}
                 </motion.div>
             </div>
+            <button onClick={testPrint}>see console</button>
         </motion.div>
     );
 }
