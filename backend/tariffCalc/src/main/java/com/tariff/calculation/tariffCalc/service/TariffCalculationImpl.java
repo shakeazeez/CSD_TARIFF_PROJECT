@@ -88,7 +88,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         MoachDTO result = restClientMoach.get()
                                          .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("MOACH_API_KEY"))
                                          .retrieve()
-                                         .onStatus((status) -> status.value() == 400, (request, response) -> {
+                                         .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
                                              // This one occurs if that country doesnt trade that item......
                                              log.info("Api not found");
                                              throw new ApiFailureException (response.getStatusText());
@@ -230,23 +230,44 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * returns Item object with Hscode
     */
     // https://mtech-api.com/client/api/hs-code-match?q=tennis+shoes&category=156&token=YOUR_API_TOKEN
-    public Item loadItemFromApi(String itemName) throws ApiFailureException {
+    public Item loadItemFromApi(String itemName, Integer countryNumber) throws ApiFailureException {
         
-        ItemRetrievalDTO result = restClientMoach.get()
-                                         .uri("/hs-code-match?q=" + itemName + "&category=wto&token=" + dotenv.get("MOACH_API_KEY"))
-                                         .retrieve()
-                                         .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-                                             throw new ApiFailureException (response.getStatusText());
-                                          })
-                                         .body(ItemRetrievalDTO.class);
-
+        ItemRetrievalDTO result; 
+        boolean general = false;
+        
+        try {
+            result = restClientMoach.get()
+                                    .uri("/hs-code-match?q=" + itemName + "&category="+ countryNumber +"&token=" + dotenv.get("MOACH_API_KEY"))
+                                    .retrieve()
+                                    .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
+                                        throw new ApiFailureException (response.getStatusText());
+                                    })
+                                    .body(ItemRetrievalDTO.class);
+        } catch (ApiFailureException e) {
+            general = true;
+            result = restClientMoach.get()
+                                    .uri("/hs-code-match?q=" + itemName + "&category=wto&token=" + dotenv.get("MOACH_API_KEY"))
+                                    .retrieve()
+                                    .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
+                                        throw new ApiFailureException (response.getStatusText());
+                                    })
+                                    .body(ItemRetrievalDTO.class);
+        }
+        
 
         log.info("Query results" + result.toString());
         if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
         }
-
+        
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
+        Optional<Item> checker = itemRepo.findById(itemCode);
+        
+        if (checker.isPresent() && checker.get().getItemName().contains("general")) {
+            return checker.get();
+        }
+        
+        itemName = itemName + (general ? "general" : countryNumber);
         return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>()));
 
     }
@@ -266,8 +287,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
         Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())
                                                     .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         // Checks for item. If not in database, query from the actual API
-        Item item = itemRepo.findByItemName(tariffQueryDTO.item())
-                            .orElseGet(() -> loadItemFromApi(tariffQueryDTO.item().toLowerCase()));
+        Item item = itemRepo.findByItemName(tariffQueryDTO.item() + reportingCountry.getCountryNumber())
+                            .orElseGet(() -> itemRepo.findByItemName(tariffQueryDTO.item() + "general")
+                            .orElseGet(() -> loadItemFromApi(tariffQueryDTO.item().toLowerCase(), reportingCountry.getCountryNumber())));
 
         log.info("No problem with Item Query");
         // Needs to be final here because being used in a very interesting lambda later down the line
@@ -320,7 +342,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         double percentage = tariff.getPercentageRate();
         double tariffAmount = percentage * tariffQueryDTO.itemCost() / 100.0;
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
-        return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName(), percentage, tariffAmount, itemCostWithTariff, tariff.getId());
+        return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""), percentage, tariffAmount, itemCostWithTariff, tariff.getId());
     }
 
 }

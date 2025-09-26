@@ -55,13 +55,13 @@ public class TariffOverviewImpl implements TariffOverviewService {
     // https://wits.worldbank.org/API/V1/SDMX/V21/datasource/TRN/reporter/840/partner/156/product/020110/year/all/datatype/reported?format=JSON
     private List<Tariff> loadTariffsFromApi(Country reportingCountry, Country partnerCountry, Item item)
             throws ApiFailureException {
-
+        String itemNum = Integer.toString(item.getItemCode()).substring(0, 6);
         WitsDTO result = null;
         try {
             result = restClientWits.get()
                     .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber() +
                             "/partner/" + partnerCountry.getCountryNumber() +
-                            "/product/" + item.getItemCode() +
+                            "/product/" + itemNum +
                             "/year/all/datatype/reported?format=JSON")
                     .retrieve()
                     .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
@@ -72,7 +72,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
             log.info("Exception found at " + e.getMessage());
             result = restClientWits.get()
                     .uri("datasource/TRN/reporter/" + reportingCountry.getCountryNumber() +
-                            "/partner/000/product/" + item.getItemCode() + "/year/all/datatype/reported?format=JSON")
+                            "/partner/000/product/" + itemNum + "/year/all/datatype/reported?format=JSON")
                     .retrieve()
                     .onStatus((stat) -> stat.value() == 400 || stat.value() == 404, (req2, res1) -> {
                         throw new ApiFailureException("Api call failed");
