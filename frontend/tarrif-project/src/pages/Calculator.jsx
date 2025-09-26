@@ -524,15 +524,16 @@ export function Calculator({ onMenuClick }){
                                         className="flex-1"
                                         style={{
                                             backgroundColor: colors.accent,
-                                            borderColor: colors.accent
+                                            borderColor: colors.accent,
+                                            color: '#ffffff'
                                         }}
                                         onMouseEnter={(e) => {
                                             e.target.style.backgroundColor = colors.hover;
                                             e.target.style.color = '#ffffff';
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor =  `${colors.accent}20`;
-                                            e.target.style.color = colors.accent;
+                                            e.target.style.backgroundColor =  `${colors.accent}`;
+                                            e.target.style.color = '#ffffff';
                                         }}
                                     >
                                         {loadingCurrent ? (
@@ -548,16 +549,17 @@ export function Calculator({ onMenuClick }){
                                         variant="outline"
                                         className="flex-1"
                                         style={{
+                                            backgroundColor: colors.accent,
                                             borderColor: colors.accent,
-                                            color: colors.accent
+                                            color: '#ffffff'
                                         }}
                                         onMouseEnter={(e) => {
                                             e.target.style.backgroundColor = colors.hover;
                                             e.target.style.color = '#ffffff';
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor = `${colors.accent}20`;
-                                            e.target.style.color = colors.accent;
+                                            e.target.style.backgroundColor =  `${colors.accent}`;
+                                            e.target.style.color = '#ffffff';
                                         }}
                                     >
                                         {loadingPast ? (
@@ -662,7 +664,6 @@ export function Calculator({ onMenuClick }){
                     )}
                 </motion.div>
             </div>
-            <button onClick={testPrint}>see console</button>
         </motion.div>
     );
 }
