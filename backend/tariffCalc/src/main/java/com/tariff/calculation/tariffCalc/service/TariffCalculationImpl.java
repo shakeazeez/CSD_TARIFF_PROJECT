@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
+import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.dto.itemApiDto.ItemRetrievalDTO;
@@ -215,29 +216,19 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * returns Item object with Hscode
     */
     // https://mtech-api.com/client/api/hs-code-match?q=tennis+shoes&category=156&token=YOUR_API_TOKEN
-    public Item loadItemFromApi(String itemName, Integer countryNumber) throws ApiFailureException {
+    public Item loadItemFromApi(String itemName, String countryNumber) throws ApiFailureException {
         
         ItemRetrievalDTO result; 
-        boolean general = false;
+        boolean general = countryNumber.equals("wto");
+
+        result = restClientMoach.get()
+                                .uri("/hs-code-match?q=" + itemName + "&category="+ countryNumber +"&token=" + dotenv.get("MOACH_API_KEY"))
+                                .retrieve()
+                                .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
+                                    throw new ApiFailureException (response.getStatusText());
+                                })
+                                .body(ItemRetrievalDTO.class);
         
-        try {
-            result = restClientMoach.get()
-                                    .uri("/hs-code-match?q=" + itemName + "&category="+ countryNumber +"&token=" + dotenv.get("MOACH_API_KEY"))
-                                    .retrieve()
-                                    .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-                                        throw new ApiFailureException (response.getStatusText());
-                                    })
-                                    .body(ItemRetrievalDTO.class);
-        } catch (ApiFailureException e) {
-            general = true;
-            result = restClientMoach.get()
-                                    .uri("/hs-code-match?q=" + itemName + "&category=wto&token=" + dotenv.get("MOACH_API_KEY"))
-                                    .retrieve()
-                                    .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-                                        throw new ApiFailureException (response.getStatusText());
-                                    })
-                                    .body(ItemRetrievalDTO.class);
-        }
         
 
         log.info("Query results" + result.toString());
@@ -276,10 +267,10 @@ public class TariffCalculationImpl implements TariffCalculationService {
         
         if (customValid.contains(reportingCountry.getCountryNumber())) {
             item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + reportingCountry.getCountryNumber())
-                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), reportingCountry.getCountryNumber()));
+                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), Integer.toString(reportingCountry.getCountryNumber())));
         } else {
             item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + "general")
-                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), reportingCountry.getCountryNumber()));
+                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), "wto"));
         }
         
         log.info("No problem with Item Query");
@@ -335,5 +326,12 @@ public class TariffCalculationImpl implements TariffCalculationService {
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
         return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""), percentage, tariffAmount, itemCostWithTariff, tariff.getId());
     }
-
+    
+    public GeneralTariffDTO getTariffById(Integer tariffId) {
+        Tariff tariff = tariffRepo.findById(tariffId)
+                                  .orElseThrow(() -> new IllegalArgumentException("Unable to find tariff Id"));
+                                  
+        return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(), tariff.getPartnerCountry().getCountryName(), tariff.getPercentageRate());
+    }
+    
 }
