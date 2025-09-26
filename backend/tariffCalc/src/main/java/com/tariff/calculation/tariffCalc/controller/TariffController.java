@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
@@ -29,7 +32,7 @@ import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 
-@Tag(name = "Tariff Controller", description = "API for tariff calculations and country information")
+@Tag(name = "Tariff Controller", description = "Tariff calculation and overview endpoints")
 @RequestMapping("/tariff")
 @RestController
 public class TariffController {
@@ -44,10 +47,13 @@ public class TariffController {
         this.tariffService = tariffService;
         this.tariffOverviewService = tariffOverviewService;
     }
+
     @Operation(summary = "Get all countries", description = "Retrieve a list of all available countries for tariff calculations")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved countries"),
-        @ApiResponse(responseCode = "404", description = "Countries not found")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved countries", content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = Country.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Countries not found", content = @Content)
     })
     @GetMapping("/countries")
     public ResponseEntity<List<Country>> getAllItems() {
@@ -67,9 +73,11 @@ public class TariffController {
      */
     @Operation(summary = "Get current year tariff details", description = "Calculate tariff details for an item between two countries for the current year")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully calculated tariff"),
-        @ApiResponse(responseCode = "400", description = "Invalid request parameters"),
-        @ApiResponse(responseCode = "404", description = "Tariff data not found")
+            @ApiResponse(responseCode = "200", description = "Successfully calculated tariff", content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = TariffResponseDTO.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Tariff data not found", content = @Content)
     })
     @PostMapping("/current")
     public ResponseEntity<TariffResponseDTO> getCurrentTariffDetails(
@@ -96,15 +104,25 @@ public class TariffController {
     /*
      * Get tariff details for item between two countries of selected year
      */
-    @Operation(summary = "Get historical tariff details", description = "Get tariff overview and details for an item between two countries for a specific past year")
+    @Operation(summary = "Get historical tariff details", description = "Get tariff overview for an item between two countries")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved historical tariff data"),
-        @ApiResponse(responseCode = "400", description = "Invalid request parameters"),
-        @ApiResponse(responseCode = "404", description = "Historical tariff data not found")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved historical tariff data", content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = TariffOverviewResponseDTO.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Historical tariff data not found", content = @Content)
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    description = "Tariff calculation query parameters",
+    required = true,
+    content = @Content(
+        mediaType = "application/json",
+        schema = @Schema(implementation = TariffCalculationQueryDTO.class),
+        examples = @ExampleObject(value = "{ \"reportingCountry\": \"China\", \"partnerCountry\": \"India\", \"item\": \"Slipper\", \"itemCost\": 1000.0 }")
+    ))
     @PostMapping("/past")
     public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(
-            @Parameter(description = "Tariff calculation query parameters including year", required = true)
+            // @Parameter(description = "Tariff calculation query parameters", required = true)
             @RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffOverviewResponseDTO response = null;
@@ -124,19 +142,36 @@ public class TariffController {
         return ResponseEntity.ok(response);
 
     }
-    
+
+    @Operation(
+        summary = "Get current tariff by id",
+        description = "Fetches the tariff details for the given tariff id."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Current tariff found and returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid tariff id given")
+    })
     @PostMapping("/current/{id}")
-    public ResponseEntity<GeneralTariffDTO> getCurrentTariffById (@PathVariable Integer id) {
-        
+    public ResponseEntity<GeneralTariffDTO> getCurrentTariffById (@Parameter(description = "Unique tariff id", required = true)
+            @PathVariable Integer id) {
         try {
             return ResponseEntity.ok(tariffService.getTariffById(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
+     @Operation(
+        summary = "Get past tariffs by id",
+        description = "Fetches all historical tariff records for the given tariff id."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "List of past tariffs returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid tariff id supplied")
+    })
     @PostMapping("/past/{id}")
-    public ResponseEntity<List<GeneralTariffDTO>> getPastTariffById (@PathVariable Integer id) {
+    public ResponseEntity<List<GeneralTariffDTO>> getPastTariffById (@Parameter(description = "Unique tariff id", required = true)
+            @PathVariable Integer id) {
         try {
             return ResponseEntity.ok(tariffOverviewService.getAllTariff(id));
         } catch (IllegalArgumentException e) {
