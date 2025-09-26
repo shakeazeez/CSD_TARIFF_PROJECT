@@ -94,7 +94,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                              throw new ApiFailureException (response.getStatusText());
                                           })
                                          .body(MoachDTO.class);
-
+        String t1 = restClientMoach.get()
+                                         .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("MOACH_API_KEY"))
+                                         .retrieve()
+                                         .onStatus((status) -> status.value() == 400, (request, response) -> {
+                                             // This one occurs if that country doesnt trade that item......
+                                             log.info("Api not found");
+                                             throw new ApiFailureException (response.getStatusText());
+                                          })
+                                         .body(String.class);
+        log.info(t1);
         log.info("The result: " + result);
         if (result == null || result.tariffData() == null) {
             throw new ApiFailureException("Unable to call api properly");
