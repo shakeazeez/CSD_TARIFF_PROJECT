@@ -50,6 +50,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final ItemRepo itemRepo;
     private final TariffRepo tariffRepo;
     private final Dotenv dotenv = Dotenv.load();
+    private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158, 764, 840, 704, 784);
 
     public TariffCalculationImpl (
         CountryRepo countryRepo,
@@ -271,10 +272,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
         Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())
                                                     .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         // Checks for item. If not in database, query from the actual API
-        Item item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + reportingCountry.getCountryNumber())
-                            .orElseGet(() -> itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + "general")
-                            .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), reportingCountry.getCountryNumber())));
-
+        Item item;
+        
+        if (customValid.contains(reportingCountry.getCountryNumber())) {
+            item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + reportingCountry.getCountryNumber())
+                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), reportingCountry.getCountryNumber()));
+        } else {
+            item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + "general")
+                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), reportingCountry.getCountryNumber()));
+        }
+        
         log.info("No problem with Item Query");
         // Needs to be final here because being used in a very interesting lambda later down the line
         final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem (
