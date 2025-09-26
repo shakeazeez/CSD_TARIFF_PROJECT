@@ -519,7 +519,7 @@ export function Dashboard({ onMenuClick }){
                                             {lastRow ? (
                                                 <>
                                                 <p>
-                                                    {lastRow.reportingCountry} → {lastRow.partnerCountry} : {lastRow.tariff}
+                                                    {lastRow.reportingCountry} → {lastRow.partnerCountry} : {lastRow.tariff}%
                                                 </p>
                                                 <button onClick={() => togglePin(id)}>Unpin</button>
                                                 </>
