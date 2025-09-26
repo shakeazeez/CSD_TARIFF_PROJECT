@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,10 +20,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.tariff.calculation.tariffCalc.country.Country;
+import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
 import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
+import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 
@@ -35,8 +38,7 @@ public class TariffController {
     private final TariffOverviewService tariffOverviewService;
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
-
-
+    
     @Autowired
     public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService) {
         this.tariffService = tariffService;
@@ -122,6 +124,24 @@ public class TariffController {
         return ResponseEntity.ok(response);
 
     }
-
+    
+    @PostMapping("/current/{id}")
+    public ResponseEntity<GeneralTariffDTO> getCurrentTariffById (@PathVariable Integer id) {
+        
+        try {
+            return ResponseEntity.ok(tariffService.getTariffById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @PostMapping("/past/{id}")
+    public ResponseEntity<List<GeneralTariffDTO>> getPastTariffById (@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(tariffOverviewService.getAllTariff(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
     
 }

@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
+import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.HistoricalTariffData;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
@@ -173,5 +174,26 @@ public class TariffOverviewImpl implements TariffOverviewService {
 
     public List<Country> getAllCountries() {
         return countryRepo.findAll();
+    }
+    
+    public List<GeneralTariffDTO> getAllTariff(Integer tariffId) {
+        Tariff tariff = tariffRepo.findById(tariffId)
+                                  .orElseThrow(() -> new IllegalArgumentException("Unable to find tariff Id"));
+                                  
+        List<Tariff> tariffCopies = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(
+                                        tariff.getReportingCountry(),
+                                        tariff.getPartnerCountry(),
+                                        tariff.getItem()
+                                    );
+        List<GeneralTariffDTO> res = new ArrayList<>();
+        
+        tariffCopies.forEach((tariffEntry) -> {
+            res.add(new GeneralTariffDTO(tariffEntry.getReportingCountry().getCountryName()
+                                ,tariffEntry.getPartnerCountry().getCountryName() 
+                                ,tariffEntry.getItem().getItemName()
+                                ,tariffEntry.getPercentageRate()));
+        });
+        
+        return res;
     }
 }
