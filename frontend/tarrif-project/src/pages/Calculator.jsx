@@ -287,8 +287,32 @@ export function Calculator({ onMenuClick }){
     const togglePin = (item) => {
         if (pinned.find(p => p.id === item.id)) {
             setPinned(pinned.filter(p => p.id !== item.id));
+            console.log("removing " + item);
+            delPin(item);
         } else {
             setPinned([...pinned, item]);
+            console.log("adding " + item);
+            addPin(item);
+        }
+    };
+
+    const addPin = async(item) => {
+        try {
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
+            localStorage.setItem("pin", response.data);
+            console.log(response);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const delPin = async(item) => {
+        try {
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
+            localStorage.setItem("pin", response.data);
+            console.log(response);
+        } catch (error) {
+            console.log(error);
         }
     };
 
@@ -545,8 +569,8 @@ export function Calculator({ onMenuClick }){
                                         Current Tariff Results
                                     </CardTitle>
                                     {/* add to pin button */}
-                                    <Button className="w-5" onClick={() => togglePin(item)}>
-                                        {pinned.find(p => p.id === item.id) ? "Unpin" : "Pin"}
+                                    <Button className="w-5" onClick={() => togglePin(current.tariffId)}>
+                                        {pinned.find(p => p.id === (current.tariffId).id) ? "Unpin" : "Pin"}
                                     </Button>
                                 </CardHeader>
                                 <CardContent>

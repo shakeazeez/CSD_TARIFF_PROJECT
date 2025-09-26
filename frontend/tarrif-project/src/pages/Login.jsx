@@ -311,9 +311,9 @@ export function Login(){
 
             // For login, store additional data
             if (!isSignUp) {
-                localStorage.setItem('username', response.data.username);
-                localStorage.setItem('userId', response.data.userId);
-                localStorage.setItem('token', response.data.token);
+                localStorage.setItem("username", response.data.username);
+                // localStorage.setItem('userId', response.data.userId);
+                localStorage.setItem("token", response.data.token);
                 localStorage.setItem('pin', JSON.stringify(response.data.pin)); // Pinned tariffs
             }
 
