@@ -99,8 +99,9 @@ export function Dashboard({ onMenuClick }){
     // STATE VARIABLES
     // ====================================
 
-    // Get backend URL from environment variables (.env file)
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
+    // Get backend URLs from environment variables (.env file)
+    const tariffURL = import.meta.env.VITE_TARIFF_API_URL;
+    const userURL = import.meta.env.VITE_USER_API_URL;
 
     // Dashboard data
     const [stats, setStats] = useState({
@@ -214,7 +215,7 @@ export function Dashboard({ onMenuClick }){
 
     const pinnedTariffRate = async (pinnedId) => {
         try {
-            const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
+            const response = await axios.post(`${tariffURL}/tariff/past/${pinnedId}`);
 
             // Map pinnedId -> response.data
             setShowPin(prev => ({
@@ -253,7 +254,7 @@ export function Dashboard({ onMenuClick }){
 
     const addPin = async(item) => {
         try {
-            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
+            const response = await axios.post(`${userURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
@@ -263,7 +264,7 @@ export function Dashboard({ onMenuClick }){
 
     const delPin = async(item) => {
         try {
-            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
+            const response = await axios.post(`${userURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
