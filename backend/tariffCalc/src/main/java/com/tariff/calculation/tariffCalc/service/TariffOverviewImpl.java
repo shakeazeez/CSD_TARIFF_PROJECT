@@ -190,6 +190,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         tariffCopies.forEach((tariffEntry) -> {
             res.add(new GeneralTariffDTO(tariffEntry.getReportingCountry().getCountryName()
                                 ,tariffEntry.getPartnerCountry().getCountryName() 
+                                ,tariffEntry.getItem().getItemName()
                                 ,tariffEntry.getPercentageRate()));
         });
         
