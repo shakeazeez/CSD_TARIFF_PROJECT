@@ -29,6 +29,7 @@ import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
+import com.tariff.calculation.tariffCalc.utility.LemmaUtils;
 
 @Service
 public class TariffOverviewImpl implements TariffOverviewService {
@@ -135,8 +136,10 @@ public class TariffOverviewImpl implements TariffOverviewService {
         Country partnerCountry = countryRepo.findByCountryName(queryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Partner country not found"));
 
-        Item item = itemRepo.findByItemName(queryDTO.item().toLowerCase().trim())
-                .orElseThrow(() -> new IllegalArgumentException("Item not found for item " + queryDTO.item()));
+        Item item = itemRepo.findByItemName(LemmaUtils.toSingular(queryDTO.item().toLowerCase().trim()) + reportingCountry.getCountryNumber())
+                .orElseGet(() ->itemRepo.findByItemName(LemmaUtils.toSingular(queryDTO.item().toLowerCase().trim()) 
+                            + "general")
+                .orElseThrow(() -> new IllegalArgumentException("Item not found for item " + queryDTO.item())));
 
         log.info("No problem with Item Query");
 

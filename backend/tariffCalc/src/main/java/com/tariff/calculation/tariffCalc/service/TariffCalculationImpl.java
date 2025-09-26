@@ -20,6 +20,7 @@ import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
+import com.tariff.calculation.tariffCalc.utility.LemmaUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -287,9 +288,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
         Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())
                                                     .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         // Checks for item. If not in database, query from the actual API
-        Item item = itemRepo.findByItemName(tariffQueryDTO.item() + reportingCountry.getCountryNumber())
-                            .orElseGet(() -> itemRepo.findByItemName(tariffQueryDTO.item() + "general")
-                            .orElseGet(() -> loadItemFromApi(tariffQueryDTO.item().toLowerCase(), reportingCountry.getCountryNumber())));
+        Item item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + reportingCountry.getCountryNumber())
+                            .orElseGet(() -> itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + "general")
+                            .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), reportingCountry.getCountryNumber())));
 
         log.info("No problem with Item Query");
         // Needs to be final here because being used in a very interesting lambda later down the line
