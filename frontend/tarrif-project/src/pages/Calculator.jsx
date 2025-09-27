@@ -337,6 +337,7 @@ export function Calculator({ onMenuClick }){
         console.log("Partner Country:", partner);
         console.log("Reporting Country:", report);
         console.log("pinned: ", pinned);
+        console.log("Token: ", localStorage.getItem("authToken"));
     };
 
     // ====================================
@@ -641,6 +642,7 @@ export function Calculator({ onMenuClick }){
                             </Card>
                         </motion.div>
                     )}
+                    <Button onClick={testPrint}>testPrint</Button>
 
                     {/* No Data Message */}
                     {(!current || Object.keys(current).length === 0) &&
