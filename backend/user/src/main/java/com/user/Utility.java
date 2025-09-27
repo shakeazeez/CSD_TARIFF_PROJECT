@@ -4,11 +4,6 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 public class Utility {
 
-    private static final Dotenv dotenv = Dotenv.configure()
-            .directory("./")
-            .filename(".env")
-            .load();
-
     public static String getEnvOrDotenv(String key) {
         String value = System.getenv(key);
         if (value != null)

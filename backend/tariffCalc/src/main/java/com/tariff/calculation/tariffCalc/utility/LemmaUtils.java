@@ -9,11 +9,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 public class LemmaUtils {
 
     private static final DictionaryLemmatizer lemmatizer;
-    private static final Dotenv dotenv = Dotenv.configure()
-                                               .directory("./")
-                                               .filename(".env")
-                                               .load();
-
+    
     static {
         try {
             
@@ -29,6 +25,7 @@ public class LemmaUtils {
         String value = System.getenv(key);
         if (value != null) return value;
         try {
+            Dotenv dotenv = Dotenv.load();
             return dotenv.get(key);
         } catch (Exception e) {
             return null;
