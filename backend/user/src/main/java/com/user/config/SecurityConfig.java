@@ -2,6 +2,8 @@ package com.user.config;
 
 import java.util.List;
 
+import com.user.security.filter.*;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,12 +37,12 @@ public class SecurityConfig {
                                         
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
-    private final JwtService jwtService;
-
-    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler, JwtService jwtService) {
+    private final SecurityAuthenticationFilter securityAuthenticationFilter;
+    
+    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler, SecurityAuthenticationFilter securityAuthenticationFilter) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
-        this.jwtService = jwtService;
+        this.securityAuthenticationFilter = securityAuthenticationFilter;
     }
     
     @Bean
@@ -76,9 +78,9 @@ public class SecurityConfig {
             .exceptionHandling(
                     customizer -> customizer
                             .accessDeniedHandler(accessDeniedHandler)
-                            .authenticationEntryPoint(authenticationEntryPoint));
+                            .authenticationEntryPoint(authenticationEntryPoint))
+            .addFilterBefore(securityAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(new SecurityAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -94,6 +96,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(dotenv.get("FRONTEND_URL")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization")); // optional
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

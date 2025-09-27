@@ -46,6 +46,6 @@ public record UserAuthentication(
 
     @Override
     public String getName() {
-        return null;
+        return authUser.getUsername();
     }
 }
