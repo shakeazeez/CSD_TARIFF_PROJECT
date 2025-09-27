@@ -50,7 +50,10 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final CountryRepo countryRepo;
     private final ItemRepo itemRepo;
     private final TariffRepo tariffRepo;
-    private final Dotenv dotenv = Dotenv.load();
+    private final Dotenv dotenv = Dotenv.configure()
+                                        .directory("./")
+                                        .filename(".env")
+                                        .load();
     private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158, 764, 840, 704, 784);
 
     public TariffCalculationImpl (
