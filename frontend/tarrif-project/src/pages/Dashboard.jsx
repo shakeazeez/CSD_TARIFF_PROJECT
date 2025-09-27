@@ -100,8 +100,7 @@ export function Dashboard({ onMenuClick }){
     // ====================================
 
     // Get backend URLs from environment variables (.env file)
-    const tariffURL = import.meta.env.VITE_BACKEND_URL;
-    const userURL = import.meta.env.VITE_BACKEND_URL;
+    const backendURL = import.meta.env.VITE_BACKEND_URL;
 
     // Dashboard data
     const [stats, setStats] = useState({
@@ -215,7 +214,7 @@ export function Dashboard({ onMenuClick }){
 
     const pinnedTariffRate = async (pinnedId) => {
         try {
-            const response = await axios.post(`${tariffURL}/tariff/past/${pinnedId}`);
+            const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
 
             // Map pinnedId -> response.data
             setShowPin(prev => ({
