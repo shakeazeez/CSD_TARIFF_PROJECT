@@ -82,8 +82,9 @@ export function Calculator({ onMenuClick }){
     // ====================================
 
     // Get backend URLs from environment variables (.env file)
-    const tariffURL = import.meta.env.VITE_TARIFF_API_URL;
-    const userURL = import.meta.env.VITE_USER_API_URL;
+    const  backendURL= import.meta.env.VITE_BACKEND_URL;
+    const tariffURL = import.meta.env.VITE_BACKEND_URL;
+    const userURL = import.meta.env.VITE_BACKEND_URL;
 
     // Country data and user selections
     const [list, setList] = useState([]); // Array of all available countries from backend

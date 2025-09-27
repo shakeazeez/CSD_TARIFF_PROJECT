@@ -100,8 +100,8 @@ export function Dashboard({ onMenuClick }){
     // ====================================
 
     // Get backend URLs from environment variables (.env file)
-    const tariffURL = import.meta.env.VITE_TARIFF_API_URL;
-    const userURL = import.meta.env.VITE_USER_API_URL;
+    const tariffURL = import.meta.env.VITE_BACKEND_URL;
+    const userURL = import.meta.env.VITE_BACKEND_URL;
 
     // Dashboard data
     const [stats, setStats] = useState({

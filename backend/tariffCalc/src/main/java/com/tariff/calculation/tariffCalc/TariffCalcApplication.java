@@ -8,11 +8,11 @@ import io.github.cdimascio.dotenv.Dotenv;
 @SpringBootApplication
 public class TariffCalcApplication {    
     private static final Dotenv dotenv = Dotenv.configure()
-                                               .directory("../../")
+                                               .directory("./")
                                                .filename(".env")
                                                .load();
 	public static void main(String[] args) {
-	    System.setProperty("DATABASE_PASSWORD", dotenv.get("DB_PASSWORD"));
+	    System.setProperty("DATABASE_PASSWORD", dotenv.get("DATABASE_PASSWORD"));
 					
 		System.setProperty("DATABASE_URL", dotenv.get("DATABASE_URL"));
 		SpringApplication.run(TariffCalcApplication.class, args);
