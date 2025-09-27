@@ -32,13 +32,13 @@ public class SecurityAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
     
-        // String authenticationHeader = request.getHeader("Authorization");
+        String authenticationHeader = request.getHeader("Authorization");
 
-        // if (authenticationHeader == null) {
-        //   authenticationHeader = request.getHeader("AuthConstants.AUTHORIZATION_HEADER.toString()");
-        // }
+        if (authenticationHeader == null) {
+          authenticationHeader = request.getHeader("AuthConstants.AUTHORIZATION_HEADER.toString()");
+        }
 
-        String authenticationHeader = request.getHeader(AuthConstants.AUTHORIZATION_HEADER.toString());
+        // String authenticationHeader = request.getHeader(AuthConstants.AUTHORIZATION_HEADER.toString());
     
         if (authenticationHeader == null) {
           // Authentication token is not present, let's rely on anonymous authentication

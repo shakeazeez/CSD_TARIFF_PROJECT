@@ -35,12 +35,12 @@ public class SecurityConfig {
                                         
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
-    // private final JwtService jwtService;
+    private final JwtService jwtService;
 
-    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler) {
+    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler, JwtService jwtService) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
-        // this.jwtService = jwtService;
+        this.jwtService = jwtService;
     }
     
     @Bean
@@ -77,8 +77,9 @@ public class SecurityConfig {
                     customizer -> customizer
                             .accessDeniedHandler(accessDeniedHandler)
                             .authenticationEntryPoint(authenticationEntryPoint));
-        
-        
+
+        http.addFilterBefore(new SecurityAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
