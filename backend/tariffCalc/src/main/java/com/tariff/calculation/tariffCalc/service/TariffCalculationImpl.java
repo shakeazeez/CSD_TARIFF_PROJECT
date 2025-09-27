@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import io.github.cdimascio.dotenv.Dotenv;
 
 /*
  * This class is the service class that handles endpoints related to tariffs
@@ -50,31 +49,20 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final CountryRepo countryRepo;
     private final ItemRepo itemRepo;
     private final TariffRepo tariffRepo;
-    private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158, 764, 840, 704, 784);
+    private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158,
+            764, 840, 704, 784);
 
-    public TariffCalculationImpl (
-        CountryRepo countryRepo,
-        ItemRepo itemRepo,
-        TariffRepo tariffRepo,
-        RestClient.Builder restClientBuilder
-    ) {
+    public TariffCalculationImpl(
+            CountryRepo countryRepo,
+            ItemRepo itemRepo,
+            TariffRepo tariffRepo,
+            RestClient.Builder restClientBuilder) {
         this.countryRepo = countryRepo;
         this.itemRepo = itemRepo;
         this.tariffRepo = tariffRepo;
         this.restClientMoach = restClientBuilder.clone()
-                                                .baseUrl("https://mtech-api.com/client/api")
-                                                .build();
-    }
-
-    private static String getEnvOrDotenv(String key) {
-        String value = System.getenv(key);
-        if (value != null) return value;
-        try {
-            Dotenv dotenv = Dotenv.load();
-            return dotenv.get(key);
-        } catch (Exception e) {
-            return null;
-        }
+                .baseUrl("https://mtech-api.com/client/api")
+                .build();
     }
 
     /*
@@ -85,21 +73,24 @@ public class TariffCalculationImpl implements TariffCalculationService {
      *
      *
      * @param countryCode The reporting countriy's countryCodes
-     *                    that has been saved and loaded ahead of time
+     * that has been saved and loaded ahead of time
+     * 
      * @param item The item that has been requested
+     * 
      * @return a list of tariff objects with that particular item and
-     *         that particular country code
-    */
+     * that particular country code
+     */
     public List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
         MoachDTO result = restClientMoach.get()
-                                         .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + getEnvOrDotenv("MOACH_API_KEY"))
-                                         .retrieve()
-                                         .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
-                                             // This one occurs if that country doesnt trade that item......
-                                             log.info("Api not found");
-                                             throw new ApiFailureException (response.getStatusText());
-                                          })
-                                         .body(MoachDTO.class);
+                .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber()
+                        + "&token=" + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                .retrieve()
+                .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
+                    // This one occurs if that country doesnt trade that item......
+                    log.info("Api not found");
+                    throw new ApiFailureException(response.getStatusText());
+                })
+                .body(MoachDTO.class);
         log.info("The result: " + result);
         if (result == null || result.tariffData() == null) {
             throw new ApiFailureException("Unable to call api properly");
@@ -112,34 +103,37 @@ public class TariffCalculationImpl implements TariffCalculationService {
         log.info(result.tariffData().toString());
         TariffData tariffData = result.tariffData().get(0);
         TariffRate tariffRate = tariffData.tariffRate();
-        
+
         // This is the US case where it is abit confusing since it stores general tariff
         // and seperate tariffs differently. This is why we dont try to be special
         if (tariffRate != null) {
             String countriesInfo = tariffRate.countries();
 
-            // This is the official 2 or 1 letter code provided to each country for some reason or another.
+            // This is the official 2 or 1 letter code provided to each country for some
+            // reason or another.
             // Will be a database thing down the road
-            List<String> countries = List.of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
-                                                          .split(","));
+            List<String> countries = List
+                    .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
+                            .split(","));
             log.info(countries.toString());
             String customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
-                                                 .trim()
-                                                 .toLowerCase();
+                    .trim()
+                    .toLowerCase();
 
             // Stores rateInfo as decimal as it is a percentage initially
             if (customRateInfo.contains("%")) {
                 customRateInfo = customRateInfo.substring(0, customRateInfo.indexOf('%'));
             }
 
-            Double customRateValue =  customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
+            Double customRateValue = customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
             // log.info("Attempting to finding by Code");
             log.info(countries.toString());
-            countries.forEach((code) ->  {
+            countries.forEach((code) -> {
                 Optional<Country> country = countryRepo.findByCountryCode(code);
-                
+
                 if (country.isPresent()) {
-                    Tariff tariff = tariffRepo.save(new Tariff(countryCode, country.get(), item ,customRateValue, LocalDate.now()));
+                    Tariff tariff = tariffRepo
+                            .save(new Tariff(countryCode, country.get(), item, customRateValue, LocalDate.now()));
                     res.add(tariff);
                 }
             });
@@ -148,13 +142,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
             // This is the world case
             Country world = countryRepo.findByCountryName("world").get();
             String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
-            Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free") ? Double.parseDouble(generalRateInfo) : 0.0;
+            Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free")
+                    ? Double.parseDouble(generalRateInfo)
+                    : 0.0;
 
             Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue, LocalDate.now()));
             res.add(tariff);
         }
 
-        // This is the general case that all other tariff information seems to like to follow.
+        // This is the general case that all other tariff information seems to like to
+        // follow.
         // If by some reason this no longer applies for some edge case... Well bops
         List<TableData> tariffInformation = tariffData.countryInformation();
 
@@ -171,13 +168,14 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     country.add(firstCountry.get());
                 }
             }
-            // This is wrong because it is not standard how these countries are described.....
+            // This is wrong because it is not standard how these countries are
+            // described.....
             // help ping me for the sample queries
             List<String> countryNames = List.of(information.country()
-                                                    .replaceAll("ASEAN:", "")
-                                                    .trim()
-                                                    .split(","));
-            
+                    .replaceAll("ASEAN:", "")
+                    .trim()
+                    .split(","));
+
             log.info(countryNames.toString());
 
             countryNames.forEach((names) -> {
@@ -190,28 +188,30 @@ public class TariffCalculationImpl implements TariffCalculationService {
             // log.info("No errors for parcing country names in the .country() part ");
             String preProcessed = information.tariffRate();
             // log.info("Tariff before anything : " + preProcessed);
-            String regionTariffRate = preProcessed.contains("%") ? preProcessed.substring(0, preProcessed.indexOf('%')) : "";
+            String regionTariffRate = preProcessed.contains("%") ? preProcessed.substring(0, preProcessed.indexOf('%'))
+                    : "";
 
             // log.info("Region tariff rate : " + regionTariffRate);
-            double regionTariffRateValue = (regionTariffRate == null || "".equals(regionTariffRate)) ? 0.0 : Double.parseDouble(regionTariffRate);
+            double regionTariffRateValue = (regionTariffRate == null || "".equals(regionTariffRate)) ? 0.0
+                    : Double.parseDouble(regionTariffRate);
             // log.info("No problem with Tariff Loading" + regionTariffRateValue);
             country.forEach((regionCountry) -> {
                 if (!customContains(res, countryCode, regionCountry)) {
-                    res.add(tariffRepo.save(new Tariff(countryCode, regionCountry, item, regionTariffRateValue, LocalDate.now())));
+                    res.add(tariffRepo.save(
+                            new Tariff(countryCode, regionCountry, item, regionTariffRateValue, LocalDate.now())));
                 }
             });
             // log.info("No problem with Tariff Saving");
         });
 
-
         return res;
     }
 
-
     private boolean customContains(List<Tariff> list, Country countryCode, Country regionCountry) {
         Optional<Tariff> temp = list.stream()
-                                    .filter(tariff -> tariff.getReportingCountry().equals(countryCode) && tariff.getPartnerCountry().equals(regionCountry))
-                                    .findFirst();
+                .filter(tariff -> tariff.getReportingCountry().equals(countryCode)
+                        && tariff.getPartnerCountry().equals(regionCountry))
+                .findFirst();
 
         return temp.isPresent();
     }
@@ -224,124 +224,139 @@ public class TariffCalculationImpl implements TariffCalculationService {
      *
      * @Param Item name
      * returns Item object with Hscode
-    */
+     */
     // https://mtech-api.com/client/api/hs-code-match?q=tennis+shoes&category=156&token=YOUR_API_TOKEN
     public Item loadItemFromApi(String itemName, String countryNumber) throws ApiFailureException {
-        
-        ItemRetrievalDTO result; 
+
+        ItemRetrievalDTO result;
         boolean general = countryNumber.equals("wto");
 
         result = restClientMoach.get()
-                                .uri("/hs-code-match?q=" + itemName + "&category="+ countryNumber +"&token=" + getEnvOrDotenv("MOACH_API_KEY"))
-                                .retrieve()
-                                .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-                                    throw new ApiFailureException (response.getStatusText());
-                                })
-                                .body(ItemRetrievalDTO.class);
-        
-        
+                .uri("/hs-code-match?q=" + itemName + "&category=" + countryNumber + "&token="
+                        + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                .retrieve()
+                .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
+                    throw new ApiFailureException(response.getStatusText());
+                })
+                .body(ItemRetrievalDTO.class);
 
         log.info("Query results" + result.toString());
         if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
         }
-        
+
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
         Optional<Item> checker = itemRepo.findById(itemCode);
-        
+
         if (checker.isPresent() && checker.get().getItemName().contains("general")) {
             return checker.get();
         }
-        
+
         itemName = itemName + (general ? "general" : countryNumber);
         return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>()));
 
     }
 
     /*
-    * This is the exposed service call for the endpoint when requesting REGULAR tariffs
-    *
-    * @Param tariffQueryDTO. This is the information received from the frontend and will return the value of
-    *                        the tariff.
-    * @return                A TariffResponseDTO containing raw data of reporting country, partner country, 
-    *                        item, tariff percentage, tariff cost, total cost post tariff
-    */
+     * This is the exposed service call for the endpoint when requesting REGULAR
+     * tariffs
+     *
+     * @Param tariffQueryDTO. This is the information received from the frontend and
+     * will return the value of
+     * the tariff.
+     * 
+     * @return A TariffResponseDTO containing raw data of reporting country, partner
+     * country,
+     * item, tariff percentage, tariff cost, total cost post tariff
+     */
     public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) {
         // This should already be statically loaded ahead of time
         Country reportingCountry = countryRepo.findByCountryName(tariffQueryDTO.reportingCountry())
-                                                    .orElseThrow(() -> new IllegalArgumentException("Country not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())
-                                                    .orElseThrow(() -> new IllegalArgumentException("Country not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         // Checks for item. If not in database, query from the actual API
         Item item;
-        
+
         if (customValid.contains(reportingCountry.getCountryNumber())) {
-            item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + reportingCountry.getCountryNumber())
-                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), Integer.toString(reportingCountry.getCountryNumber())));
+            item = itemRepo
+                    .findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + reportingCountry.getCountryNumber())
+                    .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()),
+                            Integer.toString(reportingCountry.getCountryNumber())));
         } else {
             item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()) + "general")
-                           .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), "wto"));
+                    .orElseGet(
+                            () -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), "wto"));
         }
-        
+
         log.info("No problem with Item Query");
-        // Needs to be final here because being used in a very interesting lambda later down the line
-        final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem (
-                                                        reportingCountry,
-                                                        item);
+        // Needs to be final here because being used in a very interesting lambda later
+        // down the line
+        final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem(
+                reportingCountry,
+                item);
 
         if (tariffList.isEmpty()) {
             log.info("Attempting to load....");
             tariffList.addAll(loadTariffFromApi(reportingCountry, item));
         }
 
-
         Tariff tariff = tariffList.stream()
-                                  .filter((tariffs) -> tariffs.getPartnerCountry().getCountryName().equals(tariffQueryDTO.partnerCountry()))
-                                  .sorted((a, b) -> b.getLocalDate().compareTo(a.getLocalDate()))
-                                  .findFirst()
-                                  // Here, we check to return either developing tariff or non-developed tariff
-                                  .orElseGet(() -> {
-                                        Country developing = countryRepo.findByCountryName("developing")
-                                                                            .orElseThrow(() -> {
-                                                                                log.info("Developing not found");
-                                                                                return new NoSuchElementException ("Developing not found");
-                                                                            });
-                                        List<Tariff> developingTariff = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(developing, reportingCountry, item);
-                                        Country world = countryRepo.findByCountryName("world")
-                                                                            .orElseThrow(() -> {
-                                                                                log.info("World not found");
-                                                                                return new NoSuchElementException ("World not found");
-                                                                            });
-                                        
-                                        if (!developingTariff.isEmpty() && partnerCountry.getIsDeveloping()) {
-                                            return tariffList.stream()
-                                                             .filter((currTariff) -> currTariff.getPartnerCountry().equals(developing))
-                                                             .findFirst()
-                                                             .orElseGet(() -> {
-                                                                 log.info("Well for Developing");
-                                                                 return tariffRepo.save(new Tariff(reportingCountry, developing, item, -1.0, LocalDate.now()));
-                                                             });
-                                        }
-                                        return tariffList.stream()
-                                                         .filter((currTariff) -> currTariff.getPartnerCountry().equals(world))
-                                                         .findFirst()
-                                                         .orElseGet(() -> {
-                                                            log.info("Well for world");
-                                                            return tariffRepo.save(new Tariff(reportingCountry, world, item, -1.0, LocalDate.now()));
-                                                        });
+                .filter((tariffs) -> tariffs.getPartnerCountry().getCountryName()
+                        .equals(tariffQueryDTO.partnerCountry()))
+                .sorted((a, b) -> b.getLocalDate().compareTo(a.getLocalDate()))
+                .findFirst()
+                // Here, we check to return either developing tariff or non-developed tariff
+                .orElseGet(() -> {
+                    Country developing = countryRepo.findByCountryName("developing")
+                            .orElseThrow(() -> {
+                                log.info("Developing not found");
+                                return new NoSuchElementException("Developing not found");
+                            });
+                    List<Tariff> developingTariff = tariffRepo
+                            .findByReportingCountryAndPartnerCountryAndItem(developing, reportingCountry, item);
+                    Country world = countryRepo.findByCountryName("world")
+                            .orElseThrow(() -> {
+                                log.info("World not found");
+                                return new NoSuchElementException("World not found");
+                            });
+
+                    if (!developingTariff.isEmpty() && partnerCountry.getIsDeveloping()) {
+                        return tariffList.stream()
+                                .filter((currTariff) -> currTariff.getPartnerCountry().equals(developing))
+                                .findFirst()
+                                .orElseGet(() -> {
+                                    log.info("Well for Developing");
+                                    return tariffRepo.save(
+                                            new Tariff(reportingCountry, developing, item, -1.0, LocalDate.now()));
                                 });
+                    }
+                    return tariffList.stream()
+                            .filter((currTariff) -> currTariff.getPartnerCountry().equals(world))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                log.info("Well for world");
+                                return tariffRepo
+                                        .save(new Tariff(reportingCountry, world, item, -1.0, LocalDate.now()));
+                            });
+                });
 
         double percentage = tariff.getPercentageRate();
         double tariffAmount = percentage * tariffQueryDTO.itemCost() / 100.0;
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
-        return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(), item.getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""), percentage, tariffAmount, itemCostWithTariff, tariff.getId());
+        return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(),
+                item.getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""), percentage, tariffAmount,
+                itemCostWithTariff, tariff.getId());
     }
-    
+
     public GeneralTariffDTO getTariffById(Integer tariffId) {
         Tariff tariff = tariffRepo.findById(tariffId)
-                                  .orElseThrow(() -> new IllegalArgumentException("Unable to find tariff Id"));
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find tariff Id"));
 
-        return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(), tariff.getPartnerCountry().getCountryName(), tariff.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""), tariff.getPercentageRate());
+        return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(),
+                tariff.getPartnerCountry().getCountryName(),
+                tariff.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""),
+                tariff.getPercentageRate());
     }
-    
+
 }

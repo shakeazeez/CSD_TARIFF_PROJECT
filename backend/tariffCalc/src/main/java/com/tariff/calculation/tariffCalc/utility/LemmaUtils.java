@@ -4,9 +4,15 @@ import opennlp.tools.lemmatizer.DictionaryLemmatizer;
 
 import java.io.InputStream;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class LemmaUtils {
 
     private static final DictionaryLemmatizer lemmatizer;
+    private static final Dotenv dotenv = Dotenv.configure()
+                                               .directory("./")
+                                               .filename(".env")
+                                               .load();
 
     static {
         try {
@@ -16,6 +22,16 @@ public class LemmaUtils {
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to load OpenNLP models", e);
+        }
+    }
+    
+    public static String getEnvOrDotenv(String key) {
+        String value = System.getenv(key);
+        if (value != null) return value;
+        try {
+            return dotenv.get(key);
+        } catch (Exception e) {
+            return null;
         }
     }
 
