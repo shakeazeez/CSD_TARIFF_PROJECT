@@ -14,16 +14,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.user.security.filter.SecurityAuthenticationFilter;
+import com.user.security.service.JwtService;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
 @EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
-    
+
     private final Dotenv dotenv = Dotenv.configure()
                                         .directory("./")
                                         .filename(".env")
@@ -31,10 +35,12 @@ public class SecurityConfig {
                                         
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
-    
-    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler) {
+    private final JwtService jwtService;
+
+    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler, JwtService jwtService) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.jwtService = jwtService;
     }
     
     @Bean
@@ -71,17 +77,17 @@ public class SecurityConfig {
                     customizer -> customizer
                             .accessDeniedHandler(accessDeniedHandler)
                             .authenticationEntryPoint(authenticationEntryPoint));
-        
-        
+
+        http.addFilterBefore(new SecurityAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
-    
-    
+
     @Bean
     public AuthenticationManager noOpAuthenticationManager() {
-      return authentication -> null;
+        return authentication -> null;
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -94,4 +100,4 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-} 
+}
