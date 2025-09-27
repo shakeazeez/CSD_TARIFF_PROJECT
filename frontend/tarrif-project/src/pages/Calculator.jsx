@@ -314,7 +314,8 @@ export function Calculator({ onMenuClick }){
 
     const addPin = async(item) => {
         try {
-            const response = await axios.post(`${userURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "", {
+            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
@@ -324,7 +325,8 @@ export function Calculator({ onMenuClick }){
 
     const delPin = async(item) => {
         try {
-            const response = await axios.post(`${userURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "", {
+            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
@@ -338,6 +340,7 @@ export function Calculator({ onMenuClick }){
         console.log("Partner Country:", partner);
         console.log("Reporting Country:", report);
         console.log("pinned: ", pinned);
+        console.log("Token: ", localStorage.getItem("authToken"));
     };
 
     // ====================================

@@ -2,6 +2,8 @@ package com.user.config;
 
 import java.util.List;
 
+import com.user.security.filter.*;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,16 +16,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.user.security.filter.SecurityAuthenticationFilter;
+import com.user.security.service.JwtService;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
 @EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
-    
+
     private final Dotenv dotenv = Dotenv.configure()
                                         .directory("./")
                                         .filename(".env")
@@ -31,10 +37,12 @@ public class SecurityConfig {
                                         
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
+    private final SecurityAuthenticationFilter securityAuthenticationFilter;
     
-    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler) {
+    public SecurityConfig(AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler, SecurityAuthenticationFilter securityAuthenticationFilter) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.securityAuthenticationFilter = securityAuthenticationFilter;
     }
     
     @Bean
@@ -70,28 +78,29 @@ public class SecurityConfig {
             .exceptionHandling(
                     customizer -> customizer
                             .accessDeniedHandler(accessDeniedHandler)
-                            .authenticationEntryPoint(authenticationEntryPoint));
-        
-        
+                            .authenticationEntryPoint(authenticationEntryPoint))
+            .addFilterBefore(securityAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+
         return http.build();
     }
-    
-    
+
     @Bean
     public AuthenticationManager noOpAuthenticationManager() {
-      return authentication -> null;
+        return authentication -> null;
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(dotenv.get("FRONTEND_URL").trim()));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization")); // optional
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-} 
+}
