@@ -123,8 +123,6 @@ public class TariffController {
     ))
     @PostMapping("/past")
     public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(
-            // @Parameter(description = "Tariff calculation query parameters", required =
-            // true)
             @RequestBody TariffCalculationQueryDTO queryDTO) {
 
         TariffOverviewResponseDTO response = null;
