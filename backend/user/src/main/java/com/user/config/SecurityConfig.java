@@ -30,11 +30,17 @@ import io.github.cdimascio.dotenv.Dotenv;
 @Configuration
 public class SecurityConfig {
 
-    private final Dotenv dotenv = Dotenv.configure()
-                                        .directory("./")
-                                        .filename(".env")
-                                        .load();
-                                        
+    private static String getEnvOrDotenv(String key) {
+        String value = System.getenv(key);
+        if (value != null) return value;
+        try {
+            Dotenv dotenv = Dotenv.load();
+            return dotenv.get(key);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
     private final SecurityAuthenticationFilter securityAuthenticationFilter;
@@ -93,7 +99,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(dotenv.get("FRONTEND_URL").trim()));
+        config.setAllowedOrigins(List.of(getEnvOrDotenv("FRONTEND_URL").trim()));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization")); // optional

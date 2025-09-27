@@ -50,10 +50,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final CountryRepo countryRepo;
     private final ItemRepo itemRepo;
     private final TariffRepo tariffRepo;
-    private final Dotenv dotenv = Dotenv.configure()
-                                        .directory("./")
-                                        .filename(".env")
-                                        .load();
     private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158, 764, 840, 704, 784);
 
     public TariffCalculationImpl (
@@ -68,6 +64,17 @@ public class TariffCalculationImpl implements TariffCalculationService {
         this.restClientMoach = restClientBuilder.clone()
                                                 .baseUrl("https://mtech-api.com/client/api")
                                                 .build();
+    }
+
+    private static String getEnvOrDotenv(String key) {
+        String value = System.getenv(key);
+        if (value != null) return value;
+        try {
+            Dotenv dotenv = Dotenv.load();
+            return dotenv.get(key);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /*
@@ -85,7 +92,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
     */
     public List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
         MoachDTO result = restClientMoach.get()
-                                         .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + dotenv.get("MOACH_API_KEY"))
+                                         .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber() + "&token=" + getEnvOrDotenv("MOACH_API_KEY"))
                                          .retrieve()
                                          .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
                                              // This one occurs if that country doesnt trade that item......
@@ -225,7 +232,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         boolean general = countryNumber.equals("wto");
 
         result = restClientMoach.get()
-                                .uri("/hs-code-match?q=" + itemName + "&category="+ countryNumber +"&token=" + dotenv.get("MOACH_API_KEY"))
+                                .uri("/hs-code-match?q=" + itemName + "&category="+ countryNumber +"&token=" + getEnvOrDotenv("MOACH_API_KEY"))
                                 .retrieve()
                                 .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                                     throw new ApiFailureException (response.getStatusText());

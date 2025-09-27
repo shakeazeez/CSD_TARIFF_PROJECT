@@ -10,9 +10,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  tariffcalc:
-    build: ./backend/tariffCalc
+  backend:
+    build: ./backend
     ports:
+      - "8080:8080"
       - "8081:8081"
     depends_on:
       - postgres
@@ -21,30 +22,21 @@ services:
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD:  ${POSTGRES_PASSWORD}
       MOACH_API_KEY: ${MOACH_API_KEY}
-
-  user:
-    build: ./backend/user
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tariffdb
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD:  ${POSTGRES_PASSWORD}
       SIGNING_SECRET: ${SIGNING_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/tariffdb?password=
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      TARIFF_URL: http://backend:8081
 
   frontend:
     build: ./frontend/tarrif-project
     ports:
       - "3000:80"
     depends_on:
-      - tariffcalc
-      - user
+      - backend
     environment:
-      VITE_USER_API_URL: ${VITE_USER_API_URL}
-      VITE_TARIFF_API_URL: ${VITE_TARIFF_API_URL}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+      
 
 volumes:
   postgres_data:

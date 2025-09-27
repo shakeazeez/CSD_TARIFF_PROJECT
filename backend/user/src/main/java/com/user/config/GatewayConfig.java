@@ -15,18 +15,23 @@ import static org.springframework.cloud.gateway.server.mvc.handler.HandlerFuncti
 @Configuration
 public class GatewayConfig {
     
-    private final Dotenv dotenv;
-    
-    public GatewayConfig() {
-        dotenv = Dotenv.load();
+    private static String getEnvOrDotenv(String key) {
+        String value = System.getenv(key);
+        if (value != null) return value;
+        try {
+            Dotenv dotenv = Dotenv.load();
+            return dotenv.get(key);
+        } catch (Exception e) {
+            return null;
+        }
     }
-
+    
     @Bean
     public RouterFunction<ServerResponse> routing() {
         // This needs to be added as the project grows 
         return route("tariff_route")
                 .route(path("/tariff/**"), http())
-                .before(uri(dotenv.get("TARIFF_URL")))
+                .before(uri(getEnvOrDotenv("TARIFF_URL")))
             .build();
     }
 }
