@@ -644,7 +644,6 @@ export function Calculator({ onMenuClick }){
                             </Card>
                         </motion.div>
                     )}
-                    <Button onClick={testPrint}>testPrint</Button>
 
                     {/* No Data Message */}
                     {(!current || Object.keys(current).length === 0) &&
