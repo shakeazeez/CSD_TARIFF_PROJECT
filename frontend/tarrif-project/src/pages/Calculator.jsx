@@ -81,8 +81,9 @@ export function Calculator({ onMenuClick }){
     // STATE VARIABLES
     // ====================================
 
-    // Get backend URL from environment variables (.env file)
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
+    // Get backend URLs from environment variables (.env file)
+    const tariffURL = import.meta.env.VITE_TARIFF_API_URL;
+    const userURL = import.meta.env.VITE_USER_API_URL;
 
     // Country data and user selections
     const [list, setList] = useState([]); // Array of all available countries from backend
@@ -142,10 +143,10 @@ export function Calculator({ onMenuClick }){
 
     // Transform country list for dropdown component compatibility
     // Converts backend format to {id, code} format expected by Dropdown component
-    const modList = list.map(item => ({
+    const modList = (list && Array.isArray(list)) ? list.map(item => ({
         id: item.countryName,   // Display name for dropdown
         code: item.countryName  // Value sent to backend
-    }));
+    })) : [];
 
     // Chart data preparation from historical tariff data
     // Extract tariff rates for chart visualization
@@ -191,7 +192,7 @@ export function Calculator({ onMenuClick }){
         const fetchCountry = async() => {
             try{
                 // Make GET request to backend countries endpoint
-                const response = await axios.get(`${backendURL}/tariff/countries`);
+                const response = await axios.get(`${tariffURL}/tariff/countries`);
                 console.log("Fetched countries:", response.data);
 
                 // Update state with fetched country list
@@ -241,7 +242,7 @@ export function Calculator({ onMenuClick }){
             console.log("Sending DTO:", tariffCalculationQueryDTO);
 
             // POST request to get current tariff calculation
-            const response = await axios.post(`${backendURL}/tariff/current`, tariffCalculationQueryDTO);
+            const response = await axios.post(`${tariffURL}/tariff/current`, tariffCalculationQueryDTO);
             console.log("Current tariff calculation success:", response);
 
             // Update state with current tariff results
@@ -274,7 +275,7 @@ export function Calculator({ onMenuClick }){
             console.log("Sending DTO:", tariffCalculationQueryDTO);
 
             // POST request to get historical tariff data
-            const response = await axios.post(`${backendURL}/tariff/past`, tariffCalculationQueryDTO);
+            const response = await axios.post(`${tariffURL}/tariff/past`, tariffCalculationQueryDTO);
             console.log("Historical tariff data success:", response);
 
             // Update state with historical tariff data

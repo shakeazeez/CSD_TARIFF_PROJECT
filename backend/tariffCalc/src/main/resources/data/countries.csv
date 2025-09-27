@@ -1,0 +1,252 @@
+countrynumber,countrycode,countryname,isdeveloping
+4,AF,Afghanistan,TRUE
+248,AX,Åland Islands,FALSE
+8,AL,Albania,TRUE
+12,DZ,Algeria,TRUE
+16,AS,American Samoa,TRUE
+20,AD,Andorra,FALSE
+24,AO,Angola,TRUE
+660,AI,Anguilla,TRUE
+10,AQ,Antarctica,TRUE
+28,AG,Antigua and Barbuda,TRUE
+32,AR,Argentina,TRUE
+51,AM,Armenia,TRUE
+533,AW,Aruba,FALSE
+36,AU,Australia,FALSE
+40,AT,Austria,FALSE
+31,AZ,Azerbaijan,TRUE
+44,BS,Bahamas (the),FALSE
+48,BH,Bahrain,FALSE
+50,BD,Bangladesh,TRUE
+52,BB,Barbados,TRUE
+112,BY,Belarus,TRUE
+56,BE,Belgium,FALSE
+84,BZ,Belize,TRUE
+204,BJ,Benin,TRUE
+60,BM,Bermuda,FALSE
+64,BT,Bhutan,TRUE
+68,BO,Bolivia (Plurinational State of),TRUE
+535,BQ,"Bonaire, Sint Eustatius and Saba",TRUE
+70,BA,Bosnia and Herzegovina,TRUE
+72,BW,Botswana,TRUE
+74,BV,Bouvet Island,TRUE
+76,BR,Brazil,TRUE
+86,IO,British Indian Ocean Territory (the),TRUE
+96,BN,Brunei Darussalam,FALSE
+100,BG,Bulgaria,TRUE
+854,BF,Burkina Faso,TRUE
+108,BI,Burundi,TRUE
+132,CV,Cabo Verde,TRUE
+116,KH,Cambodia,TRUE
+120,CM,Cameroon,TRUE
+124,CA,Canada,FALSE
+136,KY,Cayman Islands (the),FALSE
+140,CF,Central African Republic (the),TRUE
+148,TD,Chad,TRUE
+152,CL,Chile,TRUE
+156,CN,China,TRUE
+162,CX,Christmas Island,TRUE
+166,CC,Cocos (Keeling) Islands (the),TRUE
+170,CO,Colombia,TRUE
+174,KM,Comoros (the),TRUE
+180,CD,Congo (the Democratic Republic of the),TRUE
+178,CG,Congo (the),TRUE
+184,CK,Cook Islands (the),TRUE
+188,CR,Costa Rica,TRUE
+384,CI,Côte d'Ivoire,TRUE
+191,HR,Croatia,FALSE
+192,CU,Cuba,TRUE
+531,CW,Curaçao,FALSE
+196,CY,Cyprus,FALSE
+203,CZ,Czechia,FALSE
+208,DK,Denmark,FALSE
+262,DJ,Djibouti,TRUE
+212,DM,Dominica,TRUE
+214,DO,Dominican Republic (the),TRUE
+218,EC,Ecuador,TRUE
+818,EG,Egypt,TRUE
+222,SV,El Salvador,TRUE
+226,GQ,Equatorial Guinea,TRUE
+232,ER,Eritrea,TRUE
+233,EE,Estonia,FALSE
+748,SZ,Eswatini,TRUE
+231,ET,Ethiopia,TRUE
+238,FK,Falkland Islands (the) [Malvinas],TRUE
+234,FO,Faroe Islands (the),FALSE
+242,FJ,Fiji,TRUE
+246,FI,Finland,FALSE
+250,FR,France,FALSE
+254,GF,French Guiana,TRUE
+258,PF,French Polynesia,TRUE
+260,TF,French Southern Territories (the),TRUE
+266,GA,Gabon,TRUE
+270,GM,Gambia (the),TRUE
+268,GE,Georgia,TRUE
+276,DE,Germany,FALSE
+288,GH,Ghana,TRUE
+292,GI,Gibraltar,FALSE
+300,GR,Greece,FALSE
+304,GL,Greenland,TRUE
+308,GD,Grenada,TRUE
+312,GP,Guadeloupe,TRUE
+316,GU,Guam,FALSE
+320,GT,Guatemala,TRUE
+831,GG,Guernsey,FALSE
+324,GN,Guinea,TRUE
+624,GW,Guinea-Bissau,TRUE
+328,GY,Guyana,TRUE
+332,HT,Haiti,TRUE
+334,HM,Heard Island and McDonald Islands,TRUE
+336,VA,Holy See (the),FALSE
+340,HN,Honduras,TRUE
+344,HK,Hong Kong,FALSE
+348,HU,Hungary,FALSE
+352,IS,Iceland,FALSE
+356,IN,India,TRUE
+360,ID,Indonesia,TRUE
+364,IR,Iran (Islamic Republic of),TRUE
+368,IQ,Iraq,TRUE
+372,IE,Ireland,FALSE
+833,IM,Isle of Man,FALSE
+376,IL,Israel,FALSE
+380,IT,Italy,FALSE
+388,JM,Jamaica,TRUE
+392,JP,Japan,FALSE
+832,JE,Jersey,FALSE
+400,JO,Jordan,TRUE
+398,KZ,Kazakhstan,TRUE
+404,KE,Kenya,TRUE
+296,KI,Kiribati,TRUE
+408,KP,Korea (the Democratic People's Republic of),TRUE
+410,KR,Korea (the Republic of),FALSE
+414,KW,Kuwait,FALSE
+417,KG,Kyrgyzstan,TRUE
+418,LA,Lao People's Democratic Republic (the),TRUE
+428,LV,Latvia,FALSE
+422,LB,Lebanon,TRUE
+426,LS,Lesotho,TRUE
+430,LR,Liberia,TRUE
+434,LY,Libya,TRUE
+438,LI,Liechtenstein,FALSE
+440,LT,Lithuania,FALSE
+442,LU,Luxembourg,FALSE
+446,MO,Macao,FALSE
+807,MK,North Macedonia,TRUE
+450,MG,Madagascar,TRUE
+454,MW,Malawi,TRUE
+458,MY,Malaysia,TRUE
+462,MV,Maldives,TRUE
+466,ML,Mali,TRUE
+470,MT,Malta,FALSE
+584,MH,Marshall Islands (the),TRUE
+474,MQ,Martinique,TRUE
+478,MR,Mauritania,TRUE
+480,MU,Mauritius,TRUE
+175,YT,Mayotte,TRUE
+484,MX,Mexico,TRUE
+583,FM,Micronesia (Federated States of),TRUE
+498,MD,Moldova (the Republic of),TRUE
+492,MC,Monaco,FALSE
+496,MN,Mongolia,TRUE
+499,ME,Montenegro,TRUE
+500,MS,Montserrat,TRUE
+504,MA,Morocco,TRUE
+508,MZ,Mozambique,TRUE
+104,MM,Myanmar,TRUE
+516,NA,Namibia,TRUE
+520,NR,Nauru,TRUE
+524,NP,Nepal,TRUE
+528,NL,Netherlands (the),FALSE
+540,NC,New Caledonia,TRUE
+554,NZ,New Zealand,FALSE
+558,NI,Nicaragua,TRUE
+562,NE,Niger (the),TRUE
+566,NG,Nigeria,TRUE
+570,NU,Niue,TRUE
+574,NF,Norfolk Island,TRUE
+580,MP,Northern Mariana Islands (the),FALSE
+578,NO,Norway,FALSE
+512,OM,Oman,FALSE
+586,PK,Pakistan,TRUE
+585,PW,Palau,FALSE
+275,PS,"Palestine, State of",TRUE
+591,PA,Panama,TRUE
+598,PG,Papua New Guinea,TRUE
+600,PY,Paraguay,TRUE
+604,PE,Peru,TRUE
+608,PH,Philippines (the),TRUE
+612,PN,Pitcairn,TRUE
+616,PL,Poland,FALSE
+620,PT,Portugal,FALSE
+630,PR,Puerto Rico,FALSE
+634,QA,Qatar,FALSE
+638,RE,Réunion,TRUE
+642,RO,Romania,TRUE
+643,RU,Russian Federation (the),TRUE
+646,RW,Rwanda,TRUE
+652,BL,Saint Barthélemy,FALSE
+654,SH,"Saint Helena, Ascension and Tristan da Cunha",TRUE
+659,KN,Saint Kitts and Nevis,TRUE
+662,LC,Saint Lucia,TRUE
+663,MF,Saint Martin (French part),FALSE
+666,PM,Saint Pierre and Miquelon,TRUE
+670,VC,Saint Vincent and the Grenadines,TRUE
+882,WS,Samoa,TRUE
+674,SM,San Marino,FALSE
+678,ST,Sao Tome and Principe,TRUE
+682,SA,Saudi Arabia,FALSE
+686,SN,Senegal,TRUE
+688,RS,Serbia,TRUE
+690,SC,Seychelles,TRUE
+694,SL,Sierra Leone,TRUE
+702,SG,Singapore,FALSE
+534,SX,Sint Maarten (Dutch part),FALSE
+703,SK,Slovakia,FALSE
+705,SI,Slovenia,FALSE
+90,SB,Solomon Islands,TRUE
+706,SO,Somalia,TRUE
+710,ZA,South Africa,TRUE
+239,GS,South Georgia and the South Sandwich Islands,TRUE
+728,SS,South Sudan,TRUE
+724,ES,Spain,FALSE
+144,LK,Sri Lanka,TRUE
+729,SD,Sudan (the),TRUE
+740,SR,Suriname,TRUE
+744,SJ,Svalbard and Jan Mayen,TRUE
+752,SE,Sweden,FALSE
+756,CH,Switzerland,FALSE
+760,SY,Syrian Arab Republic,TRUE
+158,TW,Taiwan (Province of China),FALSE
+762,TJ,Tajikistan,TRUE
+834,TZ,"Tanzania, United Republic of",TRUE
+764,TH,Thailand,TRUE
+626,TL,Timor-Leste,TRUE
+768,TG,Togo,TRUE
+772,TK,Tokelau,TRUE
+776,TO,Tonga,TRUE
+780,TT,Trinidad and Tobago,TRUE
+788,TN,Tunisia,TRUE
+792,TR,Turkey,TRUE
+795,TM,Turkmenistan,TRUE
+796,TC,Turks and Caicos Islands (the),TRUE
+798,TV,Tuvalu,TRUE
+800,UG,Uganda,TRUE
+804,UA,Ukraine,TRUE
+784,AE,United Arab Emirates (the),FALSE
+826,GB,United Kingdom of Great Britain and Northern Ireland (the),FALSE
+581,UM,United States Minor Outlying Islands (the),TRUE
+840,US,United States of America (the),FALSE
+858,UY,Uruguay,TRUE
+860,UZ,Uzbekistan,TRUE
+548,VU,Vanuatu,TRUE
+862,VE,Venezuela (Bolivarian Republic of),TRUE
+704,VN,Viet Nam,TRUE
+92,VG,Virgin Islands (British),FALSE
+850,VI,Virgin Islands (U.S.),FALSE
+876,WF,Wallis and Futuna,TRUE
+732,EH,Western Sahara,TRUE
+887,YE,Yemen,TRUE
+894,ZM,Zambia,TRUE
+716,ZW,Zimbabwe,TRUE
+-1,D,developing,TRUE
+0,W,world,FALSE

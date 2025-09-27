@@ -254,17 +254,8 @@ export function Dashboard({ onMenuClick }){
 
     const addPin = async(item) => {
         try {
-          console.log(localStorage.getItem("authToken"));
-            const response = await axios.post(
-              `${userURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`,
-              {},
-              {
-                   headers: {
-                     'Content-Type': 'application/json', // Or other appropriate content type
-                     'Authorization': `Bearer ${localStorage.getItem("authToken")}` // Add the JWT token here
-                   }
-                }
-            );
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "", {
+            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
             localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
@@ -274,21 +265,15 @@ export function Dashboard({ onMenuClick }){
 
     const delPin = async(item) => {
         try {
-          const response = await axios.post(
-                        `${userURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`,
-                        {},
-                        {
-                             headers: {
-                               'Content-Type': 'application/json', // Or other appropriate content type
-                               'Authorization': `Bearer ${localStorage.getItem("authToken")}` // Add the JWT token here
-                             }
-                          }
-                      );            localStorage.setItem("pin", response.data);
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "", {
+            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
+            localStorage.setItem("pin", response.data);
             console.log(response);
         } catch (error) {
             console.log(error);
         }
     };
+
 
     // ====================================
     // EVENT HANDLERS
