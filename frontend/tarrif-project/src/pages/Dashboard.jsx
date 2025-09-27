@@ -38,7 +38,8 @@ import {
     CheckCircle,
     User,
     Settings,
-    LogOut
+    LogOut,
+    ConstructionIcon
 } from 'lucide-react' // SVG icons
 
 // Custom components
@@ -196,6 +197,79 @@ export function Dashboard({ onMenuClick }){
 
         fetchDashboardData();
     }, []);
+
+    const [pinned, setPinned] = useState([]);
+    const [showPin, setShowPin] = useState({}); // object: { id: response.data }
+
+    useEffect(() => {
+    const storedPins = localStorage.getItem("pin"); // "1,2,3"
+        if (storedPins) {
+            const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
+            setPinned(pinsArray);
+
+            // Fetch for each pinnedId
+            pinsArray.forEach(id => pinnedTariffRate(id));
+        }
+    }, []);
+
+    const pinnedTariffRate = async (pinnedId) => {
+        try {
+            const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
+
+            // Map pinnedId -> response.data
+            setShowPin(prev => ({
+            ...prev,
+            [pinnedId]: response.data,
+            }));
+
+            console.log(pinnedId, response.data);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const seeConsole = () => {
+        console.log(showPin[0][showPin[0].length-1]);
+    };
+
+    const togglePin = (item) => {
+        let updatedPins;
+        if (pinned.includes(item)) {
+            // Remove the item
+            updatedPins = pinned.filter(p => p !== item);
+            console.log("removing", item);
+            delPin(item); // optional, if you handle backend
+        } else {
+            // Add the item
+            updatedPins = [...pinned, item];
+            console.log("adding", item);
+            addPin(item); // optional, if you handle backend
+        }
+        // Update state
+        setPinned(updatedPins);
+        // Sync to localStorage as string
+        localStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
+    };
+
+    const addPin = async(item) => {
+        try {
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`);
+            localStorage.setItem("pin", response.data);
+            console.log(response);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const delPin = async(item) => {
+        try {
+            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`);
+            localStorage.setItem("pin", response.data);
+            console.log(response);
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     // ====================================
     // EVENT HANDLERS
@@ -426,6 +500,40 @@ export function Dashboard({ onMenuClick }){
                             ))}
                         </div>
                     </motion.div>
+
+
+                    {/* Pinned Items */}
+                    <Card>
+                        <CardTitle>Pinned</CardTitle>
+                        <CardContent>
+                            {pinned.length > 0 ? (
+                                <Card>
+                                    {pinned.map(id => {
+                                        const rows = showPin[id];       // full array of results
+                                        const lastRow = rows ? rows.at(-1) : null; // last row
+
+                                        return (
+                                            <div key={id} style={{ marginBottom: "1rem" }}>
+                                            <Card>
+                                            <h3>Pinned ID: {id}</h3>
+                                            {lastRow ? (
+                                                <>
+                                                <p>
+                                                    {lastRow.reportingCountry} → {lastRow.partnerCountry} : {lastRow.tariff}
+                                                </p>
+                                                <button onClick={() => togglePin(id)}>Unpin</button>
+                                                </>
+                                            ) : (
+                                                <p>Loading...</p>
+                                            )}</Card>
+                                            </div>
+                                        );
+                                    })}
+                                </Card>
+                            ): null}
+                        </CardContent>
+                    </Card>
+                    
 
                     {/* Quick Actions */}
                     <motion.div variants={itemVariants}>

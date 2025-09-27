@@ -330,8 +330,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
     public GeneralTariffDTO getTariffById(Integer tariffId) {
         Tariff tariff = tariffRepo.findById(tariffId)
                                   .orElseThrow(() -> new IllegalArgumentException("Unable to find tariff Id"));
-                                  
-        return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(), tariff.getPartnerCountry().getCountryName(), tariff.getPercentageRate());
+
+        return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(), tariff.getPartnerCountry().getCountryName(), tariff.getItem().getItemName(), tariff.getPercentageRate());
     }
     
 }
