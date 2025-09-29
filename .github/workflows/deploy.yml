@@ -22,7 +22,7 @@ jobs:
     - name: Test Backend
       run: |
         cd backend
-        ./mvnw test
+        mvn test
 
     - name: Set up Node.js 22
       uses: actions/setup-node@v4
