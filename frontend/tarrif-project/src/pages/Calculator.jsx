@@ -265,7 +265,7 @@ export function Calculator({ onMenuClick }) {
       console.log("Error fetching current tariff:", error);
       setError(
         error.response?.data?.message ||
-          "Error calculating tariff. Please check your inputs and try again."
+          "This country combination for this item does not exists. Please check your inputs and try again."
       );
     } finally {
       setLoadingCurrent(false);
@@ -276,7 +276,7 @@ export function Calculator({ onMenuClick }) {
   const fetchPast = async () => {
     if (!report || !partner || !hs) {
       setError(
-        "Please fill in reporting country, partner country, and HS code before viewing historical data."
+        "Please fill in reporting country, partner country, and Item/Item Description before viewing historical data."
       );
       return;
     }
@@ -305,7 +305,7 @@ export function Calculator({ onMenuClick }) {
       console.log("Error fetching historical tariff data:", error);
       setError(
         error.response?.data?.message ||
-          "Error fetching historical data. Please check your inputs and try again."
+          "Unable to retrieve historical data. Please verify your inputs and try again."
       );
     } finally {
       setLoadingPast(false);

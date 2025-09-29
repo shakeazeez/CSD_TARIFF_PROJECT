@@ -6,6 +6,7 @@ import com.tariff.calculation.tariffCalc.service.CrudService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/tariff/admin")
+@Tag(name = "Admin Controller", description = "Admin tasks such as deleting items, countries and tariffs")
 public class AdminController {
     private final CrudService crudService;
     
