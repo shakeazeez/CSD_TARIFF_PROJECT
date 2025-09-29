@@ -60,9 +60,6 @@ jobs:
             # Start new containers
             if docker-compose up -d; then
               echo "Deployment successful"
-              # Clean up old Docker images (keep only 2 most recent)
-              echo "Cleaning up old Docker images..."
-              docker images --format "{{.ID}} {{.CreatedAt}}" | sort -k2 -r | tail -n +3 | awk '{print $1}' | xargs docker rmi -f 2>/dev/null || true
               # Clean up stopped containers
               docker container prune -f
             else
