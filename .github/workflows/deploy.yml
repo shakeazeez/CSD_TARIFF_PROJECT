@@ -54,6 +54,13 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           source ~/.bashrc
+          # Set environment variables from secrets
+          export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+          export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+          export MOACH_API_KEY="${{ secrets.MOACH_API_KEY }}"
+          export SIGNING_SECRET="${{ secrets.SIGNING_SECRET }}"
+          export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+          export VITE_BACKEND_URL="${{ secrets.VITE_BACKEND_URL }}"
           cd ~/Projects/CSD_TARIFF_PROJECT
           git pull origin main
           # Build images first
