@@ -18,10 +18,13 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
+        cache: maven
 
     - name: Test Backend
       run: |
-        cd backend
+        cd backend/tariffCalc
+        mvn test
+        cd ../user
         mvn test
 
     - name: Set up Node.js 22
