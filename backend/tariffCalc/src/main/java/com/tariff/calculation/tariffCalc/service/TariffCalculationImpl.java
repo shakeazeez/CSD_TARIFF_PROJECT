@@ -74,9 +74,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
      *
      * @param countryCode The reporting countriy's countryCodes
      * that has been saved and loaded ahead of time
-     * 
+     *
      * @param item The item that has been requested
-     * 
+     *
      * @return a list of tariff objects with that particular item and
      * that particular country code
      */
@@ -100,16 +100,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
         List<Tariff> res = new ArrayList<>();
 
         // sigh... This is gna be disgusting. Also, IDK why is there multiple data....
-        log.info(result.tariffData().toString());
+        // log.info(result.tariffData().toString());
         TariffData tariffData = result.tariffData().get(0);
-        TariffRate tariffRate = tariffData.tariffRate();
+        TariffRate tariffRate = tariffData.getTariffRate();
 
         // This is the US case where it is abit confusing since it stores general tariff
         // and seperate tariffs differently. This is why we dont try to be special
         if (tariffRate != null) {
             String countriesInfo = tariffRate.countries();
 
-            // Cheaper rate 
+            // Cheaper rate
             List<String> countries = List
                     .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
                             .split(","));
@@ -128,15 +128,15 @@ public class TariffCalculationImpl implements TariffCalculationService {
             log.info(countries.toString());
             countries.forEach((code) -> {
                 Optional<Country> country = countryRepo.findByCountryCode(code);
-
+                log.info("For coding: " + code);
                 if (country.isPresent()) {
                     Tariff tariff = tariffRepo
-                            .save(new Tariff(countryCode, country.get(), item, customRateValue, "Special Rate of Duty" , LocalDate.now()));
+                            .save(new Tariff(countryCode, country.get(), item, customRateValue, "Special Rate of Duty",
+                                    LocalDate.now()));
                     res.add(tariff);
                 }
             });
-            
-            
+
             // log.info("No issue finding by Code");
             // test
             // This is the world case
@@ -146,24 +146,25 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     ? Double.parseDouble(generalRateInfo)
                     : 0.0;
 
-            Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue, "General Rate of Duty" , LocalDate.now()));
+            Tariff tariff = tariffRepo.save(
+                    new Tariff(countryCode, world, item, generalRateValue, "General Rate of Duty", LocalDate.now()));
             res.add(tariff);
         }
 
         // This is the general case that all other tariff information seems to like to
         // follow.
         // If by some reason this no longer applies for some edge case... Well bops
-        List<TableData> tariffInformation = tariffData.countryInformation();
-
-        log.info(tariffInformation.toString());
+        List<TableData> tariffInformation = tariffData.getCountryInformation();
+        log.info("The information " + tariffInformation.toString());
         tariffInformation.forEach((information) -> {
             List<Country> country = new ArrayList<>();
-            if ("MFN".equals(information.tariffRegion())) {
+            if ("MFN".equals(information.getTariffRegion())) {
                 country.add(countryRepo.findByCountryName("world").get());
-            } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
+            } else if ("LDCs Preferential Tariff".equals(information.getTariffRegion())) {
                 country.add(countryRepo.findByCountryName("developing").get());
             } else {
-                Optional<Country> firstCountry = countryRepo.findByCountryName(information.tariffRegion());
+                log.info("The country" + information.getTariffRegion().trim());
+                Optional<Country> firstCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(information.getTariffRegion().trim());
                 if (!firstCountry.isEmpty()) {
                     country.add(firstCountry.get());
                 }
@@ -171,7 +172,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             // This is wrong because it is not standard how these countries are
             // described.....
             // help ping me for the sample queries
-            List<String> countryNames = List.of(information.country()
+            List<String> countryNames = List.of(information.getCountry()
                     .replaceAll("ASEAN:", "")
                     .trim()
                     .split(","));
@@ -179,15 +180,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
             log.info(countryNames.toString());
 
             countryNames.forEach((names) -> {
-                Optional<Country> temp = countryRepo.findByCountryName(names);
+                log.info("For name: " + names);
+                Optional<Country> temp = countryRepo.findByCountryName(names.trim());
                 if (temp.isPresent() && !country.contains(temp.get())) {
                     country.add(temp.get());
                 }
             });
 
             // log.info("No errors for parcing country names in the .country() part ");
-            String preProcessed = information.tariffRate();
-            // log.info("Tariff before anything : " + preProcessed);
+            String preProcessed = information.getTariffRate().trim();
+            log.info("Tariff before anything : " + preProcessed);
             String regionTariffRate = preProcessed.contains("%") ? preProcessed.substring(0, preProcessed.indexOf('%'))
                     : "";
 
@@ -196,15 +198,18 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     : Double.parseDouble(regionTariffRate);
             // log.info("No problem with Tariff Loading" + regionTariffRateValue);
             // log.info("No problem with Tariff Saving");
+            log.info("Countries: " + country);
             country.forEach((regionCountry) -> {
+                log.info("For regCountry: " + regionCountry);
                 if (!customContains(res, countryCode, regionCountry)) {
                     res.add(tariffRepo.save(
-                        new Tariff(countryCode, regionCountry, item, regionTariffRateValue, information.tariffRegion() + " " + information.country(), LocalDate.now())));
+                            new Tariff(countryCode, regionCountry, item, regionTariffRateValue,
+                                    information.getTariffRegion() + " " + information.getCountry(), LocalDate.now())));
                 }
             });
         });
-        
-        // This infrastructure must be changed 
+
+        // This infrastructure must be changed
 
         return res;
     }
@@ -266,23 +271,24 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * @Param tariffQueryDTO. This is the information received from the frontend and
      * will return the value of
      * the tariff.
-     * 
+     *
      * @return A TariffResponseDTO containing raw data of reporting country, partner
      * country,
      * item, tariff percentage, tariff cost, total cost post tariff
      */
     public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) {
         // This should already be statically loaded ahead of time
-        Country reportingCountry = countryRepo.findByCountryName(tariffQueryDTO.reportingCountry())
+        Country reportingCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(tariffQueryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Country not found"));
-        Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())
+        Country partnerCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(tariffQueryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         // Checks for item. If not in database, query from the actual API
         Item item;
 
         if (customValid.contains(reportingCountry.getCountryNumber())) {
             item = itemRepo
-                    .findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase() + reportingCountry.getCountryNumber())
+                    .findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase()
+                            + reportingCountry.getCountryNumber())
                     .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()),
                             Integer.toString(reportingCountry.getCountryNumber())));
         } else {
@@ -302,10 +308,11 @@ public class TariffCalculationImpl implements TariffCalculationService {
             log.info("Attempting to load....");
             tariffList.addAll(loadTariffFromApi(reportingCountry, item));
         }
+        
+        log.info(tariffList.toString());
 
         Tariff tariff = tariffList.stream()
-                .filter((tariffs) -> tariffs.getPartnerCountry().getCountryName()
-                        .equals(tariffQueryDTO.partnerCountry()))
+                .filter((tariffs) -> tariffs.getPartnerCountry().getCountryNumber() == (partnerCountry.getCountryNumber()))
                 .sorted((a, b) -> b.getLocalDate().compareTo(a.getLocalDate()))
                 .findFirst()
                 // Here, we check to return either developing tariff or non-developed tariff
@@ -330,7 +337,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                 .orElseGet(() -> {
                                     log.info("Well for Developing");
                                     return tariffRepo.save(
-                                            new Tariff(reportingCountry, developing, item, -1.0, "No trade agreement found" ,LocalDate.now()));
+                                            new Tariff(reportingCountry, developing, item, -1.0,
+                                                    "No trade agreement found", LocalDate.now()));
                                 });
                     }
                     return tariffList.stream()
@@ -339,7 +347,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
                             .orElseGet(() -> {
                                 log.info("Well for world");
                                 return tariffRepo
-                                        .save(new Tariff(reportingCountry, world, item, -1.0, "No trade agreement found", LocalDate.now()));
+                                        .save(new Tariff(reportingCountry, world, item, -1.0,
+                                                "No trade agreement found", LocalDate.now()));
                             });
                 });
 
@@ -358,7 +367,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(),
                 tariff.getPartnerCountry().getCountryName(),
                 tariff.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""),
-                tariff.getPercentageRate(), 
+                tariff.getPercentageRate(),
                 tariff.getDescription());
     }
 

@@ -7,4 +7,5 @@ public interface CountryRepo extends JpaRepository<Country, Integer> {
     // Getters 
     public Optional<Country> findByCountryName(String countryName);
     public Optional<Country> findByCountryCode(String countryCode);
+    public Optional<Country> findFirstByCountryNameContainingIgnoreCase(String name);
 } 
