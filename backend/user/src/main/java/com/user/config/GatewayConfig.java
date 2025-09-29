@@ -20,10 +20,13 @@ public class GatewayConfig {
     
     @Bean
     public RouterFunction<ServerResponse> routing() {
-        // This needs to be added as the project grows 
+        String tariffUrl = Utility.getEnvOrDotenv("TARIFF_URL");
+        if (tariffUrl == null || tariffUrl.isEmpty()) {
+            tariffUrl = "http://localhost:8081"; // default for tests
+        }
         return route("tariff_route")
                 .route(path("/tariff/**"), http())
-                .before(uri(Utility.getEnvOrDotenv("TARIFF_URL")))
+                .before(uri(tariffUrl))
             .build(); 
     }
 }
