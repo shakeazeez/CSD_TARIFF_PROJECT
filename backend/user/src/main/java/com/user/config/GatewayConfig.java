@@ -24,6 +24,6 @@ public class GatewayConfig {
         return route("tariff_route")
                 .route(path("/tariff/**"), http())
                 .before(uri(Utility.getEnvOrDotenv("TARIFF_URL")))
-            .build();
+            .build(); 
     }
 }

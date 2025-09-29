@@ -69,6 +69,9 @@ public class SecurityConfig {
             .authorizeHttpRequests (
                 matcher -> matcher
                 .requestMatchers(
+                    "/tariff/admin/**"
+                ).hasRole("ADMIN")
+                .requestMatchers(
                     "/user/**"
                 ).authenticated()
                 .anyRequest().permitAll()
