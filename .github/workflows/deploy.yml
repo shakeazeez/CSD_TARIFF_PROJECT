@@ -53,6 +53,7 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
+          source ~/.bashrc
           cd ~/Projects/CSD_TARIFF_PROJECT
           git pull origin main
           # Build images first
