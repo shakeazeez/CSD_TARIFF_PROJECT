@@ -53,7 +53,7 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd /path/to/your/project  # Replace with the actual path on your server
+          cd ~/Projects/CSD_TARIFF_PROJECT
           git pull origin main
           # Build images first
           docker-compose build
