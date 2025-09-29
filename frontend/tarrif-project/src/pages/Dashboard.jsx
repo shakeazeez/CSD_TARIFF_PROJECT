@@ -318,393 +318,494 @@ export function Dashboard({ onMenuClick }){
     // COMPONENT RENDER (JSX)
     // ====================================
 
-    return(
-        <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            className="min-h-screen relative overflow-hidden"
-            style={{
-                background: 'transparent'
-            }}
-        >
-            {/* TOP NAVIGATION */}
-            <Header onMenuClick={onMenuClick} showUserInfo={true} />
+    return (
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="min-h-screen relative overflow-hidden"
+        style={{
+          background: "transparent",
+        }}
+      >
+        {/* TOP NAVIGATION */}
+        <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
-            {/* NOTIFICATIONS */}
-            <AnimatePresence>
-                {success && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -50 }}
-                        className="fixed top-20 right-4 z-50"
-                    >
-                        <Card 
-                            className="shadow-lg"
-                            style={{
-                                borderColor: colors.success,
-                                backgroundColor: `${colors.success}20`,
-                                borderWidth: '1px'
-                            }}
-                        >
-                            <CardContent className="flex items-center space-x-2 p-4">
-                                <CheckCircle 
-                                    className="h-5 w-5" 
-                                    style={{ color: colors.success }} 
-                                />
-                                <span style={{ color: colors.foreground }}>
-                                    {success}
-                                </span>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
+        {/* NOTIFICATIONS */}
+        <AnimatePresence>
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="fixed top-20 right-4 z-50"
+            >
+              <Card
+                className="shadow-lg"
+                style={{
+                  borderColor: colors.success,
+                  backgroundColor: `${colors.success}20`,
+                  borderWidth: "1px",
+                }}
+              >
+                <CardContent className="flex items-center space-x-2 p-4">
+                  <CheckCircle
+                    className="h-5 w-5"
+                    style={{ color: colors.success }}
+                  />
+                  <span style={{ color: colors.foreground }}>{success}</span>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -50 }}
-                        className="fixed top-20 right-4 z-50"
-                    >
-                        <Card 
-                            className="shadow-lg"
-                            style={{
-                                borderColor: colors.error,
-                                backgroundColor: `${colors.error}20`,
-                                borderWidth: '1px'
-                            }}
-                        >
-                            <CardContent className="flex items-center space-x-2 p-4">
-                                <AlertCircle 
-                                    className="h-5 w-5" 
-                                    style={{ color: colors.error }} 
-                                />
-                                <span style={{ color: colors.foreground }}>
-                                    {error}
-                                </span>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="fixed top-20 right-4 z-50"
+            >
+              <Card
+                className="shadow-lg"
+                style={{
+                  borderColor: colors.error,
+                  backgroundColor: `${colors.error}20`,
+                  borderWidth: "1px",
+                }}
+              >
+                <CardContent className="flex items-center space-x-2 p-4">
+                  <AlertCircle
+                    className="h-5 w-5"
+                    style={{ color: colors.error }}
+                  />
+                  <span style={{ color: colors.foreground }}>{error}</span>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* MAIN CONTENT */}
-            <div className="relative z-10 container mx-auto px-4 py-8">
-                <motion.div
-                    variants={itemVariants}
-                    className="max-w-7xl mx-auto space-y-8"
+        {/* MAIN CONTENT */}
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <motion.div
+            variants={itemVariants}
+            className="max-w-7xl mx-auto space-y-8"
+          >
+            {/* Welcome Section */}
+            <motion.div variants={itemVariants} className="text-center mb-8">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="inline-block mb-4"
+              >
+                <div
+                  className="p-4 rounded-2xl shadow-2xl mx-auto w-fit"
+                  style={{ backgroundColor: colors.accent }}
                 >
-                    {/* Welcome Section */}
-                    <motion.div
-                        variants={itemVariants}
-                        className="text-center mb-8"
+                  <User className="h-12 w-12 text-white" />
+                </div>
+              </motion.div>
+
+              <motion.h1
+                variants={itemVariants}
+                className="text-4xl font-bold mb-4"
+                style={{ color: colors.foreground }}
+              >
+                Welcome back, {user?.username || "Trader"}! 👋
+              </motion.h1>
+              <motion.p
+                variants={itemVariants}
+                className="text-xl"
+                style={{ color: colors.muted }}
+              >
+                Ready to optimize your global trade strategy?
+              </motion.p>
+            </motion.div>
+
+            {/* Stats Overview */}
+            <motion.div variants={itemVariants}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {[
+                  {
+                    title: "Total Calculations",
+                    value: stats.totalCalculations,
+                    icon: Calculator,
+                    description: "Tariff calculations performed",
+                    color: colors.accent,
+                  },
+                  {
+                    title: "Countries Covered",
+                    value: stats.countriesCovered,
+                    icon: Globe,
+                    description: "Markets analyzed",
+                    color: "#3b82f6",
+                  },
+                  {
+                    title: "Avg Tariff Rate",
+                    value: `${stats.avgTariffRate}%`,
+                    icon: TrendingUp,
+                    description: "Across all calculations",
+                    color: "#10b981",
+                  },
+                  {
+                    title: "Premium Member",
+                    value: "Active",
+                    icon: Star,
+                    description: "Since account creation",
+                    color: "#f59e0b",
+                  },
+                ].map((stat, index) => (
+                  <motion.div
+                    key={stat.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <Card
+                      style={{
+                        backgroundColor: `${colors.surface}95`,
+                        borderColor: colors.border,
+                      }}
                     >
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                            className="inline-block mb-4"
-                        >
-                            <div
-                                className="p-4 rounded-2xl shadow-2xl mx-auto w-fit"
-                                style={{ backgroundColor: colors.accent }}
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p
+                              className="text-sm font-medium"
+                              style={{ color: colors.muted }}
                             >
-                                <User className="h-12 w-12 text-white" />
-                            </div>
-                        </motion.div>
-
-                        <motion.h1
-                            variants={itemVariants}
-                            className="text-4xl font-bold mb-4"
-                            style={{ color: colors.foreground }}
-                        >
-                            Welcome back, {user?.username || 'Trader'}! 👋
-                        </motion.h1>
-                        <motion.p
-                            variants={itemVariants}
-                            className="text-xl"
-                            style={{ color: colors.muted }}
-                        >
-                            Ready to optimize your global trade strategy?
-                        </motion.p>
-                    </motion.div>
-
-                    {/* Stats Overview */}
-                    <motion.div variants={itemVariants}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            {[
-                                {
-                                    title: "Total Calculations",
-                                    value: stats.totalCalculations,
-                                    icon: Calculator,
-                                    description: "Tariff calculations performed",
-                                    color: colors.accent
-                                },
-                                {
-                                    title: "Countries Covered",
-                                    value: stats.countriesCovered,
-                                    icon: Globe,
-                                    description: "Markets analyzed",
-                                    color: "#3b82f6"
-                                },
-                                {
-                                    title: "Avg Tariff Rate",
-                                    value: `${stats.avgTariffRate}%`,
-                                    icon: TrendingUp,
-                                    description: "Across all calculations",
-                                    color: "#10b981"
-                                },
-                                {
-                                    title: "Premium Member",
-                                    value: "Active",
-                                    icon: Star,
-                                    description: "Since account creation",
-                                    color: "#f59e0b"
-                                }
-                            ].map((stat, index) => (
-                                <motion.div
-                                    key={stat.title}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 * index }}
-                                >
-                                    <Card style={{
-                                        backgroundColor: `${colors.surface}95`,
-                                        borderColor: colors.border
-                                    }}>
-                                        <CardContent className="p-6">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm font-medium" style={{ color: colors.muted }}>
-                                                        {stat.title}
-                                                    </p>
-                                                    <p className="text-3xl font-bold" style={{ color: colors.foreground }}>
-                                                        {stat.value}
-                                                    </p>
-                                                    <p className="text-xs" style={{ color: colors.muted }}>
-                                                        {stat.description}
-                                                    </p>
-                                                </div>
-                                                <div
-                                                    className="p-3 rounded-lg"
-                                                    style={{ backgroundColor: stat.color + '20' }}
-                                                >
-                                                    <stat.icon
-                                                        className="h-6 w-6"
-                                                        style={{ color: stat.color }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            ))}
+                              {stat.title}
+                            </p>
+                            <p
+                              className="text-3xl font-bold"
+                              style={{ color: colors.foreground }}
+                            >
+                              {stat.value}
+                            </p>
+                            <p
+                              className="text-xs"
+                              style={{ color: colors.muted }}
+                            >
+                              {stat.description}
+                            </p>
+                          </div>
+                          <div
+                            className="p-3 rounded-lg"
+                            style={{ backgroundColor: stat.color + "20" }}
+                          >
+                            <stat.icon
+                              className="h-6 w-6"
+                              style={{ color: stat.color }}
+                            />
+                          </div>
                         </div>
-                    </motion.div>
-
-
-                    {/* Pinned Items */}
-                    <Card>
-                        <CardTitle>Pinned</CardTitle>
-                        <CardContent>
-                            {pinned.length > 0 ? (
-                                <Card>
-                                    {pinned.map(id => {
-                                        const rows = showPin[id];       // full array of results
-                                        const lastRow = rows ? rows.at(-1) : null; // last row
-
-                                        return (
-                                            <div key={id} style={{ marginBottom: "1rem" }}>
-                                            <Card>
-                                            <h3>Pinned ID: {id}</h3>
-                                            {lastRow ? (
-                                                <>
-                                                <p>
-                                                    {lastRow.reportingCountry} → {lastRow.partnerCountry} : {lastRow.tariff}%
-                                                </p>
-                                                <button onClick={() => togglePin(id)}>Unpin</button>
-                                                </>
-                                            ) : (
-                                                <p>Loading...</p>
-                                            )}</Card>
-                                            </div>
-                                        );
-                                    })}
-                                </Card>
-                            ): null}
-                        </CardContent>
+                      </CardContent>
                     </Card>
-                    
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
 
-                    {/* Quick Actions */}
-                    <motion.div variants={itemVariants}>
-                        <Card style={{
-                            backgroundColor: `${colors.surface}95`,
-                            borderColor: colors.border
-                        }}>
-                            <CardHeader>
-                                <CardTitle style={{ color: colors.foreground }}>
-                                    <Zap className="h-6 w-6 inline mr-2" />
-                                    Quick Actions
-                                </CardTitle>
-                                <CardDescription style={{ color: colors.muted }}>
-                                    Jump into your most common tasks
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    {quickActions.map((action, index) => (
-                                        <motion.div
-                                            key={action.title}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                        >
+{/* Pinned Items */}
+<motion.div variants={itemVariants}>
+    <Card style={{
+        backgroundColor: `${colors.surface}95`,
+        borderColor: colors.border
+    }}>
+        <CardHeader>
+            <CardTitle style={{ color: colors.foreground }}>
+                <Star className="h-6 w-6 inline mr-2" />
+                Pinned Tariffs
+            </CardTitle>
+            <CardDescription style={{ color: colors.muted }}>
+                Your saved tariff calculations
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            {pinned.length > 0 ? (
+                <div className="flex flex-row justify-center items-center space-x-4 overflow-x-auto pb-2">
+                    {pinned.map((id, index) => {
+                        const rows = showPin[id];       // full array of results
+                        const lastRow = rows ? rows.at(-1) : null; // last row
+                        
+                        // Dynamically calculate width based on number of pins
+                        const width = pinned.length === 1 ? 'w-1/3' : 
+                                     pinned.length === 2 ? 'w-1/3' : 'w-1/3';
+
+                        return (
+                            <div key={id} className={`flex-shrink-0 ${width} min-w-[250px]`}>
+                                <div 
+                                    className="p-4 rounded-lg h-full"
+                                    style={{ 
+                                        backgroundColor: `${colors.accent}10`,
+                                        borderColor: colors.accent,
+                                        borderWidth: '1px'
+                                    }}
+                                >
+                                    <div className="text-lg font-bold mb-2" style={{ color: colors.foreground }}>
+                                        #{index + 1}
+                                    </div>
+                                    
+                                    {lastRow ? (
+                                        <div className="space-y-3">
+                                            <div className="text-center">
+                                                <div className="text-2xl font-bold mb-1" style={{ color: "#000000" }}>
+                                                    {lastRow.tariff}%
+                                                </div>
+                                                <div className="text-md" style={{ color: colors.foreground }}>
+                                                    {lastRow.partnerCountry} → {lastRow.reportingCountry}
+                                                </div>
+                                                <div className="text-sm mt-1" style={{ color: colors.muted }}>
+                                                    {lastRow.item || "Unknown item"}
+                                                </div>
+                                            </div>
+                                            
                                             <Button
-                                                onClick={action.action}
-                                                className="w-full h-auto p-4 flex flex-col items-center space-y-2"
-                                                style={{
-                                                    backgroundColor: action.color + '10',
-                                                    borderColor: action.color,
-                                                    color: action.color
-                                                }}
+                                                onClick={() => togglePin(id)}
                                                 variant="outline"
+                                                className="w-full mt-2"
+                                                style={{
+                                                    borderColor: colors.error,
+                                                    color: colors.error
+                                                }}
                                             >
-                                                <action.icon className="h-8 w-8" />
-                                                <div className="text-center">
-                                                    <div className="font-semibold">{action.title}</div>
-                                                    <div className="text-xs opacity-75">{action.description}</div>
-                                                </div>
+                                                <Star className="h-4 w-4 mr-2" fill="currentColor" /> Unpin
                                             </Button>
-                                        </motion.div>
-                                    ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-4 text-center">
+                                            <p className="text-lg" style={{ color: colors.muted }}>Loading...</p>
+                                        </div>
+                                    )}
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <p className="text-center py-6 text-lg" style={{ color: colors.muted }}>
+                    No pinned tariffs yet.
+                </p>
+            )}
+        </CardContent>
+    </Card>
+</motion.div>
 
-                    {/* Recent Activity & Insights */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* Recent Activity */}
-                        <motion.div variants={itemVariants}>
-                            <Card style={{
-                                backgroundColor: `${colors.surface}95`,
-                                borderColor: colors.border
-                            }}>
-                                <CardHeader>
-                                    <CardTitle style={{ color: colors.foreground }}>
-                                        <Clock className="h-6 w-6 inline mr-2" />
-                                        Recent Activity
-                                    </CardTitle>
-                                    <CardDescription style={{ color: colors.muted }}>
-                                        Your latest tariff analysis activities
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        {stats.recentActivity.map((activity, index) => (
-                                            <motion.div
-                                                key={activity.id}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.1 * index }}
-                                                className="flex items-center space-x-3 p-3 rounded-lg"
-                                                style={{ backgroundColor: colors.background }}
-                                            >
-                                                <div
-                                                    className="p-2 rounded-lg"
-                                                    style={{
-                                                        backgroundColor:
-                                                            activity.type === 'calculation' ? colors.accent + '20' :
-                                                            activity.type === 'analysis' ? '#3b82f620' :
-                                                            activity.type === 'export' ? '#10b98120' : '#f59e0b20'
-                                                    }}
-                                                >
-                                                    {activity.type === 'calculation' && <Calculator className="h-4 w-4" style={{ color: colors.accent }} />}
-                                                    {activity.type === 'analysis' && <TrendingUp className="h-4 w-4" style={{ color: '#3b82f6' }} />}
-                                                    {activity.type === 'export' && <BarChart3 className="h-4 w-4" style={{ color: '#10b981' }} />}
-                                                    {activity.type === 'settings' && <Settings className="h-4 w-4" style={{ color: '#f59e0b' }} />}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-medium" style={{ color: colors.foreground }}>
-                                                        {activity.action}
-                                                    </p>
-                                                    <p className="text-xs" style={{ color: colors.muted }}>
-                                                        {activity.time}
-                                                    </p>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
+            {/* Quick Actions */}
+            <motion.div variants={itemVariants}>
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <Zap className="h-6 w-6 inline mr-2" />
+                    Quick Actions
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>
+                    Jump into your most common tasks
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {quickActions.map((action, index) => (
+                      <motion.div
+                        key={action.title}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Button
+                          onClick={action.action}
+                          className="w-full h-auto p-4 flex flex-col items-center space-y-2"
+                          style={{
+                            backgroundColor: action.color + "10",
+                            borderColor: action.color,
+                            color: action.color,
+                          }}
+                          variant="outline"
+                        >
+                          <action.icon className="h-8 w-8" />
+                          <div className="text-center">
+                            <div className="font-semibold">{action.title}</div>
+                            <div className="text-xs opacity-75">
+                              {action.description}
+                            </div>
+                          </div>
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-                        {/* Trade Insights */}
-                        <motion.div variants={itemVariants}>
-                            <Card style={{
-                                backgroundColor: `${colors.surface}95`,
-                                borderColor: colors.border
-                            }}>
-                                <CardHeader>
-                                    <CardTitle style={{ color: colors.foreground }}>
-                                        <Target className="h-6 w-6 inline mr-2" />
-                                        Trade Insights
-                                    </CardTitle>
-                                    <CardDescription style={{ color: colors.muted }}>
-                                        AI-powered recommendations for your business
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {/* Alerts moved to toasts */}
-                                </CardContent>
-                            </Card>
+            {/* Recent Activity & Insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Recent Activity */}
+              <motion.div variants={itemVariants}>
+                <Card
+                  style={{
+                    backgroundColor: `${colors.surface}95`,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <CardHeader>
+                    <CardTitle style={{ color: colors.foreground }}>
+                      <Clock className="h-6 w-6 inline mr-2" />
+                      Recent Activity
+                    </CardTitle>
+                    <CardDescription style={{ color: colors.muted }}>
+                      Your latest tariff analysis activities
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {stats.recentActivity.map((activity, index) => (
+                        <motion.div
+                          key={activity.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 * index }}
+                          className="flex items-center space-x-3 p-3 rounded-lg"
+                          style={{ backgroundColor: colors.background }}
+                        >
+                          <div
+                            className="p-2 rounded-lg"
+                            style={{
+                              backgroundColor:
+                                activity.type === "calculation"
+                                  ? colors.accent + "20"
+                                  : activity.type === "analysis"
+                                  ? "#3b82f620"
+                                  : activity.type === "export"
+                                  ? "#10b98120"
+                                  : "#f59e0b20",
+                            }}
+                          >
+                            {activity.type === "calculation" && (
+                              <Calculator
+                                className="h-4 w-4"
+                                style={{ color: colors.accent }}
+                              />
+                            )}
+                            {activity.type === "analysis" && (
+                              <TrendingUp
+                                className="h-4 w-4"
+                                style={{ color: "#3b82f6" }}
+                              />
+                            )}
+                            {activity.type === "export" && (
+                              <BarChart3
+                                className="h-4 w-4"
+                                style={{ color: "#10b981" }}
+                              />
+                            )}
+                            {activity.type === "settings" && (
+                              <Settings
+                                className="h-4 w-4"
+                                style={{ color: "#f59e0b" }}
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p
+                              className="text-sm font-medium"
+                              style={{ color: colors.foreground }}
+                            >
+                              {activity.action}
+                            </p>
+                            <p
+                              className="text-xs"
+                              style={{ color: colors.muted }}
+                            >
+                              {activity.time}
+                            </p>
+                          </div>
                         </motion.div>
+                      ))}
                     </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-                    {/* Usage Progress */}
-                    <motion.div variants={itemVariants}>
-                        <Card style={{
-                            backgroundColor: `${colors.surface}95`,
-                            borderColor: colors.border
-                        }}>
-                            <CardHeader>
-                                <CardTitle style={{ color: colors.foreground }}>
-                                    <BarChart3 className="h-6 w-6 inline mr-2" />
-                                    Monthly Usage
-                                </CardTitle>
-                                <CardDescription style={{ color: colors.muted }}>
-                                    Your tariff calculation usage this month
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span style={{ color: colors.foreground }}>Calculations Used</span>
-                                        <span style={{ color: colors.muted }}>47 / 100</span>
-                                    </div>
-                                    <Progress value={47} className="h-2" />
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span style={{ color: colors.foreground }}>Reports Generated</span>
-                                        <span style={{ color: colors.muted }}>12 / 50</span>
-                                    </div>
-                                    <Progress value={24} className="h-2" />
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span style={{ color: colors.foreground }}>Data Exports</span>
-                                        <span style={{ color: colors.muted }}>3 / 25</span>
-                                    </div>
-                                    <Progress value={12} className="h-2" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </motion.div>
+              {/* Trade Insights */}
+              <motion.div variants={itemVariants}>
+                <Card
+                  style={{
+                    backgroundColor: `${colors.surface}95`,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <CardHeader>
+                    <CardTitle style={{ color: colors.foreground }}>
+                      <Target className="h-6 w-6 inline mr-2" />
+                      Trade Insights
+                    </CardTitle>
+                    <CardDescription style={{ color: colors.muted }}>
+                      AI-powered recommendations for your business
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Alerts moved to toasts */}
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
-        </motion.div>
+
+            {/* Usage Progress */}
+            <motion.div variants={itemVariants}>
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <BarChart3 className="h-6 w-6 inline mr-2" />
+                    Monthly Usage
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>
+                    Your tariff calculation usage this month
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: colors.foreground }}>
+                        Calculations Used
+                      </span>
+                      <span style={{ color: colors.muted }}>47 / 100</span>
+                    </div>
+                    <Progress value={47} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: colors.foreground }}>
+                        Reports Generated
+                      </span>
+                      <span style={{ color: colors.muted }}>12 / 50</span>
+                    </div>
+                    <Progress value={24} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: colors.foreground }}>
+                        Data Exports
+                      </span>
+                      <span style={{ color: colors.muted }}>3 / 25</span>
+                    </div>
+                    <Progress value={12} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+        </div>
+      </motion.div>
     );
 }

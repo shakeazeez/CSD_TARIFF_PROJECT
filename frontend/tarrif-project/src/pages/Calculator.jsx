@@ -492,7 +492,7 @@ export function Calculator({ onMenuClick }){
                                             type="text"
                                             placeholder="Enter Item/Item Description (Slipper)"
                                             value={hs}
-                                            onChange={(e) => setHS(e.target.value)}
+                                            onChange={(e) => setHS((e.target.value).toLowerCase())}
                                             style={{
                                                 backgroundColor: colors.background,
                                                 borderColor: colors.border,
