@@ -278,9 +278,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
      */
     public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) {
         // This should already be statically loaded ahead of time
-        Country reportingCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(tariffQueryDTO.reportingCountry())
+        Country reportingCountry = countryRepo.findByCountryName(tariffQueryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Country not found"));
-        Country partnerCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(tariffQueryDTO.partnerCountry())
+        Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         // Checks for item. If not in database, query from the actual API
         Item item;
