@@ -485,12 +485,12 @@ export function Calculator({ onMenuClick }){
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="hs-code" style={{ color: colors.foreground }}>
-                                            HS Code
+                                            Item/Item Description
                                         </Label>
                                         <Input
                                             id="hs-code"
                                             type="text"
-                                            placeholder="Enter HS code (e.g., 123456)"
+                                            placeholder="Enter Item/Item Description (Slipper)"
                                             value={hs}
                                             onChange={(e) => setHS(e.target.value)}
                                             style={{
