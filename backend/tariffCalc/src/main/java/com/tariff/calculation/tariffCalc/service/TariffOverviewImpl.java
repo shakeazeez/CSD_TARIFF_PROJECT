@@ -131,10 +131,10 @@ public class TariffOverviewImpl implements TariffOverviewService {
     }
 
     public TariffOverviewResponseDTO getTariffOverview(TariffCalculationQueryDTO queryDTO) {
-        Country reportingCountry = countryRepo.findByCountryName(queryDTO.reportingCountry())
+        Country reportingCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(queryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Reporting country not found"));
 
-        Country partnerCountry = countryRepo.findByCountryName(queryDTO.partnerCountry())
+        Country partnerCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(queryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Partner country not found"));
 
         Item item = itemRepo.findByItemName(LemmaUtils.toSingular(queryDTO.item().toLowerCase().trim()) + reportingCountry.getCountryNumber())

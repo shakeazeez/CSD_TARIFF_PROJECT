@@ -138,7 +138,7 @@ countrynumber,countrycode,countryname,isdeveloping
 462,MV,Maldives,TRUE
 466,ML,Mali,TRUE
 470,MT,Malta,FALSE
-584,MH,Marshall Islands (the),TRUE
+584,MH,Marshall Islands,TRUE
 474,MQ,Martinique,TRUE
 478,MR,Mauritania,TRUE
 480,MU,Mauritius,TRUE
@@ -156,7 +156,7 @@ countrynumber,countrycode,countryname,isdeveloping
 516,NA,Namibia,TRUE
 520,NR,Nauru,TRUE
 524,NP,Nepal,TRUE
-528,NL,Netherlands (the),FALSE
+528,NL,Netherlands,FALSE
 540,NC,New Caledonia,TRUE
 554,NZ,New Zealand,FALSE
 558,NI,Nicaragua,TRUE
@@ -164,12 +164,12 @@ countrynumber,countrycode,countryname,isdeveloping
 566,NG,Nigeria,TRUE
 570,NU,Niue,TRUE
 574,NF,Norfolk Island,TRUE
-580,MP,Northern Mariana Islands (the),FALSE
+580,MP,Northern Mariana Islands,FALSE
 578,NO,Norway,FALSE
 512,OM,Oman,FALSE
 586,PK,Pakistan,TRUE
 585,PW,Palau,FALSE
-275,PS,"Palestine, State of",TRUE
+275,PS,"Palestine",TRUE
 591,PA,Panama,TRUE
 598,PG,Papua New Guinea,TRUE
 600,PY,Paraguay,TRUE
@@ -182,7 +182,7 @@ countrynumber,countrycode,countryname,isdeveloping
 634,QA,Qatar,FALSE
 638,RE,Réunion,TRUE
 642,RO,Romania,TRUE
-643,RU,Russian Federation (the),TRUE
+643,RU,Russian Federation,TRUE
 646,RW,Rwanda,TRUE
 652,BL,Saint Barthélemy,FALSE
 654,SH,"Saint Helena, Ascension and Tristan da Cunha",TRUE
@@ -228,14 +228,14 @@ countrynumber,countrycode,countryname,isdeveloping
 788,TN,Tunisia,TRUE
 792,TR,Turkey,TRUE
 795,TM,Turkmenistan,TRUE
-796,TC,Turks and Caicos Islands (the),TRUE
+796,TC,Turks and Caicos Islands,TRUE
 798,TV,Tuvalu,TRUE
 800,UG,Uganda,TRUE
 804,UA,Ukraine,TRUE
-784,AE,United Arab Emirates (the),FALSE
-826,GB,United Kingdom of Great Britain and Northern Ireland (the),FALSE
-581,UM,United States Minor Outlying Islands (the),TRUE
-840,US,United States of America (the),FALSE
+784,AE,United Arab Emirates,FALSE
+826,GB,United Kingdom of Great Britain and Northern Ireland,FALSE
+581,UM,United States Minor Outlying Islands,TRUE
+840,US,United States of America,FALSE
 858,UY,Uruguay,TRUE
 860,UZ,Uzbekistan,TRUE
 548,VU,Vanuatu,TRUE

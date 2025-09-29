@@ -1,19 +1,26 @@
 package com.tariff.calculation.tariffCalc.dto.currentTariffApiDto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record TableData (
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class TableData {
     
-    @JsonProperty("FTA Conventional Duty")
-    String tariffRegion,
+    @JsonAlias({"FTA Conventional Duty", "tariffRegion"})
+    private String tariffRegion;
     
-    @JsonProperty("Rate") 
-    String tariffRate,
+    @JsonAlias({"Rate", "tariffRate"}) 
+    private String tariffRate;
     
-    @JsonProperty("FTA Code")
-    String countryCode,
+    @JsonAlias({"FTA Code", "countryCode"})
+    private String countryCode;
     
-    @JsonProperty("Applicable Country")
-    String country
-)
-{}
+    @JsonAlias({"Applicable Country", "country"})
+    private String country;
+}
