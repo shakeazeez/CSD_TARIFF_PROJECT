@@ -109,9 +109,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         if (tariffRate != null) {
             String countriesInfo = tariffRate.countries();
 
-            // This is the official 2 or 1 letter code provided to each country for some
-            // reason or another.
-            // Will be a database thing down the road
+            // Cheaper rate 
             List<String> countries = List
                     .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
                             .split(","));
@@ -133,10 +131,12 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
                 if (country.isPresent()) {
                     Tariff tariff = tariffRepo
-                            .save(new Tariff(countryCode, country.get(), item, customRateValue, LocalDate.now()));
+                            .save(new Tariff(countryCode, country.get(), item, customRateValue, "Special Rate of Duty" , LocalDate.now()));
                     res.add(tariff);
                 }
             });
+            
+            
             // log.info("No issue finding by Code");
             // test
             // This is the world case
@@ -146,7 +146,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     ? Double.parseDouble(generalRateInfo)
                     : 0.0;
 
-            Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue, LocalDate.now()));
+            Tariff tariff = tariffRepo.save(new Tariff(countryCode, world, item, generalRateValue, "General Rate of Duty" , LocalDate.now()));
             res.add(tariff);
         }
 
@@ -155,13 +155,13 @@ public class TariffCalculationImpl implements TariffCalculationService {
         // If by some reason this no longer applies for some edge case... Well bops
         List<TableData> tariffInformation = tariffData.countryInformation();
 
-        List<Country> country = new ArrayList<>();
         log.info(tariffInformation.toString());
         tariffInformation.forEach((information) -> {
+            List<Country> country = new ArrayList<>();
             if ("MFN".equals(information.tariffRegion())) {
                 country.add(countryRepo.findByCountryName("world").get());
             } else if ("LDCs Preferential Tariff".equals(information.tariffRegion())) {
-                country.add(countryRepo.findByCountryName("world").get());
+                country.add(countryRepo.findByCountryName("developing").get());
             } else {
                 Optional<Country> firstCountry = countryRepo.findByCountryName(information.tariffRegion());
                 if (!firstCountry.isEmpty()) {
@@ -195,14 +195,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
             double regionTariffRateValue = (regionTariffRate == null || "".equals(regionTariffRate)) ? 0.0
                     : Double.parseDouble(regionTariffRate);
             // log.info("No problem with Tariff Loading" + regionTariffRateValue);
+            // log.info("No problem with Tariff Saving");
             country.forEach((regionCountry) -> {
                 if (!customContains(res, countryCode, regionCountry)) {
                     res.add(tariffRepo.save(
-                            new Tariff(countryCode, regionCountry, item, regionTariffRateValue, LocalDate.now())));
+                        new Tariff(countryCode, regionCountry, item, regionTariffRateValue, information.tariffRegion() + " " + information.country(), LocalDate.now())));
                 }
             });
-            // log.info("No problem with Tariff Saving");
         });
+        
+        // This infrastructure must be changed 
 
         return res;
     }
@@ -328,7 +330,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                 .orElseGet(() -> {
                                     log.info("Well for Developing");
                                     return tariffRepo.save(
-                                            new Tariff(reportingCountry, developing, item, -1.0, LocalDate.now()));
+                                            new Tariff(reportingCountry, developing, item, -1.0, "No trade agreement found" ,LocalDate.now()));
                                 });
                     }
                     return tariffList.stream()
@@ -337,7 +339,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                             .orElseGet(() -> {
                                 log.info("Well for world");
                                 return tariffRepo
-                                        .save(new Tariff(reportingCountry, world, item, -1.0, LocalDate.now()));
+                                        .save(new Tariff(reportingCountry, world, item, -1.0, "No trade agreement found", LocalDate.now()));
                             });
                 });
 
@@ -346,7 +348,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         double itemCostWithTariff = tariffAmount + tariffQueryDTO.itemCost();
         return new TariffResponseDTO(reportingCountry.getCountryName(), tariffQueryDTO.partnerCountry(),
                 item.getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""), percentage, tariffAmount,
-                itemCostWithTariff, tariff.getId());
+                itemCostWithTariff, tariff.getId(), tariff.getDescription());
     }
 
     public GeneralTariffDTO getTariffById(Integer tariffId) {
@@ -356,7 +358,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
         return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(),
                 tariff.getPartnerCountry().getCountryName(),
                 tariff.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""),
-                tariff.getPercentageRate());
+                tariff.getPercentageRate(), 
+                tariff.getDescription());
     }
 
 }
