@@ -38,13 +38,16 @@ public class Tariff {
     private Item item;
     private Double percentageRate;
     
+    private String description;
+    
     private LocalDate localDate;
 
-    public Tariff(Country reportingCountry, Country partnerCountry, Item item, Double percentageRate, LocalDate localDate) {
+    public Tariff(Country reportingCountry, Country partnerCountry, Item item, Double percentageRate, String description, LocalDate localDate) {
         this.reportingCountry = reportingCountry;
         this.partnerCountry = partnerCountry;
         this.item = item;
         this.percentageRate = percentageRate;
+        this.description = description;
         this.localDate = localDate;
     }
 }

@@ -121,7 +121,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
             log.info(startDateString);
             LocalDate startDate = LocalDateTime.parse(startDateString).toLocalDate();
 
-            tariffs.add(new Tariff(reportingCountry, partnerCountry, item, tariffRate, startDate));
+            tariffs.add(new Tariff(reportingCountry, partnerCountry, item, tariffRate, "Info not available" ,startDate));
         }
 
         tariffs.forEach((tariff) -> tariffRepo.save(tariff));
@@ -191,7 +191,8 @@ public class TariffOverviewImpl implements TariffOverviewService {
             res.add(new GeneralTariffDTO(tariffEntry.getReportingCountry().getCountryName()
                                 ,tariffEntry.getPartnerCountry().getCountryName() 
                                 ,tariffEntry.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", "")
-                                ,tariffEntry.getPercentageRate()));
+                                ,tariffEntry.getPercentageRate()
+                                ,tariffEntry.getDescription()));
         });
         
         return res;

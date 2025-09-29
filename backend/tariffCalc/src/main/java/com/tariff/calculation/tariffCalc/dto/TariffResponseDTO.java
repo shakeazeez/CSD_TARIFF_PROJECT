@@ -11,5 +11,6 @@ public record TariffResponseDTO(
     Double tariffRate,
     Double tariffAmount,
     Double itemCostWithTariff,
-    Integer tariffId
+    Integer tariffId, 
+    String tariffDescription
 ) {}
