@@ -26,7 +26,7 @@ public class UserApplication {
         public void addCorsMappings(@NotNull CorsRegistry registry) {
            	String frontendUrl = Utility.getEnvOrDotenv("FRONTEND_URL");
            	if (frontendUrl == null || frontendUrl.isEmpty()) {
-           		frontendUrl = "http://localhost:3000"; // default for tests
+           		frontendUrl = "http://localhost:80"; // default for tests
            	}
            	registry.addMapping("/**")
                     .allowedOrigins(frontendUrl);

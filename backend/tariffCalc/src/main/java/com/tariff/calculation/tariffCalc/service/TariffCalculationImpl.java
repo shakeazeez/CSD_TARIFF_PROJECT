@@ -23,6 +23,7 @@ import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.utility.LemmaUtils;
 
+import org.hibernate.mapping.Array;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -110,13 +111,26 @@ public class TariffCalculationImpl implements TariffCalculationService {
             String countriesInfo = tariffRate.countries();
 
             // Cheaper rate
-            List<String> countries = List
-                    .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
-                            .split(","));
+            List<String> countries; 
+            try {
+                countries = List
+                            .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
+                                    .split(","));
+                
+            } catch (StringIndexOutOfBoundsException e) {
+                countries = new ArrayList<>();
+            }
+            
             log.info(countries.toString());
-            String customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
-                    .trim()
-                    .toLowerCase();
+            
+            String customRateInfo ;
+            try {
+                customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
+                        .trim()
+                        .toLowerCase();                
+            } catch (StringIndexOutOfBoundsException e) {
+                customRateInfo = "0.0";
+            }
 
             // Stores rateInfo as decimal as it is a percentage initially
             if (customRateInfo.contains("%")) {

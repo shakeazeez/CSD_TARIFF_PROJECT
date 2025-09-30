@@ -29,6 +29,7 @@ import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
 import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
 import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
+import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 
@@ -39,13 +40,15 @@ public class TariffController {
 
     private final TariffCalculationService tariffService;
     private final TariffOverviewService tariffOverviewService;
+    private final TariffRepo tariffRepo;
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
 
     @Autowired
-    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService) {
+    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService, TariffRepo tariffRepo) {
         this.tariffService = tariffService;
         this.tariffOverviewService = tariffOverviewService;
+        this.tariffRepo = tariffRepo;
     }
 
     @Operation(summary = "Get all countries", description = "Retrieve a list of all available countries for tariff calculations")
@@ -100,11 +103,18 @@ public class TariffController {
         } catch (ApiFailureException e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(response);
     }
-
+    
+    @GetMapping("/all/tariff")
+    public List<Tariff> getAllTariff() {
+        return tariffRepo.findAll();
+    }
     /*
      * Get tariff details for item between two countries of selected year
      */
@@ -137,6 +147,9 @@ public class TariffController {
         } catch (ApiFailureException e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(response);
@@ -157,6 +170,9 @@ public class TariffController {
             return ResponseEntity.ok(tariffService.getTariffById(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -174,6 +190,9 @@ public class TariffController {
             return ResponseEntity.ok(tariffOverviewService.getAllTariff(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 

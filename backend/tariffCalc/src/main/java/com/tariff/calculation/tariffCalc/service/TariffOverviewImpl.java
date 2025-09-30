@@ -187,7 +187,8 @@ public class TariffOverviewImpl implements TariffOverviewService {
                                     );
         List<GeneralTariffDTO> res = new ArrayList<>();
         
-        tariffCopies.forEach((tariffEntry) -> {
+        tariffCopies.stream()
+                    .sorted((a, b) -> a.getLocalDate().compareTo(b.getLocalDate())).forEach((tariffEntry) -> {
             res.add(new GeneralTariffDTO(tariffEntry.getReportingCountry().getCountryName()
                                 ,tariffEntry.getPartnerCountry().getCountryName() 
                                 ,tariffEntry.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", "")

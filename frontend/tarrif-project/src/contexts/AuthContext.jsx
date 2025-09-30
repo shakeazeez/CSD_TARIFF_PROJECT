@@ -85,9 +85,11 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setIsAuthenticated(false);
         setUser(null);
-        localStorage.clear();
-        // localStorage.removeItem('authToken');
-        // localStorage.removeItem('userData');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('username');
+        localStorage.removeItem('token');
+        localStorage.removeItem('pin');
         // You might want to call logout API endpoint here
     };
 

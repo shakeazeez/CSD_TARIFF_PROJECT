@@ -516,7 +516,7 @@ export function Dashboard({ onMenuClick }){
     }}>
         <CardHeader>
             <CardTitle style={{ color: colors.foreground }}>
-                <Star className="h-6 w-6 inline mr-2" />
+                <Star className="h-6 w-6 inline mr-2" style={{ color: colors.accent }} />
                 Pinned Tariffs
             </CardTitle>
             <CardDescription style={{ color: colors.muted }}>
@@ -532,15 +532,15 @@ export function Dashboard({ onMenuClick }){
                         
                         // Dynamically calculate width based on number of pins
                         const width = pinned.length === 1 ? 'w-1/3' : 
-                                     pinned.length === 2 ? 'w-1/3' : 'w-1/3';
+                                      pinned.length === 2 ? 'w-1/3' : 'w-1/3';
 
                         return (
                             <div key={id} className={`flex-shrink-0 ${width} min-w-[250px]`}>
                                 <div 
-                                    className="p-4 rounded-lg h-full"
+                                    className="p-4 rounded-lg h-full shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
                                     style={{ 
-                                        backgroundColor: `${colors.accent}10`,
-                                        borderColor: colors.accent,
+                                        backgroundColor: `${colors.border}80`,
+                                        borderColor: `${colors.border}80`,
                                         borderWidth: '1px'
                                     }}
                                 >
@@ -551,13 +551,13 @@ export function Dashboard({ onMenuClick }){
                                     {lastRow ? (
                                         <div className="space-y-3">
                                             <div className="text-center">
-                                                <div className="text-2xl font-bold mb-1" style={{ color: "#000000" }}>
+                                                <div className="text-2xl font-bold mb-1" style={{ color: colors.foreground }}>
                                                     {lastRow.tariff}%
                                                 </div>
                                                 <div className="text-md" style={{ color: colors.foreground }}>
                                                     {lastRow.partnerCountry} → {lastRow.reportingCountry}
                                                 </div>
-                                                <div className="text-sm mt-1" style={{ color: colors.muted }}>
+                                                <div className="text-sm mt-1" style={{ color: `${colors.muted }`}}>
                                                     {lastRow.item || "Unknown item"}
                                                 </div>
                                             </div>
@@ -567,11 +567,11 @@ export function Dashboard({ onMenuClick }){
                                                 variant="outline"
                                                 className="w-full mt-2"
                                                 style={{
-                                                    borderColor: colors.error,
-                                                    color: colors.error
+                                                    background: colors.error,
+                                    
                                                 }}
                                             >
-                                                <Star className="h-4 w-4 mr-2" fill="currentColor" /> Unpin
+                                                <Star className="h-4 w-4 mr-2" style={{ fill: colors.error }} /> Unpin
                                             </Button>
                                         </div>
                                     ) : (
