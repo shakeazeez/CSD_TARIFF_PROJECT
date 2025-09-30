@@ -287,9 +287,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         if (customValid.contains(reportingCountry.getCountryNumber())) {
             item = itemRepo
-                    .findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase()
+                    .findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase().replaceAll(",", "")
                             + reportingCountry.getCountryNumber())
-                    .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()),
+                    .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase().replaceAll(",", "")),
                             Integer.toString(reportingCountry.getCountryNumber())));
         } else {
             item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase() + "general")
