@@ -1,0 +1,83 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Test Backend
+      run: |
+        cd backend/tariffCalc
+        mvn test
+        cd ../user
+        mvn test
+
+    - name: Set up Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Test Frontend
+      run: |
+        cd frontend/tarrif-project
+        npm install
+        npm test
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to AWS EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          source ~/.bashrc
+          # Set environment variables from secrets
+          export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+          export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+          export MOACH_API_KEY="${{ secrets.MOACH_API_KEY }}"
+          export SIGNING_SECRET="${{ secrets.SIGNING_SECRET }}"
+          export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+          export VITE_BACKEND_URL="${{ secrets.VITE_BACKEND_URL }}"
+          cd ~/Projects/CSD_TARIFF_PROJECT
+          git pull origin main
+          # Build images first
+          docker-compose build
+          if [ $? -eq 0 ]; then
+            # If build succeeds, stop old containers
+            docker-compose down
+            # Start new containers
+            if docker-compose up -d; then
+              echo "Deployment successful"
+              # Clean up stopped containers
+              docker container prune -f
+            else
+              echo "Deployment failed, attempting to restart old version"
+              # Try to start again (may work if transient error)
+              docker-compose up -d
+            fi
+          else
+            echo "Build failed, keeping current deployment running"
+          fi

@@ -68,4 +68,8 @@ public class CrudServiceImpl implements CrudService {
             throw new IllegalArgumentException("Country id is incorrect");
         }
     }
+    // For testing purposes
+    // public void deleteAllTariff() {
+    //     tariffRepo.deleteAll();
+    // }
 }

@@ -25,7 +25,7 @@ countrynumber,countrycode,countryname,isdeveloping
 204,BJ,Benin,TRUE
 60,BM,Bermuda,FALSE
 64,BT,Bhutan,TRUE
-68,BO,Bolivia (Plurinational State of),TRUE
+68,BO,"Bolivia, Plurinational State of Bolivia",TRUE
 535,BQ,"Bonaire, Sint Eustatius and Saba",TRUE
 70,BA,Bosnia and Herzegovina,TRUE
 72,BW,Botswana,TRUE
@@ -49,7 +49,7 @@ countrynumber,countrycode,countryname,isdeveloping
 166,CC,Cocos (Keeling) Islands (the),TRUE
 170,CO,Colombia,TRUE
 174,KM,Comoros (the),TRUE
-180,CD,Congo (the Democratic Republic of the),TRUE
+180,CD,"Congo , The Democratic Republic of the Congo",TRUE
 178,CG,Congo (the),TRUE
 184,CK,Cook Islands (the),TRUE
 188,CR,Costa Rica,TRUE
@@ -104,7 +104,7 @@ countrynumber,countrycode,countryname,isdeveloping
 352,IS,Iceland,FALSE
 356,IN,India,TRUE
 360,ID,Indonesia,TRUE
-364,IR,Iran (Islamic Republic of),TRUE
+364,IR,"Iran, Islamic Republic of Iran",TRUE
 368,IQ,Iraq,TRUE
 372,IE,Ireland,FALSE
 833,IM,Isle of Man,FALSE
@@ -117,11 +117,11 @@ countrynumber,countrycode,countryname,isdeveloping
 398,KZ,Kazakhstan,TRUE
 404,KE,Kenya,TRUE
 296,KI,Kiribati,TRUE
-408,KP,Korea (the Democratic People's Republic of),TRUE
-410,KR,Korea (the Republic of),FALSE
+408,KP,Korea the Democratic People's Republic of Korea,TRUE
+410,KR,Korea the Republic of Korea,FALSE
 414,KW,Kuwait,FALSE
 417,KG,Kyrgyzstan,TRUE
-418,LA,Lao People's Democratic Republic (the),TRUE
+418,LA,Lao People's Democratic Republic (the) Laos,TRUE
 428,LV,Latvia,FALSE
 422,LB,Lebanon,TRUE
 426,LS,Lesotho,TRUE
@@ -144,8 +144,8 @@ countrynumber,countrycode,countryname,isdeveloping
 480,MU,Mauritius,TRUE
 175,YT,Mayotte,TRUE
 484,MX,Mexico,TRUE
-583,FM,Micronesia (Federated States of),TRUE
-498,MD,Moldova (the Republic of),TRUE
+583,FM,"Micronesia , Federated States of Micronesia",TRUE
+498,MD,Moldova, The Republic of Moldova,TRUE
 492,MC,Monaco,FALSE
 496,MN,Mongolia,TRUE
 499,ME,Montenegro,TRUE
@@ -218,7 +218,7 @@ countrynumber,countrycode,countryname,isdeveloping
 760,SY,Syrian Arab Republic,TRUE
 158,TW,Taiwan (Province of China),FALSE
 762,TJ,Tajikistan,TRUE
-834,TZ,"Tanzania, United Republic of",TRUE
+834,TZ,"Tanzania, United Republic of Tanzania",TRUE
 764,TH,Thailand,TRUE
 626,TL,Timor-Leste,TRUE
 768,TG,Togo,TRUE
@@ -239,8 +239,8 @@ countrynumber,countrycode,countryname,isdeveloping
 858,UY,Uruguay,TRUE
 860,UZ,Uzbekistan,TRUE
 548,VU,Vanuatu,TRUE
-862,VE,Venezuela (Bolivarian Republic of),TRUE
-704,VN,Viet Nam,TRUE
+862,VE,Venezuela Bolivarian Republic of Venezuela,TRUE
+704,VN,Vietnam,TRUE
 92,VG,Virgin Islands (British),FALSE
 850,VI,Virgin Islands (U.S.),FALSE
 876,WF,Wallis and Futuna,TRUE
