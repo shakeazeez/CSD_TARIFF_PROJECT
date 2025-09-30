@@ -100,6 +100,9 @@ public class TariffController {
         } catch (ApiFailureException e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(response);
@@ -137,6 +140,9 @@ public class TariffController {
         } catch (ApiFailureException e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(response);
@@ -174,6 +180,9 @@ public class TariffController {
             return ResponseEntity.ok(tariffOverviewService.getAllTariff(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 

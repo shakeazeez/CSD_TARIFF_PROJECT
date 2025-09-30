@@ -75,6 +75,9 @@ public class GeneralUserController {
         } catch (IllegalStateException e) {
             log.info(e.getMessage());
             return ResponseEntity.status(409).build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -91,6 +94,9 @@ public class GeneralUserController {
         } catch (IllegalArgumentException e) {
             log.info(e.getMessage());
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 

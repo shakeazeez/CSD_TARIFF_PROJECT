@@ -53,6 +53,9 @@ public class AuthUserController {
             return ResponseEntity.ok(login);
         } catch (ApplicationAuthenticationException | IllegalArgumentException e) {
             return ResponseEntity.status(401).build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 
