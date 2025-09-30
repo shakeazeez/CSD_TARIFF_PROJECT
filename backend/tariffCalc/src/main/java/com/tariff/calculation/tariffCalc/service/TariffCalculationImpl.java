@@ -122,9 +122,15 @@ public class TariffCalculationImpl implements TariffCalculationService {
             }
             
             log.info(countries.toString());
-            String customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
-                    .trim()
-                    .toLowerCase();
+            
+            String customRateInfo ;
+            try {
+                customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
+                        .trim()
+                        .toLowerCase();                
+            } catch (StringIndexOutOfBoundsException e) {
+                customRateInfo = "0.0";
+            }
 
             // Stores rateInfo as decimal as it is a percentage initially
             if (customRateInfo.contains("%")) {
