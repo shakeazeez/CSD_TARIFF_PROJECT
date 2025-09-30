@@ -97,6 +97,12 @@ function App() {
               <Route path="/settings" element={
                 <ComingSoon feature="Settings" />
               }/>
+              <Route path="/trends" element={
+                <ComingSoon feature="Tariff Trends" />
+              }/>
+              <Route path="/globalcoverage" element={
+                <ComingSoon feature="Global Coverage" />
+              }/>
               <Route path="/" element={
                 <Home onMenuClick={() => setSidebarOpen(true)} />
               }/>

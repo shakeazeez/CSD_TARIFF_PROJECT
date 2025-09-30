@@ -295,14 +295,14 @@ export function Dashboard({ onMenuClick }){
             title: "View Trends",
             description: "Analyze historical tariff data",
             icon: TrendingUp,
-            action: () => navigate('/calculator'),
+            action: () => navigate('/trends'),
             color: "#3b82f6"
         },
         {
             title: "Global Coverage",
             description: "Explore countries and markets",
             icon: Globe,
-            action: () => navigate('/'),
+            action: () => navigate('/globalcoverage'),
             color: "#10b981"
         },
         {
