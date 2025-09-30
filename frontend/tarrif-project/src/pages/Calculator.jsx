@@ -650,6 +650,27 @@ export function Calculator({ onMenuClick }) {
                           : "w-12"
                       }`}
                       onClick={() => togglePin(Number(current.tariffId))}
+                      style={{
+                        backgroundColor: pinned.includes(Number(current.tariffId))
+                          ? colors.error
+                          : colors.accent,
+                        borderColor: pinned.includes(Number(current.tariffId))
+                          ? colors.error
+                          : colors.accent,
+                        color: "#ffffff",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = pinned.includes(Number(current.tariffId))
+                          ? colors.error
+                          : colors.hover;
+                        e.target.style.color = "#ffffff";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = pinned.includes(Number(current.tariffId))
+                          ? colors.error
+                          : colors.accent;
+                        e.target.style.color = "#ffffff";
+                      }}
                     >
                       {pinned.includes(Number(current.tariffId))
                         ? "Unpin"
