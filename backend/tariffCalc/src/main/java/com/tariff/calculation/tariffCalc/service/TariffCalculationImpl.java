@@ -96,7 +96,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             throw new ApiFailureException("Unable to call api properly");
         }
 
-        // log.info("Query results" + result.toString());
+        log.info("Query results" + result.toString());
         List<Tariff> res = new ArrayList<>();
 
         // sigh... This is gna be disgusting. Also, IDK why is there multiple data....
@@ -158,7 +158,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         log.info("The information " + tariffInformation.toString());
         tariffInformation.forEach((information) -> {
             List<Country> country = new ArrayList<>();
-            if ("MFN".equals(information.getTariffRegion())) {
+            if (information.getTariffRegion().contains("MFN")) {
                 country.add(countryRepo.findByCountryName("world").get());
             } else if ("LDCs Preferential Tariff".equals(information.getTariffRegion())) {
                 country.add(countryRepo.findByCountryName("developing").get());
@@ -237,7 +237,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         ItemRetrievalDTO result;
         boolean general = countryNumber.equals("wto");
-
         result = restClientMoach.get()
                 .uri("/hs-code-match?q=" + itemName + "&category=" + countryNumber + "&token="
                         + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
@@ -278,6 +277,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
      */
     public TariffResponseDTO getCurrentTariffDetails(TariffCalculationQueryDTO tariffQueryDTO) {
         // This should already be statically loaded ahead of time
+        log.info(tariffQueryDTO.toString());
         Country reportingCountry = countryRepo.findByCountryName(tariffQueryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Country not found"));
         Country partnerCountry = countryRepo.findByCountryName(tariffQueryDTO.partnerCountry())

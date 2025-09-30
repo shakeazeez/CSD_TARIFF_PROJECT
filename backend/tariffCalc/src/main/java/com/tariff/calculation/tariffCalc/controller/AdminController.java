@@ -75,4 +75,10 @@ public class AdminController {
             return ResponseEntity.badRequest().build();
         }
     }
+    
+    // This is for testing purposes 
+    // @DeleteMapping("/all/tariff")
+    // public void deleteAllTariffs() {
+    //     crudService.deleteAllTariff();
+    // }
 }
