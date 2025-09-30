@@ -52,6 +52,7 @@ public class AuthUserController {
             TokenDTO login = authUserService.login(loginDTO);
             return ResponseEntity.ok(login);
         } catch (ApplicationAuthenticationException | IllegalArgumentException e) {
+            log.info(e.getMessage());
             return ResponseEntity.status(401).build();
         } catch (Exception e) {
             log.info(e.getMessage()); 
