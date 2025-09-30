@@ -122,6 +122,43 @@ export function Calculator({ onMenuClick }) {
     }
   }, []);
 
+  const [fieldLabels, setFieldLabels] = useState({
+    reportingCountry: "Reporting Country",
+    partnerCountry: "Partner Country", 
+    item: "Item",
+    tariffRate: "Tariff Rate (%)",
+    tariffAmount: "Tariff Amount (USD)",
+    itemCostWithTariff: "Cost of Item including Tariff (USD)",
+    tariffId: "IGNORE", 
+    tariffDescription: "Tariff Description"
+  });
+
+  const [fieldValues, setFieldValues] = useState({
+    reportingCountry: "",
+    partnerCountry: "", 
+    item: "",
+    tariffRate: 0,
+    tariffAmount: 0,
+    itemCostWithTariff: 0,
+    tariffId: 0,
+    tariffDescription: ""
+  });
+
+  useEffect(() => {
+    if (current && typeof current === 'object' && Object.keys(current).length > 0) {
+      const newValues = {};
+      Object.keys(fieldLabels).forEach(key => {
+        if (current[key] !== undefined) {
+          newValues[key] = current[key];
+        }
+      });
+      
+      if (Object.keys(newValues).length > 0) {
+        setFieldValues(prev => ({ ...prev, ...newValues }));
+      }
+    }
+  }, [current, fieldLabels]);
+
   // ====================================
   // EFFECTS
   // ====================================
@@ -659,31 +696,31 @@ export function Calculator({ onMenuClick }) {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(current).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="p-4 rounded-lg"
-                        style={{
-                          backgroundColor: colors.background,
-                          border: `1px solid ${colors.border}`,
-                        }}
-                      >
+                    {Object.entries(fieldLabels)
+                      .filter(([key]) => key !== 'tariffId') // Exclude tariffId
+                      .map(([key, label]) => (
                         <div
-                          className="text-sm font-medium"
-                          style={{ color: colors.muted }}
+                          key={key}
+                          className="p-4 rounded-lg"
+                          style={{
+                            backgroundColor: colors.background,
+                            border: `1px solid ${colors.border}`,
+                          }}
                         >
-                          {key
-                            .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (str) => str.toUpperCase())}
+                          <div
+                            className="text-sm font-medium mb-2"
+                            style={{ color: colors.muted }}
+                          >
+                            {label}
+                          </div>
+                          <div
+                            className="text-2xl font-bold"
+                            style={{ color: colors.foreground }}
+                          >
+                            {typeof fieldValues[key] === "number" ? fieldValues[key].toFixed(2) : fieldValues[key] || "N/A"}
+                          </div>
                         </div>
-                        <div
-                          className="text-2xl font-bold"
-                          style={{ color: colors.foreground }}
-                        >
-                          {typeof value === "number" ? value.toFixed(2) : value}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </CardContent>
               </Card>
