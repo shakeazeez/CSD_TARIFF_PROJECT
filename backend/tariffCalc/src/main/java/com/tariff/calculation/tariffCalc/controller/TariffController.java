@@ -163,6 +163,9 @@ public class TariffController {
             return ResponseEntity.ok(tariffService.getTariffById(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.info(e.getMessage()); 
+            return ResponseEntity.internalServerError().build();
         }
     }
 
