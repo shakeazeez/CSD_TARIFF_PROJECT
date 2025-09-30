@@ -22,7 +22,11 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        MAVEN_OPTS: -Dmaven.repo.local=/root/.m2/repository
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -39,6 +43,8 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       TARIFF_URL: http://backend:8081
       JAVA_OPTS: -Xmx768m -Xms256m
+    volumes:
+      - maven_cache:/root/.m2
     deploy:
       resources:
         limits:
@@ -59,3 +65,4 @@ services:
 
 volumes:
   postgres_data:
+  maven_cache:

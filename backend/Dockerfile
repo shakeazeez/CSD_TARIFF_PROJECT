@@ -3,15 +3,18 @@ FROM eclipse-temurin:21-jdk-alpine AS build
 RUN apk add --no-cache maven
 WORKDIR /app
 
+# Create Maven cache directory
+RUN mkdir -p /root/.m2/repository
+
 # Build tariffCalc
 COPY tariffCalc/pom.xml tariffCalc/pom.xml
 COPY tariffCalc/src tariffCalc/src
-RUN cd tariffCalc && mvn clean package -DskipTests
+RUN cd tariffCalc && mvn clean package -DskipTests -Dmaven.repo.local=/root/.m2/repository
 
 # Build user
 COPY user/pom.xml user/pom.xml
 COPY user/src user/src
-RUN cd user && mvn clean package -DskipTests
+RUN cd user && mvn clean package -DskipTests -Dmaven.repo.local=/root/.m2/repository
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
