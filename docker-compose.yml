@@ -5,10 +5,21 @@ services:
       POSTGRES_DB: tariffdb
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
+      POSTGRES_SHARED_BUFFERS: 128MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 256MB
+      POSTGRES_WORK_MEM: 4MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 32MB
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
+        reservations:
+          memory: 256MB
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -27,6 +38,14 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/tariffdb?password=
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       TARIFF_URL: http://backend:8081
+      JAVA_OPTS: -Xmx768m -Xms256m
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+        reservations:
+          memory: 512MB
+    restart: unless-stopped
 
   frontend:
     build: ./frontend/tarrif-project
