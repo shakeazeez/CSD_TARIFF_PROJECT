@@ -271,8 +271,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
         if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
         }
-        
-        
 
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
         Optional<Item> checker = itemRepo.findById(itemCode);
