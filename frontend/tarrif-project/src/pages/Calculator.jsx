@@ -115,9 +115,21 @@ export function Calculator({ onMenuClick }) {
   const [pinned, setPinned] = useState([]);
   useEffect(() => {
     if (localStorage.getItem("authToken") != null) {
-      const storedPins = localStorage.getItem("pin"); // "1,2"
+      const storedPins = localStorage.getItem("pin");
       if (storedPins) {
-        setPinned(storedPins.split(",").map((p) => Number(p.trim()))); // [1,2]
+        try {
+          // Try to parse as JSON array first (from login/addPin/delPin responses)
+          const parsedPins = JSON.parse(storedPins);
+          if (Array.isArray(parsedPins)) {
+            setPinned(parsedPins.map(p => Number(p)));
+          } else {
+            // Fallback to comma-separated string format
+            setPinned(storedPins.split(",").map((p) => Number(p.trim())));
+          }
+        } catch (e) {
+          // If JSON parsing fails, try comma-separated format
+          setPinned(storedPins.split(",").map((p) => Number(p.trim())));
+        }
       }
     }
   }, []);
@@ -239,12 +251,11 @@ export function Calculator({ onMenuClick }) {
       try {
         // Make GET request to backend countries endpoint
         const response = await axios.get(`${backendURL}/tariff/countries`);
-        console.log("Fetched countries:", response.data);
 
         // Update state with fetched country list
         setList(response.data);
       } catch (error) {
-        console.log("Error fetching countries:", error);
+        console.error("Error fetching countries:", error);
 
         // FALLBACK DATA: Uncomment below for development/testing without backend
         // const fallbackCountries = [
@@ -283,23 +294,18 @@ export function Calculator({ onMenuClick }) {
     setSuccess("");
 
     try {
-      // Log the data being sent for debugging
-      console.log("Sending DTO:", tariffCalculationQueryDTO);
-
       // POST request to get current tariff calculation
       const response = await axios.post(
         `${backendURL}/tariff/current`,
         tariffCalculationQueryDTO
       );
-      console.log("Current tariff calculation success:", response);
 
       // Update state with current tariff results
       setCurrent(response.data);
-      console.log("Current tariff data:", current);
 
       setSuccess("Tariff calculation completed successfully!");
     } catch (error) {
-      console.log("Error fetching current tariff:", error);
+      console.error("Error fetching current tariff:", error);
       setError(
         error.response?.data?.message ||
           "This country combination for this item does not exists. Please check your inputs and try again."
@@ -323,23 +329,18 @@ export function Calculator({ onMenuClick }) {
     setSuccess("");
 
     try {
-      // Log the data being sent for debugging
-      console.log("Sending DTO:", tariffCalculationQueryDTO);
-
       // POST request to get historical tariff data
       const response = await axios.post(
         `${backendURL}/tariff/past`,
         tariffCalculationQueryDTO
       );
-      console.log("Historical tariff data success:", response);
 
       // Update state with historical tariff data
       setPast(response.data);
-      console.log("Historical tariff data:", past);
 
       setSuccess("Historical data loaded successfully!");
     } catch (error) {
-      console.log("Error fetching historical tariff data:", error);
+      console.error("Error fetching historical tariff data:", error);
       setError(
         error.response?.data?.message ||
           "Unable to retrieve historical data. Please verify your inputs and try again."
@@ -355,18 +356,16 @@ export function Calculator({ onMenuClick }) {
     if (pinned.includes(item)) {
       // Remove the item
       updatedPins = pinned.filter((p) => p !== item);
-      console.log("removing", item);
       delPin(item); // optional, if you handle backend
     } else {
       // Add the item
       updatedPins = [...pinned, item];
-      console.log("adding", item);
       addPin(item); // optional, if you handle backend
     }
     // Update state
     setPinned(updatedPins);
-    // Sync to localStorage as string
-    localStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
+    // Sync to localStorage as JSON array (consistent with backend responses)
+    localStorage.setItem("pin", JSON.stringify(updatedPins));
   };
 
   const addPin = async (item) => {
@@ -382,10 +381,9 @@ export function Calculator({ onMenuClick }) {
           },
         }
       );
-      localStorage.setItem("pin", response.data);
-      console.log(response);
+      localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
-      console.log(error);
+      console.error("Error adding pin:", error);
     }
   };
 
@@ -402,20 +400,10 @@ export function Calculator({ onMenuClick }) {
           },
         }
       );
-      localStorage.setItem("pin", response.data);
-      console.log(response);
+      localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
-      console.log(error);
+      console.error("Error removing pin:", error);
     }
-  };
-
-  // Debug function to print current form values to console
-  const testPrint = async () => {
-    console.log("HS Code:", hs);
-    console.log("Partner Country:", partner);
-    console.log("Reporting Country:", report);
-    console.log("pinned: ", pinned);
-    console.log("Token: ", localStorage.getItem("authToken"));
   };
 
   // ====================================
