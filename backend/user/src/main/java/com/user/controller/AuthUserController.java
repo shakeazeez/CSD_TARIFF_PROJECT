@@ -1,18 +1,5 @@
 package com.user.controller;
 
-import com.user.dto.CreateUserDTO;
-import com.user.dto.LoginDTO;
-import com.user.dto.TokenDTO;
-import com.user.security.exception.ApplicationAuthenticationException;
-import com.user.service.AuthUserService;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -22,6 +9,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.user.dto.CreateUserDTO;
+import com.user.dto.LoginDTO;
+import com.user.dto.TokenDTO;
+import com.user.security.exception.ApplicationAuthenticationException;
+import com.user.service.AuthUserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Authentication", description = "Endpoints for user authentication")
 @RestController()
@@ -61,7 +61,7 @@ public class AuthUserController {
     }
 
     @Operation(summary = "Register user", responses = {
-        @ApiResponse(responseCode = "202", description = "Registration accepted", content = @Content),
+        @ApiResponse(responseCode = "200", description = "Registration successful, returns authentication token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenDTO.class))),
         @ApiResponse(responseCode = "409", description = "User with that username already exists", content = @Content),
         @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
     })
@@ -71,17 +71,18 @@ public class AuthUserController {
             examples = @ExampleObject(value = "{ \"username\": \"demo_user\", \"password\": \"DemoPass123!\", \"role\": \"member\" }")
     ))
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody CreateUserDTO createUserDTO) {
+    public ResponseEntity<TokenDTO> registerUser(@RequestBody CreateUserDTO createUserDTO) {
         try {
             authUserService.createUser(createUserDTO);
+            // Auto-login after successful registration to provide token and pin data
+            TokenDTO token = authUserService.login(new LoginDTO(createUserDTO.username(), createUserDTO.password()));
+            return ResponseEntity.ok(token);
         } catch (IllegalArgumentException e) {
             log.info(e.getMessage());
             return ResponseEntity.status(409).build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
-
-        return ResponseEntity.accepted().build();
     }
 
     @Operation(summary = "Test unauthenticated endpoint", description = "Returns a simple string to verify unauthenticated access")

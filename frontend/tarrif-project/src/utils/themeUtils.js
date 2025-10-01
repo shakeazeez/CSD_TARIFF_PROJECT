@@ -17,20 +17,12 @@ export const validateCustomColors = () => {
       surface: '#F5F5F5'
     }
   };
-
-  console.log('🎨 Custom Theme Validation:');
-  console.log('Expected Colors:', expectedColors);
   
   // Check if CSS custom properties are applied
   const rootStyles = getComputedStyle(document.documentElement);
   const appliedAccent = rootStyles.getPropertyValue('--accent');
   const appliedBackground = rootStyles.getPropertyValue('--background');
   const appliedCard = rootStyles.getPropertyValue('--card');
-  
-  console.log('Applied CSS Variables:');
-  console.log('--accent:', appliedAccent);
-  console.log('--background:', appliedBackground);
-  console.log('--card:', appliedCard);
   
   return {
     expectedColors,
@@ -82,26 +74,16 @@ export const validateColorConversions = () => {
     background: '#F7F6EE',
     surface: '#F5F5F5'
   };
-
-  console.log('🔍 Color Conversion Validation:');
   
   Object.entries(colors).forEach(([name, hex]) => {
     const hsl = hexToHsl(hex);
-    console.log(`${name} (${hex}): HSL(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`);
   });
 };
 
 // Theme debugging helper with comprehensive component checks
 export const debugTheme = () => {
-  console.log('🔧 Theme Debug Information:');
-  console.log('Document theme attribute:', document.documentElement.getAttribute('data-theme'));
-  console.log('Document class list:', document.documentElement.classList.toString());
-  console.log('Local storage theme:', localStorage.getItem('theme'));
-  console.log('System prefers dark:', window.matchMedia('(prefers-color-scheme: dark)').matches);
-  
   // Check if theme context is available
   if (window.React) {
-    console.log('React available for theme context');
   }
   
   // Check if all themed components are present
@@ -114,16 +96,13 @@ export const debugTheme = () => {
   
   themedComponents.forEach(selector => {
     const elements = document.querySelectorAll(selector);
-    console.log(`${selector}: ${elements.length} elements found`);
   });
   
   validateCustomColors();
   validateColorConversions();
   
   // Test theme switching
-  console.log('🎭 Testing theme switching...');
   const currentTheme = document.documentElement.getAttribute('data-theme');
-  console.log('Current theme:', currentTheme);
   
   return {
     currentTheme,
@@ -140,13 +119,10 @@ if (typeof window !== 'undefined') {
   
   // Auto-test theme integration when this file loads
   setTimeout(() => {
-    console.log('🎨 Auto-testing theme integration...');
     const result = debugTheme();
     
     if (result.hasDataAttribute) {
-      console.log('✅ data-theme attribute found - theme switching should work');
     } else {
-      console.warn('⚠️ No data-theme attribute found - check ThemeProvider');
     }
     
     // Check if custom colors are applied
@@ -154,11 +130,7 @@ if (typeof window !== 'undefined') {
     const accentColor = rootStyles.getPropertyValue('--accent');
     
     if (accentColor.includes('152')) { // Our custom green accent HSL
-      console.log('✅ Custom colors detected in CSS variables');
     } else {
-      console.warn('⚠️ Custom colors may not be applied correctly');
     }
-    
-    console.log('🎯 Theme integration test complete');
   }, 1000); // Wait for components to load
 }

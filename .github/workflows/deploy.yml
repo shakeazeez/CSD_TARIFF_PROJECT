@@ -38,70 +38,9 @@ jobs:
         npm install
         npm test
 
-  build-backend:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
-
-    - name: Build Backend Images
-      run: |
-        cd backend
-        # Clean up Docker system to free space
-        docker system prune -f
-        docker volume prune -f
-
-        # Build backend images
-        docker build -t tariff-backend:latest .
-        if [ $? -ne 0 ]; then
-          echo "Backend build failed"
-          exit 1
-        fi
-
-        echo "Backend build successful"
-
-  build-frontend:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js 22
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: 'npm'
-        cache-dependency-path: frontend/tarrif-project/package-lock.json
-
-    - name: Build Frontend Image
-      run: |
-        cd frontend/tarrif-project
-        # Clean npm cache
-        npm cache clean --force
-
-        # Build frontend image
-        docker build -t tariff-frontend:latest .
-        if [ $? -ne 0 ]; then
-          echo "Frontend build failed"
-          exit 1
-        fi
-
-        echo "Frontend build successful"
-
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [build-backend, build-frontend]
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -116,8 +55,6 @@ jobs:
         script: |
           source ~/.bashrc
 
-          echo "=== Starting Deployment Process ==="
-
           # Set environment variables from secrets
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
@@ -128,49 +65,38 @@ jobs:
 
           cd ~/Projects/CSD_TARIFF_PROJECT
 
-          echo "=== Step 1: Pulling latest code ==="
           git pull origin main
 
-          echo "=== Step 2: Creating backup of current deployment ==="
           # Create backup of current docker-compose.yml
           cp docker-compose.yml docker-compose.backup
 
-          echo "=== Step 3: Cleaning up Docker system ==="
+          # Clean up Docker system
           docker system prune -f
           # Note: Keeping postgres_data volume intact to preserve database
           docker container prune -f
 
-          echo "=== Step 4: Stopping current containers ==="
+          # Stop current containers
           docker-compose down
 
-          echo "=== Step 5: Starting new deployment ==="
+          # Start new deployment
           if docker-compose up -d; then
-            echo "Deployment successful"
 
-            echo "=== Step 6: Verifying deployment ==="
             # Wait a bit for containers to start
             sleep 30
 
             # Check if containers are running
             if docker-compose ps | grep -q "Up"; then
-              echo "All containers are running"
 
-              echo "=== Step 7: Cleaning up old images ==="
+              # Clean up old images
               docker image prune -f
 
-              echo "Deployment completed successfully!"
             else
-              echo "Some containers failed to start"
-              echo "=== Attempting rollback ==="
               docker-compose logs
               exit 1
             fi
           else
-            echo "Deployment failed"
-            echo "=== Attempting rollback to previous version ==="
             # Restore backup and restart
             cp docker-compose.backup docker-compose.yml
             docker-compose up -d
-            echo "Rollback completed"
             exit 1
           fi

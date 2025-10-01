@@ -188,7 +188,7 @@ export function Dashboard({ onMenuClick }){
                     }, 4000);
                 }, 1000);
             } catch (error) {
-                console.log("Error fetching dashboard data:", error);
+                console.error("Error fetching dashboard data:", error);
                 setError("Failed to load dashboard data. Please try again.");
                 clearMessages();
                 setLoading(false);
@@ -202,13 +202,29 @@ export function Dashboard({ onMenuClick }){
     const [showPin, setShowPin] = useState({}); // object: { id: response.data }
 
     useEffect(() => {
-    const storedPins = localStorage.getItem("pin"); // "1,2,3"
+        const storedPins = localStorage.getItem("pin");
         if (storedPins) {
-            const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
-            setPinned(pinsArray);
-
-            // Fetch for each pinnedId
-            pinsArray.forEach(id => pinnedTariffRate(id));
+            try {
+                // Try to parse as JSON array first (from login/signup responses)
+                const parsedPins = JSON.parse(storedPins);
+                if (Array.isArray(parsedPins)) {
+                    setPinned(parsedPins.map(p => Number(p)));
+                    // Fetch for each pinnedId
+                    parsedPins.forEach(id => pinnedTariffRate(id));
+                } else {
+                    // Fallback to comma-separated string format
+                    const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
+                    setPinned(pinsArray);
+                    // Fetch for each pinnedId
+                    pinsArray.forEach(id => pinnedTariffRate(id));
+                }
+            } catch (e) {
+                // If JSON parsing fails, try comma-separated format
+                const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
+                setPinned(pinsArray);
+                // Fetch for each pinnedId
+                pinsArray.forEach(id => pinnedTariffRate(id));
+            }
         }
     }, []);
 
@@ -222,14 +238,9 @@ export function Dashboard({ onMenuClick }){
             [pinnedId]: response.data,
             }));
 
-            console.log(pinnedId, response.data);
         } catch (error) {
-            console.log(error);
+            console.error("Error fetching pinned tariff data:", error);
         }
-    };
-
-    const seeConsole = () => {
-        console.log(showPin[0][showPin[0].length-1]);
     };
 
     const togglePin = (item) => {
@@ -237,12 +248,10 @@ export function Dashboard({ onMenuClick }){
         if (pinned.includes(item)) {
             // Remove the item
             updatedPins = pinned.filter(p => p !== item);
-            console.log("removing", item);
             delPin(item); // optional, if you handle backend
         } else {
             // Add the item
             updatedPins = [...pinned, item];
-            console.log("adding", item);
             addPin(item); // optional, if you handle backend
         }
         // Update state
@@ -256,9 +265,8 @@ export function Dashboard({ onMenuClick }){
             const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "", {
             headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
             localStorage.setItem("pin", response.data);
-            console.log(response);
         } catch (error) {
-            console.log(error);
+            console.error("Error adding pin:", error);
         }
     };
 
@@ -267,9 +275,8 @@ export function Dashboard({ onMenuClick }){
             const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "", {
             headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
             localStorage.setItem("pin", response.data);
-            console.log(response);
         } catch (error) {
-            console.log(error);
+            console.error("Error removing pin:", error);
         }
     };
 

@@ -206,7 +206,6 @@ export function Login(){
         const passwordValidChars = /^[a-zA-Z0-9#$]+$/;
 
         if (form.username == "" || form.password == "") {
-            console.log("User submitted an empty form.");
             tempErrors.username = "Username is required";
             tempErrors.password = "Password is required";  
 
@@ -257,10 +256,7 @@ export function Login(){
             const DEMO_PASSWORD = "DemoPass123!";
 
             // Check for demo credentials first
-            console.log("Checking demo:", form.username, "===", DEMO_USERNAME, "&&", form.password, "===", DEMO_PASSWORD);
             if (form.username === DEMO_USERNAME && form.password === DEMO_PASSWORD) {
-                console.log("Demo login successful");
-
                 // Store demo authentication token
                 const demoToken = "demo-token-" + Date.now();
                 localStorage.setItem('authToken', demoToken);
@@ -282,17 +278,12 @@ export function Login(){
                 return;
             }
 
-            // Log the data being sent for debugging
-            console.log(`Sending ${isSignUp ? 'signup' : 'login'} DTO:`, authDTO);
-
             // Prepare form data for backend
             const data = {
                 username: form.username,
                 password: form.password,
                 ...(isSignUp && { role })
             };
-
-            console.log('Sending data:', data);
 
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
@@ -301,7 +292,6 @@ export function Login(){
                     'Content-Type': 'application/json'
                 }
             });
-            console.log(`${isSignUp ? 'Signup' : 'Login'} success:`, response);
 
             // Handle successful authentication
             // Store authentication token (you can modify this based on your API response)
@@ -309,26 +299,20 @@ export function Login(){
                 localStorage.setItem('authToken', response.data.token);
             }
 
-            // For login, store additional data
-            if (!isSignUp) {
-                localStorage.setItem("username", response.data.username);
-                // localStorage.setItem('userId', response.data.userId);
-                localStorage.setItem("token", response.data.token);
-                localStorage.setItem('pin', JSON.stringify(response.data.pin)); // Pinned tariffs
-            }
+            // Store user data for both login and signup (since signup now returns TokenDTO)
+            localStorage.setItem("username", response.data.username);
+            // localStorage.setItem('userId', response.data.userId);
+            localStorage.setItem("token", response.data.token);
+            localStorage.setItem('pin', JSON.stringify(response.data.pin)); // Pinned tariffs
 
             // Update auth context with user data
-            login(response.data.user || { username: form.username });
+            login({ username: response.data.username });
 
-            // Redirect
-            if (!isSignUp) {
-                navigate('/dashboard');
-            } else {
-                navigate('/login');
-            }
+            // Redirect to dashboard for both login and signup (since signup now auto-logs in)
+            navigate('/dashboard');
 
         } catch(error){
-            console.log(`${isSignUp ? 'Signup' : 'Login'} error:`, error);
+            console.error(`${isSignUp ? 'Signup' : 'Login'} error:`, error);
             const action = isSignUp ? 'signup' : 'login';
             const errorMessage = error.response?.status === 401 ? "Username or password is invalid." : (error.response?.data?.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
             setAllow(errorMessage);
@@ -343,7 +327,7 @@ export function Login(){
 
         if (!isSignUp) {
             if (!validateForm(form)) {
-                console.log("Validation failed:", error);
+                console.error("Validation failed:", error);
                 return;
             }
         }
