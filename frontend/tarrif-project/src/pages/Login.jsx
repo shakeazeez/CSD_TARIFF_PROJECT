@@ -301,12 +301,11 @@ export function Login(){
 
             // Store user data for both login and signup (since signup now returns TokenDTO)
             localStorage.setItem("username", response.data.username);
-            // localStorage.setItem('userId', response.data.userId);
-            localStorage.setItem("token", response.data.token);
             localStorage.setItem('pin', JSON.stringify(response.data.pin)); // Pinned tariffs
 
             // Update auth context with user data
             login({ username: response.data.username });
+            localStorage.setItem('authToken', response.data.token);
 
             // Redirect to dashboard for both login and signup (since signup now auto-logs in)
             navigate('/dashboard');
