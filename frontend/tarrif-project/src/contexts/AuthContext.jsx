@@ -72,11 +72,50 @@ export const AuthProvider = ({ children }) => {
      * Login function
      * @param {Object} userData - User data from login response
      */
-    const login = (userData) => {
+    const login = (authPayload = {}) => {
+        const { token, username, pin, ...rest } = authPayload || {};
+
+        const normalizedUsername = username ?? rest?.username ?? null;
+
+        let normalizedPin = [];
+        if (Array.isArray(pin)) {
+            normalizedPin = pin;
+        } else if (typeof pin === 'string' && pin.length > 0) {
+            normalizedPin = pin
+                .split(',')
+                .map((value) => {
+                    const parsed = Number(value.trim());
+                    return Number.isNaN(parsed) ? null : parsed;
+                })
+                .filter((value) => value !== null);
+        } else if (pin !== undefined && pin !== null) {
+            normalizedPin = [pin];
+        }
+
+        const userData = {
+            ...rest,
+            username: normalizedUsername,
+            pin: normalizedPin
+        };
+
         setIsAuthenticated(true);
         setUser(userData);
+
         localStorage.setItem('userData', JSON.stringify(userData));
-        // Token is already stored in Login component
+
+        if (token) {
+            localStorage.setItem('authToken', token);
+        }
+
+        if (normalizedUsername) {
+            localStorage.setItem('username', normalizedUsername);
+        }
+
+        if (normalizedPin.length > 0 || Array.isArray(pin)) {
+            localStorage.setItem('pin', JSON.stringify(normalizedPin));
+        } else {
+            localStorage.setItem('pin', JSON.stringify([]));
+        }
     };
 
     /**

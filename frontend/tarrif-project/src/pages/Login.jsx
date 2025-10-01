@@ -257,19 +257,15 @@ export function Login(){
 
             // Check for demo credentials first
             if (form.username === DEMO_USERNAME && form.password === DEMO_PASSWORD) {
-                // Store demo authentication token
-                const demoToken = "demo-token-" + Date.now();
-                localStorage.setItem('authToken', demoToken);
+                const demoToken = `demo-token-${Date.now()}`;
 
-                // Set demo user data
-                const demoUser = {
+                login({
                     username: DEMO_USERNAME,
                     name: "Demo User",
-                    role: "member"
-                };
-
-                // Update auth context
-                login(demoUser);
+                    role: "member",
+                    token: demoToken,
+                    pin: []
+                });
 
                 // Redirect to dashboard page after successful authentication
                 navigate('/dashboard');
@@ -295,25 +291,46 @@ export function Login(){
 
             // Handle successful authentication
             // Store authentication token (you can modify this based on your API response)
-            if (response.data.token) {
-                localStorage.setItem('authToken', response.data.token);
+            let authPayload = response?.data ?? {};
+
+            if (isSignUp && (!authPayload?.token || !authPayload?.username)) {
+                const loginResponse = await axios.post(`${backendURL}/auth/login`, {
+                    username: form.username,
+                    password: form.password
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                authPayload = loginResponse?.data ?? {};
             }
 
-            // Store user data for both login and signup (since signup now returns TokenDTO)
-            localStorage.setItem("username", response.data.username);
-            localStorage.setItem('pin', JSON.stringify(response.data.pin)); // Pinned tariffs
+            const { token, username, pin, ...restPayload } = authPayload ?? {};
 
-            // Update auth context with user data
-            login({ username: response.data.username });
-            localStorage.setItem('authToken', response.data.token);
+            if (!token || !username) {
+                throw new Error('Authentication response is missing required fields.');
+            }
 
-            // Redirect to dashboard for both login and signup (since signup now auto-logs in)
+            login({
+                token,
+                username,
+                pin: pin ?? [],
+                ...restPayload
+            });
+
+            if (isSignUp) {
+                setSuccess('Account created successfully. Redirecting to dashboard...');
+            }
+
             navigate('/dashboard');
 
         } catch(error){
             console.error(`${isSignUp ? 'Signup' : 'Login'} error:`, error);
             const action = isSignUp ? 'signup' : 'login';
-            const errorMessage = error.response?.status === 401 ? "Username or password is invalid." : (error.response?.data?.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
+            const errorMessage = error.response?.status === 401
+                ? "Username or password is invalid."
+                : (error.response?.data?.message || error.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
             setAllow(errorMessage);
         } finally {
             setIsLoading(false);
