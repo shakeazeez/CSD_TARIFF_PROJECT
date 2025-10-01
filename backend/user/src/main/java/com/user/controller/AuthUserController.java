@@ -73,15 +73,13 @@ public class AuthUserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody CreateUserDTO createUserDTO) {
         try {
-            authUserService.createUser(createUserDTO);
+            return ResponseEntity.ok(authUserService.createUser(createUserDTO));
         } catch (IllegalArgumentException e) {
             log.info(e.getMessage());
             return ResponseEntity.status(409).build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
-
-        return ResponseEntity.accepted().build();
     }
 
     @Operation(summary = "Test unauthenticated endpoint", description = "Returns a simple string to verify unauthenticated access")

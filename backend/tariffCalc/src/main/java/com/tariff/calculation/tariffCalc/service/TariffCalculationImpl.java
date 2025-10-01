@@ -82,8 +82,15 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * that particular country code
      */
     public List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
+        
+        String countryNumber = Integer.toString(countryCode.getCountryNumber());
+        
+        while (countryNumber.length() < 3) {
+            countryNumber = "0" + countryNumber;
+        }
+        
         MoachDTO result = restClientMoach.get()
-                .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryCode.getCountryNumber()
+                .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryNumber
                         + "&token=" + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
                 .retrieve()
                 .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
@@ -264,6 +271,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
         if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
         }
+        
+        
 
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
         Optional<Item> checker = itemRepo.findById(itemCode);

@@ -30,7 +30,7 @@ public class AuthUserServiceImpl implements AuthUserService {
         this.jwtService = jwtService;
     }
     
-    public void createUser(CreateUserDTO createUserDTO) {
+    public TokenDTO createUser(CreateUserDTO createUserDTO) {
         Optional<GeneralUser> preCheck = generalUserRepo.findByUsername(createUserDTO.username());
         
         if (preCheck.isPresent()) {
@@ -39,10 +39,18 @@ public class AuthUserServiceImpl implements AuthUserService {
         
         String passwordHash = passwordEncoder.encode(createUserDTO.password());
         
-        // gay
         GeneralUser creation = new GeneralUser(createUserDTO.username(), passwordHash, new HashMap<>(), new ArrayList<>(), new ArrayList<>());
         creation.getRole().add(Role.valueOf(createUserDTO.role().toUpperCase()));
         generalUserRepo.save(creation);
+        
+        AuthUser authUser = new AuthUser(creation.getUsername(), creation.getHashedPassword(), creation.getRole());
+        String jwtToken = jwtService.createJwtToken(authUser); 
+        
+        return new TokenDTO(
+            creation.getUsername(), 
+            jwtToken,
+            creation.getTariffIds()
+        );
     }
     
     public TokenDTO login(LoginDTO loginDTO) {

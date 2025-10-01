@@ -6,5 +6,5 @@ import com.user.dto.TokenDTO;
 
 public interface AuthUserService{
      public TokenDTO login(LoginDTO loginDTO);
-     public void createUser(CreateUserDTO createUserDTO);
+     public TokenDTO createUser(CreateUserDTO createUserDTO);
 }
