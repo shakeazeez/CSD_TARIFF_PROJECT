@@ -33,29 +33,27 @@ public class GeneralUserController {
         this.generalUserService = generalUserService;
     }
 
-    // not included in this sprint, will be added in future sprints
-    // @PostMapping("/{username}/history/{tariffId}")
-    // public ResponseEntity<Map<Integer, Integer>> addHistory(@PathVariable String username,
-    //         @PathVariable Integer tariffId) {
-    //     try {
-    //         Map<Integer, Integer> history = generalUserService.addHistory(username, tariffId);
-    //         return ResponseEntity.ok(history);
-    //     } catch (IllegalArgumentException e) {
-    //         return ResponseEntity.badRequest().body(null);
-    //     }
-    // }
+    @PostMapping("/{username}/history/{tariffId}")
+    public ResponseEntity<Map<Integer, Integer>> addHistory(@PathVariable String username,
+            @PathVariable Integer tariffId) {
+        try {
+            Map<Integer, Integer> history = generalUserService.addHistory(username, tariffId);
+            return ResponseEntity.ok(history);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
-    // // not included in this sprint, will be added in future sprints
-    // @GetMapping("/{username}/history/{tariffId}")
-    // public ResponseEntity<Map<Integer, Integer>> getHistory(@PathVariable String username,
-    //         @PathVariable Integer tariffId) {
-    //     try {
-    //         Map<Integer, Integer> history = generalUserService.retrieveHistory(username, tariffId);
-    //         return ResponseEntity.ok(history);
-    //     } catch (IllegalArgumentException e) {
-    //         return ResponseEntity.badRequest().body(null);
-    //     }
-    // }
+    @GetMapping("/{username}/history/{tariffId}")
+    public ResponseEntity<Map<Integer, Integer>> getHistory(@PathVariable String username,
+            @PathVariable Integer tariffId) {
+        try {
+            Map<Integer, Integer> history = generalUserService.retrieveHistory(username, tariffId);
+            return ResponseEntity.ok(history);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
     @Operation(summary = "Add pinned tariff", description = "Pins a tariff for the user. Maximum of 3 tariffs can be pinned.")
     @ApiResponses(value = {

@@ -66,14 +66,4 @@ public class LemmaUtils {
 
         return singularPhrase.toString().trim();
     }
-
-    // for quick testing
-    // to run: ./mvnw exec:java -Dexec.mainClass="com.tariff.calculation.tariffCalc.utility.LemmaUtils"
-    public static void main(String[] args) {
-        System.out.println(toSingular("wolves")); // wolf
-        System.out.println(toSingular("children")); // child
-        System.out.println(toSingular("cars")); // car
-        System.out.println(toSingular("cities")); // city
-        System.out.println(toSingular("boxes")); // box
-    }
 }
