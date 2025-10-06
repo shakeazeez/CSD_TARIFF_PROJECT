@@ -45,7 +45,7 @@ public class JwtService {
          */
         long nowMilles = System.currentTimeMillis();
         Date now = new Date(nowMilles);
-        long expMilles = System.currentTimeMillis() + 360000000;
+        long expMilles = System.currentTimeMillis() + 86400;
         Date exp = new Date(expMilles);
 
         List<String> roles = authUser.getRoles()
