@@ -7,6 +7,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import com.tariff.calculation.tariffCalc.country.Country;
+import com.tariff.calculation.tariffCalc.enums.Industry;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
 import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
@@ -82,13 +83,13 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * that particular country code
      */
     public List<Tariff> loadTariffFromApi(Country countryCode, Item item) throws ApiFailureException {
-        
+
         String countryNumber = Integer.toString(countryCode.getCountryNumber());
-        
+
         while (countryNumber.length() < 3) {
             countryNumber = "0" + countryNumber;
         }
-        
+
         MoachDTO result = restClientMoach.get()
                 .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryNumber
                         + "&token=" + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
@@ -118,23 +119,23 @@ public class TariffCalculationImpl implements TariffCalculationService {
             String countriesInfo = tariffRate.countries();
 
             // Cheaper rate
-            List<String> countries; 
+            List<String> countries;
             try {
                 countries = List
-                            .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
-                                    .split(","));
-                
+                        .of(countriesInfo.substring(countriesInfo.indexOf('(') + 1, countriesInfo.indexOf(')'))
+                                .split(","));
+
             } catch (StringIndexOutOfBoundsException e) {
                 countries = new ArrayList<>();
             }
-            
+
             log.info(countries.toString());
-            
-            String customRateInfo ;
+
+            String customRateInfo;
             try {
                 customRateInfo = countriesInfo.substring(countriesInfo.indexOf('('))
                         .trim()
-                        .toLowerCase();                
+                        .toLowerCase();
             } catch (StringIndexOutOfBoundsException e) {
                 customRateInfo = "0.0";
             }
@@ -185,7 +186,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 country.add(countryRepo.findByCountryName("developing").get());
             } else {
                 log.info("The country" + information.getTariffRegion().trim());
-                Optional<Country> firstCountry = countryRepo.findFirstByCountryNameContainingIgnoreCase(information.getTariffRegion().trim());
+                Optional<Country> firstCountry = countryRepo
+                        .findFirstByCountryNameContainingIgnoreCase(information.getTariffRegion().trim());
                 if (!firstCountry.isEmpty()) {
                     country.add(firstCountry.get());
                 }
@@ -254,18 +256,31 @@ public class TariffCalculationImpl implements TariffCalculationService {
      * returns Item object with Hscode
      */
     // https://mtech-api.com/client/api/hs-code-match?q=tennis+shoes&category=156&token=YOUR_API_TOKEN
-    public Item loadItemFromApi(String itemName, String countryNumber) throws ApiFailureException {
+    public Item loadItemFromApi(String itemName, Country country) throws ApiFailureException {
 
         ItemRetrievalDTO result;
-        boolean general = countryNumber.equals("wto");
-        result = restClientMoach.get()
-                .uri("/hs-code-match?q=" + itemName + "&category=" + countryNumber + "&token="
-                        + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
-                .retrieve()
-                .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-                    throw new ApiFailureException(response.getStatusText());
-                })
-                .body(ItemRetrievalDTO.class);
+        boolean general = country.getCountryName().equals("world");
+
+        if (!country.getCountryName().equals("world")) {
+            result = restClientMoach.get()
+                    .uri("/hs-code-match?q=" + itemName + "&category=" + country.getCountryNumber() + "&token="
+                            + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                    .retrieve()
+                    .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
+                        throw new ApiFailureException(response.getStatusText());
+                    })
+                    .body(ItemRetrievalDTO.class);
+        } else {
+            result = restClientMoach.get()
+                    .uri("/hs-code-match?q=" + itemName + "&category=wto&token="
+                            + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                    .retrieve()
+                    .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
+                        throw new ApiFailureException(response.getStatusText());
+                    })
+                    .body(ItemRetrievalDTO.class);
+
+        }
 
         log.info("Query results" + result.toString());
         if (result == null || result.data() == null) {
@@ -273,14 +288,10 @@ public class TariffCalculationImpl implements TariffCalculationService {
         }
 
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
-        Optional<Item> checker = itemRepo.findById(itemCode);
 
-        if (checker.isPresent() && checker.get().getItemName().contains("general")) {
-            return checker.get();
-        }
+        Industry industry = Industry.ENERGY;
 
-        itemName = itemName + (general ? "general" : countryNumber);
-        return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>()));
+        return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>(), country, industry));
 
     }
 
@@ -306,16 +317,20 @@ public class TariffCalculationImpl implements TariffCalculationService {
         // Checks for item. If not in database, query from the actual API
         Item item;
 
+        String treatedItemName = tariffQueryDTO.item().toLowerCase().replaceAll(",", "");
+
         if (customValid.contains(reportingCountry.getCountryNumber())) {
             item = itemRepo
-                    .findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase().replaceAll(",", "")
-                            + reportingCountry.getCountryNumber())
-                    .orElseGet(() -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase().replaceAll(",", "")),
-                            Integer.toString(reportingCountry.getCountryNumber())));
+                    .findByItemNameAndCountry(treatedItemName, reportingCountry)
+                    .orElseGet(() -> loadItemFromApi(
+                            treatedItemName,
+                            reportingCountry));
         } else {
-            item = itemRepo.findByItemName(LemmaUtils.toSingular(tariffQueryDTO.item()).toLowerCase() + "general")
+            item = itemRepo.findByItemNameAndCountry(treatedItemName, countryRepo.findByCountryName("world").get())
                     .orElseGet(
-                            () -> loadItemFromApi(LemmaUtils.toSingular(tariffQueryDTO.item().toLowerCase()), "wto"));
+                            () -> loadItemFromApi(
+                                    treatedItemName,
+                                    countryRepo.findByCountryName("world").get()));
         }
 
         log.info("No problem with Item Query");
@@ -329,11 +344,12 @@ public class TariffCalculationImpl implements TariffCalculationService {
             log.info("Attempting to load....");
             tariffList.addAll(loadTariffFromApi(reportingCountry, item));
         }
-        
+
         log.info(tariffList.toString());
 
         Tariff tariff = tariffList.stream()
-                .filter((tariffs) -> tariffs.getPartnerCountry().getCountryNumber() == (partnerCountry.getCountryNumber()))
+                .filter((tariffs) -> tariffs.getPartnerCountry()
+                        .getCountryNumber() == (partnerCountry.getCountryNumber()))
                 .sorted((a, b) -> b.getLocalDate().compareTo(a.getLocalDate()))
                 .findFirst()
                 // Here, we check to return either developing tariff or non-developed tariff

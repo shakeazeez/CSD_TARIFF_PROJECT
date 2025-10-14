@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.user.service.GeneralUserService;
+import com.user.service.MemberUserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,9 +27,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "General User", description = "Endpoints for general user's query history and pinned tariffs")
 public class GeneralUserController {
     private final Logger log = LoggerFactory.getLogger(GeneralUserController.class);
-    private final GeneralUserService generalUserService;
+    private final MemberUserService generalUserService;
 
-    public GeneralUserController(GeneralUserService generalUserService) {
+    public GeneralUserController(MemberUserService generalUserService) {
         this.generalUserService = generalUserService;
     }
 
