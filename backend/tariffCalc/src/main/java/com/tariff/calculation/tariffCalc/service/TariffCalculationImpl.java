@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import com.tariff.calculation.tariffCalc.category.Category;
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.enums.Industry;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
@@ -24,7 +25,6 @@ import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.utility.LemmaUtils;
 
-import org.hibernate.mapping.Array;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -53,18 +53,21 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final TariffRepo tariffRepo;
     private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158,
             764, 840, 704, 784);
+    private final EmbeddingService embeddingService;
 
     public TariffCalculationImpl(
             CountryRepo countryRepo,
             ItemRepo itemRepo,
             TariffRepo tariffRepo,
-            RestClient.Builder restClientBuilder) {
+            RestClient.Builder restClientBuilder,
+            EmbeddingService embeddingService) {
         this.countryRepo = countryRepo;
         this.itemRepo = itemRepo;
         this.tariffRepo = tariffRepo;
         this.restClientMoach = restClientBuilder.clone()
                 .baseUrl("https://mtech-api.com/client/api")
                 .build();
+        this.embeddingService = embeddingService;
     }
 
     /*
@@ -259,7 +262,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
     public Item loadItemFromApi(String itemName, Country country) throws ApiFailureException {
 
         ItemRetrievalDTO result;
-        boolean general = country.getCountryName().equals("world");
 
         if (!country.getCountryName().equals("world")) {
             result = restClientMoach.get()
@@ -289,7 +291,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
 
-        Industry industry = Industry.ENERGY;
+        Category category = embeddingService.getEmbeddings(new String[] {itemName, result.data().codes().get(0).description()});
+        Industry industry = Industry.valueOf(category.getDesc().toUpperCase());
 
         return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>(), country, industry));
 
