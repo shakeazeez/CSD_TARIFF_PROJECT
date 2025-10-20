@@ -1,7 +1,10 @@
 package com.user.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -20,7 +23,7 @@ public class GeneralUserServiceImpl implements GeneralUserService {
     }
 
     @Transactional
-    public Map<Integer, Integer> addHistory(String username, Integer tariffId) {
+    public List<Integer> addHistory(String username, Integer tariffId) {
         GeneralUser generalUser = generalUserRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -35,15 +38,27 @@ public class GeneralUserServiceImpl implements GeneralUserService {
         generalUser.setHistory(history);
         generalUserRepo.save(generalUser);
 
-        return history;
+        // return the most searched top 5 tariffs
+        return history.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // sort by frequency in descending order
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Map<Integer, Integer> retrieveHistory(String username, Integer tariffId) {
+    public List<Integer> retrieveHistory(String username) {
         GeneralUser generalUser = generalUserRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        
-        return generalUser.getHistory();
+
+        Map<Integer, Integer> history = generalUser.getHistory();
+
+        // return the most searched top 5 tariffs
+        return history.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // sort by frequency in descending order
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     @Transactional
