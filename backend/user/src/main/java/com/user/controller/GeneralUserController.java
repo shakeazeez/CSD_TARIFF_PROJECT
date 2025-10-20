@@ -37,21 +37,20 @@ public class GeneralUserController {
     }
 
     @PostMapping("/{username}/history/{tariffId}")
-    public ResponseEntity<Map<Integer, Integer>> addHistory(@PathVariable String username,
+    public ResponseEntity<List<Integer>> addHistory(@PathVariable String username,
             @PathVariable Integer tariffId) {
         try {
-            Map<Integer, Integer> history = userService.addHistory(username, tariffId);
+            List<Integer> history = generalUserService.addHistory(username, tariffId);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
 
-    @GetMapping("/{username}/history/{tariffId}")
-    public ResponseEntity<Map<Integer, Integer>> getHistory(@PathVariable String username,
-            @PathVariable Integer tariffId) {
+    @GetMapping("/{username}/history")
+    public ResponseEntity<List<Integer>> getHistory(@PathVariable String username) {
         try {
-            Map<Integer, Integer> history = userService.retrieveHistory(username, tariffId);
+            List<Integer> history = generalUserService.retrieveHistory(username);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);

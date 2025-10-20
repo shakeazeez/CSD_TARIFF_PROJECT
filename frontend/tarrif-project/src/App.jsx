@@ -15,6 +15,7 @@ import { Footer } from './components/Footer.jsx'
 import { NotFound } from './pages/NotFound.jsx'
 import { Toaster } from './components/Toaster.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
+import { Business } from './pages/Business.jsx'
 
 /**
  * Protected Route component that redirects to login if not authenticated
@@ -90,6 +91,9 @@ function App() {
               }/>
               <Route path="/calculator" element={
                 <Calculator onMenuClick={() => setSidebarOpen(true)} />
+              }/>
+              <Route path="/business" element={
+                <Business onMenuClick={() => setSidebarOpen(true)} />
               }/>
               <Route path="/faq" element={
                 <FAQ onMenuClick={() => setSidebarOpen(true)} />

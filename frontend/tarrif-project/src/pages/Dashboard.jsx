@@ -45,6 +45,7 @@ import {
 // Custom components
 import Chart from '../components/Chart.jsx' // Custom chart component
 import { Header } from '../components/Header.jsx' // Header component
+import Searches from '../components/Searches.jsx' // Search history component
 import { useToast } from '../hooks/use-toast'
 
 // ====================================
@@ -87,7 +88,7 @@ export function Dashboard({ onMenuClick }){
     const { colors, theme, toggleTheme, isDark } = useTheme();
 
     // Get authentication context for user management
-    const { user, logout } = useAuth();
+    const { user, logout, isAuthenticated } = useAuth();
 
     // Toast hook
     const { toast } = useToast();
@@ -101,6 +102,9 @@ export function Dashboard({ onMenuClick }){
 
     // Get backend URLs from environment variables (.env file)
     const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+    // Initialize search functionality
+    const searchMethods = Searches({ backendURL });
 
     // Dashboard data
     const [stats, setStats] = useState({
@@ -134,6 +138,21 @@ export function Dashboard({ onMenuClick }){
             return () => clearTimeout(timer);
         }
     }, [success]);
+
+    // ====================================
+    // NAVIGATION FUNCTION
+    // ====================================
+
+    // handles navigation to calculator with pre filled search data
+    const handleSearchNavigation = (searchData) => {
+        // navigate to calculator with state containing the search data
+        navigate('/calculator', { 
+            state: { 
+                searchData: searchData,
+                autoFill: true 
+            } 
+        });
+    };
 
     // ====================================
     // DATA FETCHING
@@ -812,6 +831,26 @@ export function Dashboard({ onMenuClick }){
               </Card>
             </motion.div>
           </motion.div>
+
+          {/* Search History Section */}
+          <div className="mt-8">
+            <Card
+              style={{
+                backgroundColor: `${colors.surface}95`,
+                borderColor: colors.border,
+              }}
+            >
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  {isAuthenticated ? "Your Top Searches" : "Search History"}
+                </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <searchMethods.SearchDisplay onSearchClick={handleSearchNavigation} colors={colors} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </motion.div>
     );

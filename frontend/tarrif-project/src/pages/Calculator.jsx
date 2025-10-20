@@ -4,6 +4,7 @@
 
 // External libraries
 import { useEffect, useState } from "react"; // React hooks for state management and side effects
+import { useLocation } from "react-router-dom"; // Navigation hook to access location state
 import axios from "axios"; // HTTP client for API requests
 
 // Animation library for smooth transitions
@@ -42,6 +43,7 @@ import Dropdown from "../components/Dropdown.jsx"; // Custom dropdown component
 import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
 import { useToast } from "../hooks/use-toast";
+import Searches from "../components/Searches.jsx"; // Search history component
 
 // ====================================
 // ANIMATION VARIANTS
@@ -82,6 +84,12 @@ export function Calculator({ onMenuClick }) {
   // Get theme context for component-level color management
   const { colors, theme, toggleTheme, isDark } = useTheme();
 
+  // To receive the data that was passed during navigation
+  const location = useLocation();
+
+  // Get authentication context for user management
+  const { isAuthenticated } = useAuth()
+
   // Toast hook
   // ====================================
   // STATE VARIABLES
@@ -89,6 +97,9 @@ export function Calculator({ onMenuClick }) {
 
   // Get backend URLs from environment variables (.env file)
   const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+  // Initialize search functionality
+  const searchMethods = Searches({ backendURL });
 
   // Country data and user selections
   const [list, setList] = useState([]); // Array of all available countries from backend
@@ -110,6 +121,18 @@ export function Calculator({ onMenuClick }) {
   // Error and success messages
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [autoFetch, setAutoFetch] = useState(false);
+
+  // for search history
+  // auto fetch when form fields are populated from search history
+  useEffect(() => {
+    if (autoFetch && report && partner && hs && cost) {
+      setAutoFetch(false); // reset flag
+      fetchCurrent();
+      fetchPast();
+    }
+  }, [autoFetch]);
 
   // Pinning
   const [pinned, setPinned] = useState([]);
@@ -190,6 +213,31 @@ export function Calculator({ onMenuClick }) {
       return () => clearTimeout(timer);
     }
   }, [success]);
+
+  // auto fetch search results when navigating from dashboard with search data
+  useEffect(() => {
+    if (location.state?.autoFill && location.state?.searchData) { // uses optional chaining operator to avoid errors when state is undefined
+      const searchData = location.state.searchData;
+      
+      // set the form fields with the search data
+      setReport(searchData.reportingCountry || ""); 
+      setPartner(searchData.partnerCountry || "");
+      setCost(100);
+      setHS(searchData.item || "");
+
+      setCurrent({});
+      setPast({});
+
+      // automatically fetch both current and past data
+      if (searchData.reportingCountry && searchData.partnerCountry && searchData.item) {
+        setSuccess("Search data loaded successfully. Results are displayed below.");
+        setAutoFetch(true);
+      }
+
+      // maybe need to clear the location state to prevent re-triggering
+      // window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // ====================================
   // DATA PROCESSING & TRANSFORMATION
@@ -303,6 +351,11 @@ export function Calculator({ onMenuClick }) {
       // Update state with current tariff results
       setCurrent(response.data);
 
+      // Add the query to search history
+      if (response.data && response.data.tariffId) {
+        searchMethods.addSearch(response.data.tariffId);
+      }
+
       setSuccess("Tariff calculation completed successfully!");
     } catch (error) {
       console.error("Error fetching current tariff:", error);
@@ -312,6 +365,7 @@ export function Calculator({ onMenuClick }) {
       );
     } finally {
       setLoadingCurrent(false);
+      fetchPast(); // Automatically fetch historical data after current calculation
     }
   };
 
@@ -404,6 +458,22 @@ export function Calculator({ onMenuClick }) {
     } catch (error) {
       console.error("Error removing pin:", error);
     }
+  };
+
+  const handleSearchHistoryClick = (data) => {
+    setReport(data.reportingCountry || "");
+    setPartner(data.partnerCountry || "");
+    setHS(data.item || "");
+    setCost(100);
+    
+    // clear current results to avoid showing incomplete data
+    setCurrent({});
+    setPast({});
+    
+    setSuccess("Loading search from history...");
+
+    // to trigger auto fetch after state updates
+    setAutoFetch(true);
   };
 
   // ====================================
@@ -765,6 +835,25 @@ export function Calculator({ onMenuClick }) {
               </Card>
             </motion.div>
           )}
+
+          {/* Search History Display */}
+          <motion.div variants={itemVariants}>
+            <Card
+              style={{
+                backgroundColor: `${colors.surface}95`,
+                borderColor: colors.border,
+              }}
+            >
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  {isAuthenticated ? "Your Top Searches" : "Search History"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <searchMethods.SearchDisplay onSearchClick={handleSearchHistoryClick} colors={colors} />
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* No Data Message */}
           {(!current || Object.keys(current).length === 0) &&
