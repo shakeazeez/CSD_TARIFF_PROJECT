@@ -312,6 +312,7 @@ export function Calculator({ onMenuClick }) {
       );
     } finally {
       setLoadingCurrent(false);
+      fetchPast(); // Automatically fetch historical data after current calculation
     }
   };
 
