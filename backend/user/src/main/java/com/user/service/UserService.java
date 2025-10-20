@@ -1,10 +1,10 @@
 package com.user.service;
 
-import java.util.Map;
+import java.util.List;
 
 public interface UserService {
-	
-    public Map<Integer, Integer> addHistory(String username, Integer tariffId);
 
-    public Map<Integer, Integer> retrieveHistory(String username, Integer tariffId);
+    public List<Integer> addHistory(String username, Integer tariffId);
+
+    public List<Integer> retrieveHistory(String username);
 }

@@ -2,6 +2,8 @@ package com.user.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.user.user.User;
 import com.user.user.UserRepo;
@@ -15,10 +17,9 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(UserRepo userRepo) {
         this.userRepo = userRepo;
     }
-	
     
     @Transactional
-    public Map<Integer, Integer> addHistory(String username, Integer tariffId) {
+    public List<Integer> addHistory(String username, Integer tariffId) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -33,14 +34,26 @@ public class UserServiceImpl implements UserService {
         user.setHistory(history);
         userRepo.save(user);
 
-        return history;
+        // return the most searched top 5 tariffs
+        return history.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // sort by frequency in descending order
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Map<Integer, Integer> retrieveHistory(String username, Integer tariffId) {
-        User generalUser = userRepo.findByUsername(username)
+    public List<Integer> retrieveHistory(String username) {
+        User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        
-        return generalUser.getHistory();
+
+        Map<Integer, Integer> history = user.getHistory();
+
+        // return the most searched top 5 tariffs
+        return history.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // sort by frequency in descending order
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 }
