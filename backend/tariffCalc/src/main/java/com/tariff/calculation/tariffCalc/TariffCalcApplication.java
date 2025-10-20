@@ -9,7 +9,7 @@ public class TariffCalcApplication {
     
 	public static void main(String[] args) {
 	    System.setProperty("DATABASE_PASSWORD", LemmaUtils.getEnvOrDotenv("DATABASE_PASSWORD"));
-					
+		System.setProperty("OPEN_AI_KEY", LemmaUtils.getEnvOrDotenv("OPEN_AI_KEY"));
 		System.setProperty("DATABASE_URL", LemmaUtils.getEnvOrDotenv("DATABASE_URL"));
 		SpringApplication.run(TariffCalcApplication.class, args);
 	}

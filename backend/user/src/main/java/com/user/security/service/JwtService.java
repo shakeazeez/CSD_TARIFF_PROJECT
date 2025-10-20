@@ -8,7 +8,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.user.security.enums.Role;
+import com.user.enums.Role;
 import com.user.security.user.AuthUser;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +25,7 @@ public class JwtService {
         if (signingSecret == null) {
             throw new IllegalArgumentException("WHoops"); 
         }
+        
         this.signingAlgo = Algorithm.HMAC512(signingSecret);
     }
     

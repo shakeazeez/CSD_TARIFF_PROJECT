@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.tariff.calculation.tariffCalc.item.Item;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -33,6 +35,9 @@ public class Country {
     @OneToMany(mappedBy = "partnerCountry")
     @JsonIgnore
     private List<Tariff> partnerTariff;
+    
+    @OneToMany(mappedBy = "tradedItems")
+    private List<Item> itemsStored;
     
     public String toString() {
         return "countryNumber: " + countryNumber + "countryName: " + countryName;

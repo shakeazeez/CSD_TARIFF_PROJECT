@@ -1,4 +1,4 @@
-package com.user.generalUser;
+package com.user.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -6,17 +6,21 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
-import com.user.security.enums.Role;
+import com.user.enums.Role;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
 
@@ -24,8 +28,10 @@ import jakarta.persistence.MapKeyColumn;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Table(name = "general_user")
-public class GeneralUser {
+@Table(name = "user")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -38,11 +44,6 @@ public class GeneralUser {
     @Column(name = "history_value")
     private Map<Integer, Integer> history;
 
-    @ElementCollection
-    @CollectionTable(name = "user_tariff_ids", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "tariff_id")
-    private List<Integer> tariffIds;
-
     // Will add all the ontop stuff on here
     @ElementCollection
     @Enumerated
@@ -50,12 +51,11 @@ public class GeneralUser {
     @Column(name = "user_role")
     private List<Role> role;
 
-    public GeneralUser(String username, String hashedPassword, Map<Integer, Integer> history, List<Integer> tariffIds,
+    public User(String username, String hashedPassword, Map<Integer, Integer> history,
             List<Role> role) {
         this.username = username;
         this.hashedPassword = hashedPassword;
         this.history = history;
-        this.tariffIds = tariffIds;
         this.role = role;
     }
 }
