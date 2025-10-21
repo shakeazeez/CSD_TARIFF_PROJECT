@@ -49,13 +49,13 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
                 String reportingCountry = tariff.getReportingCountry().getCountryName();
                 int yearReported = tariff.getLocalDate().getYear();
 
-                boolean isWithinYearRange = startYear >= yearReported && endYear <= yearReported;
+                boolean isWithinYearRange = startYear >= yearReported && yearReported <= endYear;
                 boolean isSelectedCountry = reportingCountry.equals(itemFilterDTO.homeCountry());
 
                 // at least need to have one tariff imposed on the item
                 if (isSelectedCountry && isWithinYearRange) {
                     filteredItemList.add(item);
-                    continue;
+                    break;
                 }
             }
         }
