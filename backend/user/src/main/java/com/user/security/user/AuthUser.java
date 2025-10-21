@@ -3,7 +3,7 @@ package com.user.security.user;
 import java.util.Collection;
 import java.util.List;
 
-import com.user.security.enums.Role;
+import com.user.enums.Role;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

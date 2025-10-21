@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.user.service.GeneralUserService;
+import com.user.service.MemberUserService;
+import com.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,35 +28,34 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "General User", description = "Endpoints for general user's query history and pinned tariffs")
 public class GeneralUserController {
     private final Logger log = LoggerFactory.getLogger(GeneralUserController.class);
-    private final GeneralUserService generalUserService;
+    private final UserService userService;
+    private final MemberUserService memberUserService;
 
-    public GeneralUserController(GeneralUserService generalUserService) {
-        this.generalUserService = generalUserService;
+    public GeneralUserController(UserService userService, MemberUserService memberUserService) {
+        this.userService = userService;
+        this.memberUserService = memberUserService;
     }
 
-    // not included in this sprint, will be added in future sprints
-    // @PostMapping("/{username}/history/{tariffId}")
-    // public ResponseEntity<Map<Integer, Integer>> addHistory(@PathVariable String username,
-    //         @PathVariable Integer tariffId) {
-    //     try {
-    //         Map<Integer, Integer> history = generalUserService.addHistory(username, tariffId);
-    //         return ResponseEntity.ok(history);
-    //     } catch (IllegalArgumentException e) {
-    //         return ResponseEntity.badRequest().body(null);
-    //     }
-    // }
+    @PostMapping("/{username}/history/{tariffId}")
+    public ResponseEntity<List<Integer>> addHistory(@PathVariable String username,
+            @PathVariable Integer tariffId) {
+        try {
+            List<Integer> history = userService.addHistory(username, tariffId);
+            return ResponseEntity.ok(history);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
-    // // not included in this sprint, will be added in future sprints
-    // @GetMapping("/{username}/history/{tariffId}")
-    // public ResponseEntity<Map<Integer, Integer>> getHistory(@PathVariable String username,
-    //         @PathVariable Integer tariffId) {
-    //     try {
-    //         Map<Integer, Integer> history = generalUserService.retrieveHistory(username, tariffId);
-    //         return ResponseEntity.ok(history);
-    //     } catch (IllegalArgumentException e) {
-    //         return ResponseEntity.badRequest().body(null);
-    //     }
-    // }
+    @GetMapping("/{username}/history")
+    public ResponseEntity<List<Integer>> getHistory(@PathVariable String username) {
+        try {
+            List<Integer> history = userService.retrieveHistory(username);
+            return ResponseEntity.ok(history);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
     @Operation(summary = "Add pinned tariff", description = "Pins a tariff for the user. Maximum of 3 tariffs can be pinned.")
     @ApiResponses(value = {
@@ -67,7 +67,7 @@ public class GeneralUserController {
     public ResponseEntity<List<Integer>> addPinnedTariff(@PathVariable String username,
             @PathVariable Integer tariffId) {
         try {
-            List<Integer> tariffIds = generalUserService.addPinnedTariff(username, tariffId);
+            List<Integer> tariffIds = memberUserService.addPinnedTariff(username, tariffId);
             return ResponseEntity.ok(tariffIds);
         } catch (IllegalArgumentException e) {
             log.info(e.getMessage());
@@ -89,7 +89,7 @@ public class GeneralUserController {
     public ResponseEntity<List<Integer>> removePinnedTariffs(@PathVariable String username,
             @PathVariable Integer tariffId) {
         try {
-            List<Integer> tariffIds = generalUserService.removePinnedTariff(username, tariffId);
+            List<Integer> tariffIds = memberUserService.removePinnedTariff(username, tariffId);
             return ResponseEntity.ok(tariffIds);
         } catch (IllegalArgumentException e) {
             log.info(e.getMessage());

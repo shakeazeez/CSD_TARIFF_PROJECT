@@ -1,4 +1,4 @@
-package com.user.security.enums;
+package com.user.enums;
 
 public enum AuthConstants {
     AUTHORIZATION_HEADER

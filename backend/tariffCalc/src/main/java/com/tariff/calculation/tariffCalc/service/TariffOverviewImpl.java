@@ -147,9 +147,9 @@ public class TariffOverviewImpl implements TariffOverviewService {
         Country partnerCountry = countryRepo.findByCountryName(queryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Partner country not found"));
 
-        Item item = itemRepo.findByItemName(LemmaUtils.toSingular(queryDTO.item().toLowerCase().trim()) + reportingCountry.getCountryNumber())
-                .orElseGet(() ->itemRepo.findByItemName(LemmaUtils.toSingular(queryDTO.item().trim()).toLowerCase() 
-                            + "general")
+        Item item = itemRepo.findByItemNameAndCountry(LemmaUtils.toSingular(queryDTO.item().toLowerCase().trim()), reportingCountry)
+                .orElseGet(() -> itemRepo.findByItemNameAndCountry(LemmaUtils.toSingular(queryDTO.item().trim()).toLowerCase(), 
+                            countryRepo.findByCountryName("world").orElseThrow())
                 .orElseThrow(() -> new IllegalArgumentException("Item not found for item " + queryDTO.item())));
 
         log.info("No problem with Item Query");

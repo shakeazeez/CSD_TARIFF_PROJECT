@@ -129,6 +129,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('username');
         localStorage.removeItem('token');
         localStorage.removeItem('pin');
+        localStorage.removeItem('generalUserTopSearches');
         // You might want to call logout API endpoint here
     };
 

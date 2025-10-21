@@ -2,7 +2,7 @@ package com.user.security.filter;
 
 import java.io.IOException;
 
-import com.user.security.enums.AuthConstants;
+import com.user.enums.AuthConstants;
 import com.user.security.exception.TokenAuthenticationException;
 import com.user.security.service.JwtService;
 import com.user.security.user.AuthUser;
