@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+
 import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
@@ -15,6 +17,7 @@ import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
 
 
+@Service
 public class BankIndustrySearchServiceImpl implements BankIndustrySearchService {
     
     private final ItemRepo itemRepo;
