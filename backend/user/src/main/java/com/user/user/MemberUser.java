@@ -19,7 +19,7 @@ import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@DiscriminatorValue("general")
+@DiscriminatorValue("member")
 @Getter
 @Setter
 @Entity

@@ -20,7 +20,7 @@ import lombok.Setter;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@DiscriminatorValue("general")
+@DiscriminatorValue("business")
 @Getter
 @Setter
 public class BusinessUser extends User {

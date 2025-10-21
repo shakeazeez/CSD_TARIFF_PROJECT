@@ -3,8 +3,8 @@ package com.tariff.calculation.tariffCalc.item;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
-import com.tariff.calculation.tariffCalc.enums.Industry;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 
 import jakarta.persistence.Column;
@@ -38,6 +38,6 @@ public class Item {
     @ManyToOne
     private Country country;
 
-    @Enumerated
+    @Enumerated(jakarta.persistence.EnumType.STRING)
     private Industry industry;
 }

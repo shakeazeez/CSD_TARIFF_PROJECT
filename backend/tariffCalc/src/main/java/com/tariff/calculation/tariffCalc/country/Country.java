@@ -36,7 +36,8 @@ public class Country {
     @JsonIgnore
     private List<Tariff> partnerTariff;
     
-    @OneToMany(mappedBy = "tradedItems")
+    @OneToMany(mappedBy = "country")
+    @JsonIgnore
     private List<Item> itemsStored;
     
     public String toString() {

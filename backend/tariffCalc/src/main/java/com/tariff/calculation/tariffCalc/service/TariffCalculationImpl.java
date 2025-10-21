@@ -6,29 +6,30 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
 import com.tariff.calculation.tariffCalc.category.Category;
+import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
-import com.tariff.calculation.tariffCalc.enums.Industry;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
 import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
-import com.tariff.calculation.tariffCalc.dto.itemApiDto.ItemRetrievalDTO;
 import com.tariff.calculation.tariffCalc.dto.currentTariffApiDto.MoachDTO;
 import com.tariff.calculation.tariffCalc.dto.currentTariffApiDto.TableData;
 import com.tariff.calculation.tariffCalc.dto.currentTariffApiDto.TariffData;
 import com.tariff.calculation.tariffCalc.dto.currentTariffApiDto.TariffRate;
+import com.tariff.calculation.tariffCalc.dto.itemApiDto.ItemRetrievalDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.utility.LemmaUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 /*
  * This class is the service class that handles endpoints related to tariffs
@@ -64,8 +65,12 @@ public class TariffCalculationImpl implements TariffCalculationService {
         this.countryRepo = countryRepo;
         this.itemRepo = itemRepo;
         this.tariffRepo = tariffRepo;
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(60000);
         this.restClientMoach = restClientBuilder.clone()
                 .baseUrl("https://mtech-api.com/client/api")
+                .requestFactory(factory)
                 .build();
         this.embeddingService = embeddingService;
     }
@@ -291,8 +296,16 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         int itemCode = Integer.parseInt(result.data().codes().get(0).itemCode());
 
-        Category category = embeddingService.getEmbeddings(new String[] {itemName, result.data().codes().get(0).description()});
-        Industry industry = Industry.valueOf(category.getDesc().toUpperCase());
+        Industry industry;
+        try {
+            Category category = embeddingService.getEmbeddings(new String[] {itemName, result.data().codes().get(0).description()});
+            log.info("Embedding search returned category: {}", category != null ? category.getName() : "null");
+            industry = Industry.valueOf(category.getName().toUpperCase());
+            log.info("Mapped to industry: {}", industry);
+        } catch (Exception e) {
+            log.warn("Failed to determine industry for item '{}' using embeddings, defaulting to OTHER. Error: {}", itemName, e.getMessage());
+            industry = Industry.OTHER;
+        }
 
         return itemRepo.save(new Item(itemCode, itemName, new ArrayList<>(), country, industry));
 
@@ -321,6 +334,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
         Item item;
 
         String treatedItemName = tariffQueryDTO.item().toLowerCase().replaceAll(",", "");
+
+        log.info("Searching for item '{}' in country '{}'", treatedItemName, reportingCountry.getCountryName());
 
         if (customValid.contains(reportingCountry.getCountryNumber())) {
             item = itemRepo

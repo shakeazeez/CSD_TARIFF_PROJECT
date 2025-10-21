@@ -10,6 +10,9 @@ import com.user.user.UserRepo;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class UserServiceImpl implements UserService {
     
     private final UserRepo userRepo;

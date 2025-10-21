@@ -1,4 +1,4 @@
-package com.user.enums;
+package com.tariff.calculation.tariffCalc.category;
 
 public enum Industry {
     AGRICULTURE("Agriculture", "Involves farming, crop cultivation, livestock breeding, aquaculture, forestry, horticulture, and related activities for food production, fiber, biofuels, and raw materials. Includes tractors, fertilizers, seeds, irrigation systems, dairy farming, poultry, fishing gear, timber harvesting, and agricultural machinery."),
