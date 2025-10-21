@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.tariff.calculation.tariffCalc.category.Industry;
@@ -22,6 +24,8 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
     
     private final ItemRepo itemRepo;
     private final TariffRepo tariffRepo;
+
+    private final Logger log = LoggerFactory.getLogger(BankIndustrySearchServiceImpl.class);
 
     public BankIndustrySearchServiceImpl (ItemRepo itemRepo, TariffRepo tariffRepo) {
         this.itemRepo = itemRepo;
@@ -44,6 +48,8 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
         // items that users can select should at least have 1 entry of tariff details for the date range
         for (Item item: preItemList) {
             List<Tariff> tariffList = item.getTariffs();
+
+            log.info("tariffList" + tariffList.toString() + "\n\n\n\n\n\n\n");
             for (Tariff tariff: tariffList) {
 
                 String reportingCountry = tariff.getReportingCountry().getCountryName();
