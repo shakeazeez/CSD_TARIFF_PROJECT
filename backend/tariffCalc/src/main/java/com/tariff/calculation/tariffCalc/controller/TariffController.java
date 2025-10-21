@@ -1,5 +1,7 @@
 package com.tariff.calculation.tariffCalc.controller;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
@@ -22,6 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
+import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
@@ -68,6 +71,22 @@ public class TariffController {
 
         return ResponseEntity.ok(country);
     }
+
+    /*
+     * Return the full list of industries (in String)
+     */
+
+    @GetMapping("/industries")
+    public ResponseEntity<List<String>> getAllIndustries() {
+        Industry[] values = Industry.values();
+        
+        List<String> industryList = new ArrayList<>();
+        for (Industry ind : values) {
+            industryList.add(ind.toString());
+        }
+
+        return ResponseEntity.ok(industryList);
+    } 
 
     /*
      * Get tariff details for item between two countries of default(current) year
