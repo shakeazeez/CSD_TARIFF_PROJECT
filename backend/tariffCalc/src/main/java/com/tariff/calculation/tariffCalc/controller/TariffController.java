@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +35,9 @@ import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
+import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
+import com.tariff.calculation.tariffCalc.service.BankIndustrySearchService;
 
 @Tag(name = "Tariff Controller", description = "Tariff calculation and overview endpoints")
 @RequestMapping("/tariff")
@@ -43,13 +46,15 @@ public class TariffController {
 
     private final TariffCalculationService tariffService;
     private final TariffOverviewService tariffOverviewService;
+    private final BankIndustrySearchService bankIndustrySearchService;
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
 
     @Autowired
-    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService) {
+    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService, BankIndustrySearchService bankIndustrySearchService) {
         this.tariffService = tariffService;
         this.tariffOverviewService = tariffOverviewService;
+        this.bankIndustrySearchService = bankIndustrySearchService;
     }
 
     @Operation(summary = "Get all countries", description = "Retrieve a list of all available countries for tariff calculations")
@@ -78,16 +83,41 @@ public class TariffController {
 
     @GetMapping("/industries")
     public ResponseEntity<List<String>> getAllIndustries() {
-        Industry[] values = Industry.values();
-        
+        Industry[] values = null;
         List<String> industryList = new ArrayList<>();
-        for (Industry ind : values) {
-            industryList.add(ind.toString());
+
+        try {
+            values = Industry.values();
+
+            for (Industry ind : values) {
+                industryList.add(ind.toString());
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok(industryList);
+    }
+
+    /* 
+     * Get the list of items available in this industry for this period of time
+     */
+    @PostMapping("/items")
+    public ResponseEntity<List<String>> getAllItemsAvailableInTheIndustry(@RequestBody TariffItemFilterDTO itemFilterDTO) {
+        
+        List<String> itemList = null;
+
+        try {
+            itemList = bankIndustrySearchService.getAllItemsAvailableInTheIndustry(itemFilterDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(itemList);
     } 
 
+    
     /*
      * Get tariff details for item between two countries of default(current) year
      */
