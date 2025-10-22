@@ -31,12 +31,15 @@ export function IndustrySearch() {
   const [homeCountry, setHomeCountry] = useState("");
   const [industry, setIndustry] = useState("");
 
-  //   const filteredDestCountries = countryList.filter((c) =>
-  //     c.toLowerCase().includes(destCountry.toLowerCase())
-  //   );
-  const filteredHomeCountries = countryList.filter((c) =>
-    c.toLowerCase().includes(homeCountry.toLowerCase())
-  );
+  // Update filtering to handle Country objects correctly
+  const filteredHomeCountries = countryList.filter((c) => {
+    // Check if c is a Country object with countryName property
+    if (typeof c === "object" && c !== null) {
+      return c.countryName.toLowerCase().includes(homeCountry.toLowerCase());
+    }
+    return false;
+  });
+
   const filteredIndustries = industryList.filter((i) =>
     i.toLowerCase().includes(industry.toLowerCase())
   );
@@ -80,8 +83,9 @@ export function IndustrySearch() {
   //     setShowDestDropdown(false);
   //   };
 
+  // Update to handle Country objects
   const selectHomeCountry = (country) => {
-    setHomeCountry(country);
+    setHomeCountry(country.countryName);
     setShowHomeDropdown(false);
   };
 
@@ -103,12 +107,12 @@ export function IndustrySearch() {
   // set default start and end date range (in case users don't enter date range)
   useEffect(() => {
     const today = new Date();
-    const sevenDaysBefore = new Date();
-    sevenDaysBefore.setDate(today.getDate() - 7);
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(today.getFullYear() - 10);
 
     const formatDate = (date) => date.toISOString().split("T")[0];
 
-    setStartDate(formatDate(sevenDaysBefore));
+    setStartDate(formatDate(tenYearsAgo));
     setEndDate(formatDate(today));
   }, []);
 
@@ -145,28 +149,22 @@ export function IndustrySearch() {
   const [loadingItems, setLoadingItems] = useState(false);
   const [errorItems, setErrorItems] = useState(null);
 
-  // BACKEND returns => items of the selected industry 
+  // BACKEND returns => items of the selected industry
   const userInput = {
-    homeCountry,
+    homeCountry: homeCountry,
     // destCountry,
-    industry,
-    startDate,
-    endDate,
+    industry: industry,
+    startDate: startDate,
+    endDate: endDate,
   };
 
   const fetchItems = async () => {
     setLoadingItems(true);
     try {
       const response = await axios.post("/tariff/items", userInput);
-      console.log("Retrieving items of industry.");
-
-      const minimalItems = response.data.map((item) => ({
-        ...item,
-        detailsLoaded: false,
-        expanded: false,
-      }));
-
-      setItemList(minimalItems);
+      console.log("Retrieving items of homeCountry: industry.");
+      // The response contains a list of strings (item names)
+      setItemList(response.data);
     } catch (error) {
       console.error("Failed to retrieve items.");
       setErrorItems("Unable to retrieve items.");
@@ -199,12 +197,14 @@ export function IndustrySearch() {
 
     // BACKEND returns => hscode, item name, current tariff, list of partner countries (rates and corresponding dates)
     try {
-      const response = await axios.post("/items/tariffDetails", {
-        selectedItems,
-        homeCountry,
-        industry,
-        startDate,
-        endDate,
+      // Update the endpoint to match the backend controller mapping
+      const response = await axios.post("/tariff/items/tariffDetails", {
+        selectedItems: selectedItems,
+        homeCountry: homeCountry,
+        // destCountry,
+        industry: industry,
+        startDate: startDate,
+        endDate: endDate,
       });
 
       const detailsMap = {};
@@ -224,16 +224,19 @@ export function IndustrySearch() {
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]
       .sort((a, b) => {
-        const avgA = a.rates.reduce((sum, r) => sum + r, 0) / a.rates.length;
-        const avgB = b.rates.reduce((sum, r) => sum + r, 0) / b.rates.length;
+        // Sort by average rate since we don't have current rate anymore
+        const avgA = a.averageRate || 0;
+        const avgB = b.averageRate || 0;
         return avgA - avgB;
       })
       .slice(0, n);
   }
 
   function getOtherPartners(tariffDetailsList, topPartners) {
-    const topCountries = topPartners.map((p) => p.country);
-    return tariffDetailsList.filter((p) => !topCountries.includes(p.country));
+    const topCountryNames = topPartners.map((p) => p.country.countryName);
+    return tariffDetailsList.filter(
+      (p) => !topCountryNames.includes(p.country.countryName)
+    );
   }
 
   // default display top 3, expand to display the list of other tariffs
@@ -257,8 +260,12 @@ export function IndustrySearch() {
               {homeDropDownOpen && countryList.length > 0 && (
                 <ul>
                   {filteredHomeCountries.map((c) => (
-                    <li key={c} onClick={() => selectHomeCountry(c)}>
-                      {c}
+                    <li
+                      // Use id as primary key, fallback to countryCode, then to countryName as last resort
+                      key={c.countryCode || c.countryName}
+                      onClick={() => selectHomeCountry(c)}
+                    >
+                      {c.countryName}
                     </li>
                   ))}
                 </ul>
@@ -354,42 +361,55 @@ export function IndustrySearch() {
             </button>
           </div>
 
+          {/* Display loading state for item search */}
+          {loadingItems && <p>Loading items...</p>}
+          {errorItems && <p style={{ color: "red" }}>{errorItems}</p>}
+
           <div name="item-multiselect">
             <h3>Select Items to View Tariffs</h3>
-            {itemList.map((item) => (
-              <div key={item.hscode}>
-                <label>
-                  <input
-                    type="checkbox"
-                    value={item.hscode}
-                    checked={selectedItems.includes(item.hscode)}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      if (checked) {
-                        setSelectedItems([...selectedItems, item.hscode]);
-                      } else {
-                        setSelectedItems(
-                          selectedItems.filter((id) => id !== item.hscode)
-                        );
-                      }
-                    }}
-                  />
-                  {item.hscode} - {item.name}
-                </label>
-              </div>
-            ))}
+            {itemList.length > 0 ? (
+              itemList.map((item) => (
+                <div key={item}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      value={item}
+                      checked={selectedItems.includes(item)}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        const value = e.target.value;
+                        if (checked) {
+                          setSelectedItems([...selectedItems, value]);
+                        } else {
+                          setSelectedItems(
+                            selectedItems.filter((id) => id !== value)
+                          );
+                        }
+                      }}
+                    />
+                    {item}
+                  </label>
+                </div>
+              ))
+            ) : !loadingItems ? (
+              <p>No items found. Try different search criteria.</p>
+            ) : null}
           </div>
         </div>
       </div>
 
+      {/* Display loading and error states for tariff details */}
+      {loadingDetails && <p>Loading tariff details...</p>}
+      {errorDetails && <p style={{ color: "red" }}>{errorDetails}</p>}
+
       {Object.values(tariffDetails).map((item) => {
         const tariffDetailsList = item.tariffDetailsList; // list of countries returned by backend
 
-        // call helper function to filter and find the top 3 countries with lowest tariff rates 
-        const top3 = getTopPartners(tariffDetailsList, 3); 
+        // call helper function to filter and find the top 3 countries with lowest tariff rates
+        const topPartners = getTopPartners(tariffDetailsList, 3);
 
         // call helper function to filter and return all other countries
-        const otherPartners = getOtherPartners(tariffDetailsList, top3);
+        const otherPartners = getOtherPartners(tariffDetailsList, topPartners);
 
         return (
           <div
@@ -404,17 +424,23 @@ export function IndustrySearch() {
             {/* Row of 3 best tariffs */}
             <h2>Top 3 Best Tariff Partner Countries</h2>
             <div style={{ display: "flex", gap: "16px" }}>
-              {top3.map((partner) => {
-                const labels = partner.dates;
-                const values = [partner.rates];
-                const legend = [partner.country];
+              {topPartners.map((partner) => {
+                const tariffs = partner.tariffs || [];
+                const labels = tariffs.map((t) => t.localDate.split("T")[0]);
+                const values = [tariffs.map((t) => t.percentageRate)];
+                const legend = [partner.country.countryName];
+
+                // Calculate average rate or use the provided average
                 const avg =
-                  partner.rates.reduce((sum, r) => sum + r, 0) /
-                  partner.rates.length;
+                  partner.averageRate ||
+                  (tariffs.length > 0
+                    ? tariffs.reduce((sum, t) => sum + t.percentageRate, 0) /
+                      tariffs.length
+                    : 0);
 
                 return (
                   <div
-                    key={partner.country}
+                    key={partner.country.countryName}
                     className="partner-box"
                     style={{
                       flex: 1,
@@ -424,16 +450,14 @@ export function IndustrySearch() {
                       borderRadius: "8px",
                     }}
                   >
-                    <h3>{partner.country}</h3>
+                    <h3>{partner.country.countryName}</h3>
                     <Chart
                       labels={labels}
                       value={values}
                       title="Tariff Over Time"
                       legend={legend}
                     />
-                    <h3>Current Tariff</h3>
-                    <p>{partner.current}%</p>
-                    <h3>Average Past Tariff</h3>
+                    <h3>Average Tariff</h3>
                     <p>{avg.toFixed(2)}%</p>
                   </div>
                 );
@@ -472,33 +496,22 @@ export function IndustrySearch() {
                     }}
                   >
                     <th style={{ padding: "8px" }}>Country</th>
-                    <th style={{ padding: "8px" }}>Current Rate</th>
                     <th style={{ padding: "8px" }}>Average Rate</th>
-                    <th style={{ padding: "8px" }}>Difference</th>
                   </tr>
                 </thead>
                 <tbody>
                   {otherPartners.map((partner) => {
-                    const avg =
-                      partner.rates.reduce((sum, r) => sum + r, 0) /
-                      partner.rates.length;
-                    const diff = partner.current - avg;
-                    const diffText = `${Math.abs(diff).toFixed(2)}% ${
-                      diff > 0 ? "worse ▼" : "better ▲"
-                    }`;
-                    const diffColor = diff > 0 ? "red" : "green";
+                    const avg = partner.averageRate || 0;
 
                     return (
                       <tr
-                        key={partner.country}
+                        key={partner.country.id}
                         style={{ borderBottom: "1px solid #eee" }}
                       >
-                        <td style={{ padding: "8px" }}>{partner.country}</td>
-                        <td style={{ padding: "8px" }}>{partner.current}%</td>
-                        <td style={{ padding: "8px" }}>{avg.toFixed(2)}%</td>
-                        <td style={{ padding: "8px", color: diffColor }}>
-                          {diffText}
+                        <td style={{ padding: "8px" }}>
+                          {partner.country.countryName}
                         </td>
+                        <td style={{ padding: "8px" }}>{avg.toFixed(2)}%</td>
                       </tr>
                     );
                   })}
