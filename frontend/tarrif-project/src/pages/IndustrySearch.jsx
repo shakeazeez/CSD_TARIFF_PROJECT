@@ -199,8 +199,8 @@ export function IndustrySearch() {
 
     // BACKEND returns => hscode, item name, current tariff, list of partner countries (rates and corresponding dates)
     try {
-      const response = await axios.post("/tariff/details", {
-        items: selectedItems,
+      const response = await axios.post("/items/tariffDetails", {
+        selectedItems,
         homeCountry,
         industry,
         startDate,
@@ -221,8 +221,8 @@ export function IndustrySearch() {
     }
   };
 
-  function getTopPartners(partners, n = 3) {
-    return [...partners]
+  function getTopPartners(tariffDetailsList, n = 3) {
+    return [...tariffDetailsList]
       .sort((a, b) => {
         const avgA = a.rates.reduce((sum, r) => sum + r, 0) / a.rates.length;
         const avgB = b.rates.reduce((sum, r) => sum + r, 0) / b.rates.length;
@@ -231,9 +231,9 @@ export function IndustrySearch() {
       .slice(0, n);
   }
 
-  function getOtherPartners(partners, topPartners) {
+  function getOtherPartners(tariffDetailsList, topPartners) {
     const topCountries = topPartners.map((p) => p.country);
-    return partners.filter((p) => !topCountries.includes(p.country));
+    return tariffDetailsList.filter((p) => !topCountries.includes(p.country));
   }
 
   // default display top 3, expand to display the list of other tariffs
@@ -383,13 +383,13 @@ export function IndustrySearch() {
       </div>
 
       {Object.values(tariffDetails).map((item) => {
-        const partners = item.partners; // list of countries returned by backend
+        const tariffDetailsList = item.tariffDetailsList; // list of countries returned by backend
 
         // call helper function to filter and find the top 3 countries with lowest tariff rates 
-        const top3 = getTopPartners(partners, 3); 
+        const top3 = getTopPartners(tariffDetailsList, 3); 
 
         // call helper function to filter and return all other countries
-        const otherPartners = getOtherPartners(partners, top3);
+        const otherPartners = getOtherPartners(tariffDetailsList, top3);
 
         return (
           <div
@@ -443,7 +443,7 @@ export function IndustrySearch() {
             {/* Horizontal divider to split the top 3 and other countries */}
             <hr style={{ margin: "24px 0" }} />
 
-            {/* Other partners */}
+            {/* Other tariffDetailsList */}
             <h2
               style={{ cursor: "pointer" }}
               onClick={() =>

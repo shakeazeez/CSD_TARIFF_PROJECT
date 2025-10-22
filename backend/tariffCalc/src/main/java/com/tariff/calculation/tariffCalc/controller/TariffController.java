@@ -35,6 +35,8 @@ import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
+import com.tariff.calculation.tariffCalc.dto.bankServiceDto.SelectedItemsDTO;
+import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffDetailsforItemDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 import com.tariff.calculation.tariffCalc.service.BankIndustrySearchService;
@@ -117,6 +119,22 @@ public class TariffController {
         return ResponseEntity.ok(itemList);
     } 
 
+    /*
+     * Get the top 10 countries and their tariff rates for the period specified for a certain item
+     */
+    @PostMapping("/items/tariffDetails")
+    public ResponseEntity<List<TariffDetailsforItemDTO>> getTariffDetailsForListOfItems(@RequestBody SelectedItemsDTO selectedItemsDTO) {
+
+        List<TariffDetailsforItemDTO> result = null;
+
+        try {
+            result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(result);
+    }
     
     /*
      * Get tariff details for item between two countries of default(current) year
