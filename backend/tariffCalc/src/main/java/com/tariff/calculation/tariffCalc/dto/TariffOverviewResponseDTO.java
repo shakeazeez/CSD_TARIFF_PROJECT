@@ -8,5 +8,6 @@ import java.util.List;
 public record TariffOverviewResponseDTO (
     String reportingCountry,
     String partnerCountry,
+    String item,
     List<HistoricalTariffData> tariffData
 ) {}

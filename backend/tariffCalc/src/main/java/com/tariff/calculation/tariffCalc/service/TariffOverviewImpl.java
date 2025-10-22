@@ -179,6 +179,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         return new TariffOverviewResponseDTO(
                 reportingCountry.getCountryName(),
                 partnerCountry.getCountryName(),
+                item.getItemName(),
                 historicalTariffData);
     }
 
