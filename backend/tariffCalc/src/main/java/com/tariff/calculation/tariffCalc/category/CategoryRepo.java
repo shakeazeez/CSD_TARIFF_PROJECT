@@ -10,13 +10,13 @@ public interface CategoryRepo extends JpaRepository<Category, Integer> {
 
     @Query(value = """
         SELECT * FROM category 
-        WHERE embedding IS NOT NULL
-        ORDER BY cast(embedding as vector) <-> cast(:embedding as vector)
+        WHERE embedding IS NOT NULL AND LOWER(name) <> 'other'
+        ORDER BY embedding <-> cast(:embedding as vector(1536))
         """, nativeQuery = true)
-	public List<Category> findClosestCategories(String embedding);
+    public List<Category> findClosestCategories(String embedding);
 
-    @Query(value = "SELECT cast(cast(embedding as vector) <-> cast(:embedding as vector) as text) FROM category WHERE embedding IS NOT NULL ORDER BY cast(embedding as vector) <-> cast(:embedding as vector)", nativeQuery = true)
-	public List<String> findClosestDistances(String embedding);
+    @Query(value = "SELECT cast(embedding <-> cast(:embedding as vector(1536)) as text) FROM category WHERE embedding IS NOT NULL AND LOWER(name) <> 'other' ORDER BY embedding <-> cast(:embedding as vector(1536))", nativeQuery = true)
+    public List<String> findClosestDistances(String embedding);
 
     Optional<Category> findByName(String name);
 }

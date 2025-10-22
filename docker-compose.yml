@@ -20,6 +20,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       OPEN_AI_KEY: ${OPEN_AI_KEY}
       TARIFF_URL: http://backend:8081
+      NEWS_URL: http://news:8083
       JAVA_OPTS: -Xmx768m -Xms256m
     volumes:
       - maven_cache:/root/.m2
@@ -29,6 +30,31 @@ services:
           memory: 1GB
         reservations:
           memory: 512MB
+    restart: unless-stopped
+    depends_on:
+      - news
+
+  news:
+    build:
+      context: ./backend/news
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPEN_AI_KEY: ${OPEN_AI_KEY}
+      THE_NEWS_API_KEY: ${THE_NEWS_API_KEY}
+      JAVA_OPTS: -Xmx512m -Xms256m
+    volumes:
+      - maven_cache:/root/.m2
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
+        reservations:
+          memory: 256MB
     restart: unless-stopped
 
   frontend:
