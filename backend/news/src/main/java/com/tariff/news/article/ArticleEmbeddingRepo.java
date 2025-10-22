@@ -6,21 +6,22 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+
 public interface ArticleEmbeddingRepo extends JpaRepository<ArticleEmbedding, Long> {
 
     @Query(value = """
         SELECT * FROM article_embedding
         WHERE embedding IS NOT NULL
-        ORDER BY cast(embedding as vector) <-> cast(:embedding as vector)
+        ORDER BY embedding <-> cast(:embedding as vector(1536))
         LIMIT :limit
         """, nativeQuery = true)
     List<ArticleEmbedding> findClosestArticles(@Param("embedding") String embedding, @Param("limit") int limit);
 
     @Query(value = """
-        SELECT cast(cast(embedding as vector) <-> cast(:embedding as vector) as text) as distance
+        SELECT cast(embedding <-> cast(:embedding as vector(1536)) as text)
         FROM article_embedding
         WHERE embedding IS NOT NULL
-        ORDER BY cast(embedding as vector) <-> cast(:embedding as vector)
+        ORDER BY embedding <-> cast(:embedding as vector(1536))
         LIMIT :limit
         """, nativeQuery = true)
     List<String> findClosestDistances(@Param("embedding") String embedding, @Param("limit") int limit);
@@ -34,8 +35,9 @@ public interface ArticleEmbeddingRepo extends JpaRepository<ArticleEmbedding, Lo
 
     @Query(value = """
         SELECT * FROM article_embedding
-        WHERE cast(embedding as vector) <-> cast(:embedding as vector) < :threshold
-        ORDER BY cast(embedding as vector) <-> cast(:embedding as vector)
+        WHERE embedding <-> cast(:embedding as vector(1536)) < :threshold
+        ORDER BY embedding <-> cast(:embedding as vector(1536))
         """, nativeQuery = true)
     List<ArticleEmbedding> findSimilarArticles(@Param("embedding") String embedding, @Param("threshold") double threshold);
+
 }

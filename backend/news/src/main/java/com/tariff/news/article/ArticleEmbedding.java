@@ -1,11 +1,16 @@
 package com.tariff.news.article;
 
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Convert;
 import lombok.Data;
 
 @Entity
@@ -24,8 +29,11 @@ public class ArticleEmbedding {
     @Column(columnDefinition = "TEXT")
     private String cleanedText;
 
-    @Column(columnDefinition = "TEXT")
-    private String embedding; // Stored as string format "[0.123,-0.456,0.789,...]"
+    @Column(columnDefinition = "vector(1536)")
+    @ColumnTransformer(read = "embedding::text", write = "cast(? as vector(1536))")
+    @JdbcTypeCode(SqlTypes.VARCHAR) // Ensure VARCHAR binding for PostgreSQL
+    @Convert(converter = com.tariff.news.article.FloatArrayConverter.class)
+    private float[] embedding; // Stored as Postgres vector(1536)
 
     private String topic; // The extracted topic used to find this article
     

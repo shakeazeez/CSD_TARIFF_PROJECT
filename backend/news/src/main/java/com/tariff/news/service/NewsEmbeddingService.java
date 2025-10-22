@@ -118,7 +118,7 @@ public class NewsEmbeddingService {
             log.info("Stored embeddings count: {}", stored.size());
 
             List<Map.Entry<ArticleEmbedding, Double>> scored = stored.stream()
-                .map(e -> Map.entry(e, cosineSimilarity(queryEmbedding, convertStringToEmbedding(e.getEmbedding()))))
+                .map(e -> Map.entry(e, cosineSimilarity(queryEmbedding, floatArrayToList(e.getEmbedding()))))
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .limit(dbCandidateLimit)
                 .collect(Collectors.toList());
@@ -135,8 +135,8 @@ public class NewsEmbeddingService {
                         .collect(Collectors.toList());
 
                     // Convert to DTOs
-                    List<com.tariff.news.dto.ArticleEmbedding> dtos = picked.stream()
-                            .map(e -> new com.tariff.news.dto.ArticleEmbedding(e.getTitle(), e.getUrl(), e.getCleanedText(), e.getEmbedding(), e.getQueryContext(), e.getLastSeenQuery(), "db"))
+            List<com.tariff.news.dto.ArticleEmbedding> dtos = picked.stream()
+                .map(e -> new com.tariff.news.dto.ArticleEmbedding(e.getTitle(), e.getUrl(), e.getCleanedText(), convertFloatArrayToString(e.getEmbedding()), e.getQueryContext(), e.getLastSeenQuery(), "db"))
                             .collect(Collectors.toList());
 
                         log.info("DB-first hit: returning {} articles", dtos.size());
@@ -520,7 +520,7 @@ public class NewsEmbeddingService {
                 ArticleEmbedding entity = existing.get(0);
                 entity.setTitle(title);
                 entity.setCleanedText(cleanedText);
-                entity.setEmbedding(embeddingStr);
+                entity.setEmbedding(parseStringToFloatArray(embeddingStr));
                 entity.setTopic(topic);
                 entity.setQueryContext(queryContext);
                 entity.setLastSeenQuery(topic);
@@ -537,7 +537,7 @@ public class NewsEmbeddingService {
             entity.setTitle(title);
             entity.setUrl(url);
             entity.setCleanedText(cleanedText);
-            entity.setEmbedding(embeddingStr);
+            entity.setEmbedding(parseStringToFloatArray(embeddingStr));
             entity.setTopic(topic);
             entity.setQueryContext(queryContext);
             entity.setLastSeenQuery(topic);
@@ -569,11 +569,46 @@ public class NewsEmbeddingService {
         List<ArticleEmbedding> all = articleEmbeddingRepo.findAllByEmbeddingIsNotNull();
         List<Double> target = convertStringToEmbedding(embeddingStr);
         return all.stream()
-            .map(e -> Map.entry(e, cosineSimilarity(target, convertStringToEmbedding(e.getEmbedding()))))
+            .map(e -> Map.entry(e, cosineSimilarity(target, floatArrayToList(e.getEmbedding()))))
             .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
             .limit(limit)
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
+    }
+
+    private float[] parseStringToFloatArray(String embeddingStr) {
+        if (embeddingStr == null || embeddingStr.length() < 2) return new float[0];
+        String s = embeddingStr.substring(1, embeddingStr.length() - 1).trim();
+        if (s.isEmpty()) return new float[0];
+        String[] parts = s.split(",");
+        float[] out = new float[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            try {
+                out[i] = Float.parseFloat(parts[i].trim());
+            } catch (NumberFormatException e) {
+                out[i] = 0.0f;
+            }
+        }
+        return out;
+    }
+
+    private List<Double> floatArrayToList(float[] arr) {
+        List<Double> list = new ArrayList<>();
+        if (arr == null) return list;
+        for (float v : arr) list.add((double) v);
+        return list;
+    }
+
+    private String convertFloatArrayToString(float[] arr) {
+        if (arr == null) return null;
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < arr.length; i++) {
+            if (i > 0) sb.append(",");
+            sb.append(arr[i]);
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     /**
