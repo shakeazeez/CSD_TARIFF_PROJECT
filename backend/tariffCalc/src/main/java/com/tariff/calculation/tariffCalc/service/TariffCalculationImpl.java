@@ -391,9 +391,19 @@ public class TariffCalculationImpl implements TariffCalculationService {
                                 .findFirst()
                                 .orElseGet(() -> {
                                     log.info("Well for Developing");
-                                    return tariffRepo.save(
-                                            new Tariff(reportingCountry, developing, item, -1.0,
-                                                    "No trade agreement found", LocalDate.now()));
+                                    // return tariffRepo.save(
+                                    //         new Tariff(reportingCountry, developing, item, 0.0,
+                                    //                 "No trade agreement found", LocalDate.now()));
+
+                                    return tariffList.stream()
+                                        .filter((currTariff) -> currTariff.getPartnerCountry().equals(world))
+                                        .findFirst()
+                                        .orElseGet(() -> {
+                                            log.info("Well for world");
+                                            return tariffRepo
+                                                    .save(new Tariff(reportingCountry, world, item, 0.0,
+                                                            "No trade agreement found", LocalDate.now()));
+                                        });
                                 });
                     }
                     return tariffList.stream()
@@ -402,7 +412,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                             .orElseGet(() -> {
                                 log.info("Well for world");
                                 return tariffRepo
-                                        .save(new Tariff(reportingCountry, world, item, -1.0,
+                                        .save(new Tariff(reportingCountry, world, item, 0.0,
                                                 "No trade agreement found", LocalDate.now()));
                             });
                 });

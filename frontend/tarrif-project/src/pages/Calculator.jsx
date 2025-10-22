@@ -159,12 +159,12 @@ export function Calculator({ onMenuClick }) {
 
   const [fieldLabels, setFieldLabels] = useState({
     reportingCountry: "Reporting Country",
-    partnerCountry: "Partner Country", 
+    partnerCountry: "Partner Country",
     item: "Item",
     tariffRate: "Tariff Rate (%)",
     tariffAmount: "Tariff Amount (USD)",
     itemCostWithTariff: "Cost of Item including Tariff (USD)",
-    tariffId: "IGNORE", 
+    tariffId: "IGNORE",
     tariffDescription: "Tariff Description"
   });
 
@@ -340,6 +340,7 @@ export function Calculator({ onMenuClick }) {
     setLoadingCurrent(true);
     setError("");
     setSuccess("");
+    setCurrent({});
 
     try {
       // POST request to get current tariff calculation
@@ -350,6 +351,7 @@ export function Calculator({ onMenuClick }) {
 
       // Update state with current tariff results
       setCurrent(response.data);
+      // console.log("current:", current.item);
 
       // Add the query to search history
       if (response.data && response.data.tariffId) {
@@ -361,7 +363,7 @@ export function Calculator({ onMenuClick }) {
       console.error("Error fetching current tariff:", error);
       setError(
         error.response?.data?.message ||
-          "This country combination for this item does not exists. Please check your inputs and try again."
+        "This country combination for this item does not exists. Please check your inputs and try again."
       );
     } finally {
       setLoadingCurrent(false);
@@ -381,6 +383,7 @@ export function Calculator({ onMenuClick }) {
     setLoadingPast(true);
     setError("");
     setSuccess("");
+    setPast({});
 
     try {
       // POST request to get historical tariff data
@@ -391,6 +394,7 @@ export function Calculator({ onMenuClick }) {
 
       // Update state with historical tariff data
       setPast(response.data);
+      //console.log(past);
 
       setSuccess("Historical data loaded successfully!");
     } catch (error) {
@@ -684,39 +688,39 @@ export function Calculator({ onMenuClick }) {
                       e.target.style.color = "#ffffff";
                     }}
                   >
-                    {loadingCurrent ? (
+                    {loadingCurrent || loadingPast ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
                       <CalculatorIcon className="h-4 w-4 mr-2" />
                     )}
-                    Calculate Current Tariff
+                    Calculate Current And Historical Tariff
                   </Button>
-                  <Button
-                    onClick={fetchPast}
-                    disabled={loadingPast}
-                    variant="outline"
-                    className="flex-1"
-                    style={{
-                      backgroundColor: colors.accent,
-                      borderColor: colors.accent,
-                      color: "#ffffff",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = colors.hover;
-                      e.target.style.color = "#ffffff";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = `${colors.accent}`;
-                      e.target.style.color = "#ffffff";
-                    }}
-                  >
-                    {loadingPast ? (
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                    )}
-                    View Historical Data
-                  </Button>
+                  {/* <Button
+                      onClick={fetchPast}
+                      disabled={loadingPast}
+                      variant="outline"
+                      className="flex-1"
+                      style={{
+                        backgroundColor: colors.accent,
+                        borderColor: colors.accent,
+                        color: "#ffffff",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = colors.hover;
+                        e.target.style.color = "#ffffff";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = `${colors.accent}`;
+                        e.target.style.color = "#ffffff";
+                      }}
+                    >
+                      {loadingPast ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                      )}
+                      View Historical Data
+                    </Button> */}
                 </div>
               </CardContent>
             </Card>
@@ -831,6 +835,41 @@ export function Calculator({ onMenuClick }) {
                     title={title}
                     legend={legend}
                   />
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Historical Data Loading State */}
+          {loadingPast && (
+            <motion.div variants={itemVariants}>
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <RefreshCw className="h-6 w-6 inline mr-2 animate-spin" />
+                    Loading Historical Tariff Trends
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>
+                    Fetching historical tariff data, please wait...
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <RefreshCw
+                        className="h-12 w-12 mx-auto mb-4 animate-spin"
+                        style={{ color: colors.accent }}
+                      />
+                      <p style={{ color: colors.muted }}>
+                        Loading historical data...
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
