@@ -25,7 +25,6 @@ public class EmbeddingService {
     }
 
     public float[] getEmbedding(String text) {
-        // Hardcoded embeddings for testing
         float[] embedding = new float[1536];
         java.util.Arrays.fill(embedding, 0.0f);
         
