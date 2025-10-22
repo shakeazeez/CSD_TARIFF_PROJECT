@@ -147,10 +147,10 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
                     .toList();
 
                 // get the current tariff rate
-                double currentRate = tariffs.stream()
-                        .max(Comparator.comparing(Tariff::getLocalDate))
-                        .map(Tariff::getPercentageRate)
-                        .orElse(0.0);
+                // double currentRate = tariffs.stream()
+                //         .max(Comparator.comparing(Tariff::getLocalDate))
+                //         .map(Tariff::getPercentageRate)
+                //         .orElse(0.0);
 
                 double averageRate = tariffs.stream()
                         .mapToDouble(Tariff::getPercentageRate)
@@ -158,7 +158,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
                         .orElse(0.0);
 
                 // full tariff details needed for the partner country
-                TariffDetails details = new TariffDetails(partnerCountry, tariffs, currentRate, averageRate);
+                TariffDetails details = new TariffDetails(partnerCountry, tariffs, averageRate);
                 tariffDetailsList.add(details);
         }
 

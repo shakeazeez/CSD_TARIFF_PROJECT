@@ -9,10 +9,9 @@ public class TariffDetails {
     private double currentRate;
     private double averageRate;
 
-    public TariffDetails(Country country, List<Tariff> tariffList, double currentRate, double averageRate) {
+    public TariffDetails(Country country, List<Tariff> tariffList, double averageRate) {
         this.country = country;
         this.tariffList = tariffList;
-        this.currentRate = currentRate;
         this.averageRate = averageRate;
     }
 
@@ -22,10 +21,6 @@ public class TariffDetails {
 
     public List<Tariff> getTariffList() {
         return tariffList;
-    }
-
-    public double getCurrentRate() {
-        return currentRate;
     }
 
     public double getAverageRate() {
