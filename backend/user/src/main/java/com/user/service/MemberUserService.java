@@ -7,5 +7,7 @@ public interface MemberUserService {
     public List<Integer> addPinnedTariff(String username, Integer tariffId);
 
     public List<Integer> removePinnedTariff(String username, Integer tariffId);
+    
+    public List<Integer> getPinnedTariff(String username);
 
 }

@@ -44,7 +44,8 @@ public class AuthUserServiceImpl implements AuthUserService {
             throw new IllegalArgumentException("User with that username already exists");
         }
 
-        String passwordHash = passwordEncoder.encode(createUserDTO.password());
+        // String passwordHash = passwordEncoder.encode(createUserDTO.password());
+        String passwordHash = createUserDTO.password();
 
         // Note creation left as error as to be changed depending on type
         User creation;
