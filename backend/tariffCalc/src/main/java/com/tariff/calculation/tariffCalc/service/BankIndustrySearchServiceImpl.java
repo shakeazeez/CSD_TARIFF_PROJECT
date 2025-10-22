@@ -28,7 +28,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
     private final TariffRepo tariffRepo;
     private final CountryRepo countryRepo;
 
-    private final Logger log = LoggerFactory.getLogger(BankIndustrySearchServiceImpl.class);
+    // private final Logger log = LoggerFactory.getLogger(BankIndustrySearchServiceImpl.class);
 
     public BankIndustrySearchServiceImpl (ItemRepo itemRepo, TariffRepo tariffRepo, CountryRepo countryRepo) {
         this.itemRepo = itemRepo;
@@ -36,8 +36,16 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
         this.countryRepo = countryRepo;
     }
 
-    /* 
-     * Returns a list of items available in the industry (used for user filter)
+    /**
+     * Retrieves a list of item names available in the specified industry, filtered by country and date range.
+     *
+     * @param itemFilterDTO DTO containing:
+     *                      - industry: the industry to filter items by (must match enum constant)
+     *                      - homeCountry: the reporting country to filter tariffs by
+     *                      - startDate: the start date of the filter range (format "yyyy-MM-dd")
+     *                      - endDate: the end date of the filter range (format "yyyy-MM-dd")
+     * @return List of item names (String) that have at least one tariff record for the given country and date range.
+     *         Returns an empty list if no items match.
      */
     public List<String> getAllItemsAvailableInTheIndustry(TariffItemFilterDTO itemFilterDTO) {
 
@@ -50,18 +58,18 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
 
         List<Item> filteredItemList = new ArrayList<>();
 
-        log.info("Items to be printed" + preItemList.toString() + "\n\n\n");
+        // log.info("Items to be printed" + preItemList.toString() + "\n\n\n");
 
         // items that users can select should at least have 1 entry of tariff details for the date range
         for (Item item: preItemList) {
             Country reportingCountry =  countryRepo.findByCountryName(countryName)
                                         .orElseThrow(() -> new IllegalArgumentException("Country not found."));
 
-            log.info("Reporting country FOUND: " +reportingCountry.toString() + "\n\n\n");
+            // log.info("Reporting country FOUND: " +reportingCountry.toString() + "\n\n\n");
 
             List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem(reportingCountry, item);
 
-            log.info("tariffList" + tariffList.toString() + "\n\n\n");
+            // log.info("tariffList" + tariffList.toString() + "\n\n\n");
 
             for (Tariff tariff: tariffList) {
                 int yearReported = tariff.getLocalDate().getYear();
@@ -78,6 +86,18 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
 
         return filteredItemList.stream().map(Item::getItemName).collect(Collectors.toList());
     }
+
+    /**
+     * Retrieves detailed tariff information for a list of selected items, filtered by reporting country and date range.
+     *
+     * @param selectedItemsDTO DTO containing:
+     *        - selectedItems: array of item names to retrieve details for
+     *        - homeCountry: the reporting country to filter tariffs by
+     *        - industry: the industry of the items
+     *        - startDate: the start date of the filter range (format "yyyy-MM-dd")
+     *        - endDate: the end date of the filter range (format "yyyy-MM-dd")
+     * @return List of TariffDetailsforItemDTO, each containing tariff details for the top 10 lowest-tariff partner countries per item.
+     */
 
     public List<TariffDetailsforItemDTO> getTariffDetailsForItems (SelectedItemsDTO selectedItemsDTO) {
 
