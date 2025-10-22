@@ -129,7 +129,6 @@ export function Calculator({ onMenuClick }) {
   useEffect(() => {
     if (autoFetch && report && partner && hs && cost) {
       setAutoFetch(false); // reset flag
-      // fetchCurrentAndPast();
       fetchCurrent();
       fetchPast();
     }
@@ -371,16 +370,6 @@ export function Calculator({ onMenuClick }) {
       fetchPast(); // Automatically fetch historical data after current calculation
     }
   };
-
-  // try {fetchCurrent & fetchPast} catch {try fetchPast catch setError}
-
-  // const fetchCurrentAndPast = async () => {
-  //   fetchCurrent();
-
-  //   if (!setLoadingCurrent) {
-  //     fetchPast();
-  //   }
-  // }
 
   // Function to fetch historical tariff data for chart visualization
   const fetchPast = async () => {
