@@ -131,6 +131,11 @@ export function Calculator({ onMenuClick }) {
       setAutoFetch(false); // reset flag
       fetchCurrent();
       fetchPast();
+
+      // scroll to the current part after got redirected
+      setTimeout(() => {
+        window.scrollTo({ top: 800, behavior: 'smooth' });
+      }, 200);
     }
   }, [autoFetch]);
 
@@ -341,6 +346,7 @@ export function Calculator({ onMenuClick }) {
     setError("");
     setSuccess("");
     setCurrent({});
+    setPast({}); // clear old results first when loading the new search data
 
     try {
       // POST request to get current tariff calculation
@@ -887,6 +893,7 @@ export function Calculator({ onMenuClick }) {
                 <CardTitle style={{ color: colors.foreground }}>
                   {isAuthenticated ? "Your Top Searches" : "Search History"}
                 </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
               </CardHeader>
               <CardContent>
                 <searchMethods.SearchDisplay onSearchClick={handleSearchHistoryClick} colors={colors} />

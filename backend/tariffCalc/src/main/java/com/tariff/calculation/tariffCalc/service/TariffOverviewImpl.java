@@ -67,7 +67,15 @@ public class TariffOverviewImpl implements TariffOverviewService {
         while (partnerCountryNumber.length() < 3) {
             partnerCountryNumber = "0" + partnerCountryNumber;
         }
-        String itemNum = Integer.toString(item.getItemCode()).substring(0, 6);
+
+        // log.info(item.getItemCode().toString());
+
+        String itemNum = String.format("%06d", item.getItemCode());
+
+        log.info("itemNum: " + itemNum);
+
+        // String itemNum = Integer.toString(item.getItemCode()).substring(0, 6);
+
         WitsDTO result = null;
         try {
             result = restClientWits.get()
