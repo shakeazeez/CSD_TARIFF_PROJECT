@@ -143,12 +143,12 @@ export function Dashboard({ onMenuClick }){
     // NAVIGATION FUNCTION
     // ====================================
 
-    // handles navigation to calculator with pre filled search data
-    const handleSearchNavigation = (searchData) => {
-        // navigate to calculator with state containing the search data
+    // handles navigation to calculator with pre filled data (search history or pinned tariffs)
+    const handleCalculatorNavigation = (data) => {
+        // navigate to calculator with state containing the data
         navigate('/calculator', { 
             state: { 
-                searchData: searchData,
+                searchData: data,
                 autoFill: true 
             } 
         });
@@ -569,6 +569,7 @@ export function Dashboard({ onMenuClick }){
                                         borderColor: `${colors.border}80`,
                                         borderWidth: '1px'
                                     }}
+                                    onClick={() => handleCalculatorNavigation(lastRow)}
                                 >
                                     <div className="text-lg font-bold mb-2" style={{ color: colors.foreground }}>
                                         #{index + 1}
@@ -847,7 +848,7 @@ export function Dashboard({ onMenuClick }){
                 <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
               </CardHeader>
               <CardContent>
-                <searchMethods.SearchDisplay onSearchClick={handleSearchNavigation} colors={colors} />
+                <searchMethods.SearchDisplay onSearchClick={handleCalculatorNavigation} colors={colors} />
               </CardContent>
             </Card>
           </div>
