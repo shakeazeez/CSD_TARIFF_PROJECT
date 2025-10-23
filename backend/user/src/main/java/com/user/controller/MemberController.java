@@ -73,7 +73,7 @@ public class MemberController {
     }
     
     @GetMapping("/{username}")
-    public ResponseEntity<?> getPinnedTariff(String username) {
+    public ResponseEntity<?> getPinnedTariff(@PathVariable String username) {
         try {
 			return ResponseEntity.ok(memberUserService.getPinnedTariff(username));
 		} catch (IllegalAccessError e) {

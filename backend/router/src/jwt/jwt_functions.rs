@@ -22,7 +22,7 @@ pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
     validation.required_spec_claims = HashSet::new();
     validation.validate_aud = false;
 
-    let secret = DecodingKey::from_secret(env::var("SECRETKEY").unwrap().as_bytes());
+    let secret = DecodingKey::from_secret(env::var("SIGNING_SECRET").unwrap().as_bytes());
 
     let res = jsonwebtoken::decode::<Claims>(&token, &secret, &validation);
     
@@ -39,8 +39,8 @@ pub fn generate_token(user: &AuthUser, roles: &UserRole) -> String {
 
     let created_claims =
         Claims {
-            custom_claims: "".to_owned(),
-            iss: env::var("").unwrap(),
+            custom_claims: "Logging in".to_owned(),
+            iss: env::var("USER_URL").unwrap(),
             exp: now_plus_60,
             sub: user.username.clone(),
             groups: roles.user_roles,
@@ -48,7 +48,7 @@ pub fn generate_token(user: &AuthUser, roles: &UserRole) -> String {
         };
 
     let header = Header::new(jsonwebtoken::Algorithm::HS512);
-    let secret = EncodingKey::from_secret(env::var("SECRETKEY").unwrap().as_bytes());
+    let secret = EncodingKey::from_secret(env::var("SIGNING_SECRET").unwrap().as_bytes());
 
     let res = encode(&header, Some(&created_claims), &secret).unwrap();
     format!("{}.{}.{}", res.protected, res.payload, res.signature)

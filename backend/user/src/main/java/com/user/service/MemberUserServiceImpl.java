@@ -1,5 +1,6 @@
 package com.user.service;
 
+import com.user.dto.MemberInfoDTO;
 import com.user.user.MemberUser;
 import com.user.user.MemberUserRepo;
 import com.user.user.User;
@@ -59,12 +60,12 @@ public class MemberUserServiceImpl implements MemberUserService {
         throw new IllegalAccessError("This feature is not available for this user");
     }
     
-    public List<Integer> getPinnedTariff(String username) {
+    public MemberInfoDTO getPinnedTariff(String username) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
                 
         if (user instanceof MemberUser memberUser) {
-            return memberUser.getPinnedTariffId();
+            return new MemberInfoDTO(memberUser.getPinnedTariffId());
         }
         
         throw new IllegalAccessError("Not a general user");

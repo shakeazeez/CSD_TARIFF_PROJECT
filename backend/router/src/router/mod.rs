@@ -27,7 +27,7 @@ pub async fn tariff_route(req :HttpRequest, body: web::Bytes) -> impl Responder 
             println!("Successful request");
             let status = res.status();
             let bytes = res.bytes().await.unwrap_or_default();
-            HttpResponse::build(status).body(bytes.to_vec())
+            HttpResponse::build(status).body(bytes)
         }, 
         Err(e) => {
             println!("{e}");
@@ -56,7 +56,7 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     let base_url = env::var("USER_URL").unwrap();
     let uri = req.uri().to_string();
     
-    if !uri.contains(&format!("{}", access)) {
+    if !uri.contains("user") && !uri.contains(&format!("{}", access)) {
         return HttpResponse::Forbidden().finish()
     } 
     
@@ -79,7 +79,7 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
             println!("Successful request");
             let status = res.status();
             let bytes = res.bytes().await.unwrap_or_default();
-            HttpResponse::build(status).body(bytes.to_vec())
+            HttpResponse::build(status).body(bytes)
         }, 
         Err(e) => {
             println!("{e}");

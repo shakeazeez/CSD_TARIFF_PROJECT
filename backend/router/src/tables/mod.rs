@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::schema::{user_role, user};
-use diesel::sql_types::Int4;
+use diesel::sql_types::Int2;
 use diesel::Selectable;
 use diesel::{
     deserialize::{FromSql, FromSqlRow},
@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 pub struct AuthUser {
     pub id: i32,
     pub username: String,
-    pub hashed_password: String,
+    pub hashedpassword: String,
 }
 
 #[derive(Queryable, Identifiable, Insertable, Debug, Selectable, Clone)]
@@ -44,7 +44,7 @@ pub struct UserRole {
     PartialOrd,
     Ord,
 )]
-#[diesel(sql_type = Int4)]
+#[diesel(sql_type = Int2)]
 pub enum Role {
     MEMBER,
     BANK,
@@ -53,7 +53,7 @@ pub enum Role {
 }
 
 impl Role {
-    pub fn from_i32(value: i32) -> Self {
+    pub fn from_i16(value: i16) -> Self {
         match value {
             0 => Role::MEMBER,
             1 => Role::BANK,
@@ -91,25 +91,25 @@ impl Display for Role {
     }
 }
 
-impl FromSql<Int4, Pg> for Role {
+impl FromSql<Int2, Pg> for Role {
     fn from_sql(
         bytes: <Pg as diesel::backend::Backend>::RawValue<'_>,
     ) -> diesel::deserialize::Result<Self> {
-        let value = i32::from_sql(bytes)?;
-        Ok(Role::from_i32(value))
+        let value = i16::from_sql(bytes)?;
+        Ok(Role::from_i16(value))
     }
 }
 
-impl ToSql<Int4, Pg> for Role {
+impl ToSql<Int2, Pg> for Role {
     fn to_sql<'b>(
         &'b self,
         out: &mut diesel::serialize::Output<'b, '_, Pg>,
     ) -> diesel::serialize::Result {
         match self {
-            Role::MEMBER => ToSql::<Int4, Pg>::to_sql(&0i32, out),
-            Role::BANK => ToSql::<Int4, Pg>::to_sql(&1i32, out),
-            Role::BUSINESS => ToSql::<Int4, Pg>::to_sql(&2i32, out),
-            Role::ADMIN => ToSql::<Int4, Pg>::to_sql(&3i32, out),
+            Role::MEMBER => ToSql::<Int2, Pg>::to_sql(&0i16, out),
+            Role::BANK => ToSql::<Int2, Pg>::to_sql(&1i16, out),
+            Role::BUSINESS => ToSql::<Int2, Pg>::to_sql(&2i16, out),
+            Role::ADMIN => ToSql::<Int2, Pg>::to_sql(&3i16, out),
         }
     }
 }

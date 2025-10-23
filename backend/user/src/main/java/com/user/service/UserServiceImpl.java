@@ -59,4 +59,9 @@ public class UserServiceImpl implements UserService {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
+    
+    
+    public List<User> getAllUsers() {
+        return userRepo.findAll();
+    }
 }

@@ -12,7 +12,7 @@ import com.user.user.UserRepo;
 import org.springframework.stereotype.Service;
 
 @Service
-public class BusinessServiceImpl extends BusinessUser {
+public class BusinessServiceImpl implements BusinessService {
 
     private UserRepo userRepo;
 

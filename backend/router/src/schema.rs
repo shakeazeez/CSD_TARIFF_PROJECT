@@ -5,15 +5,15 @@ diesel::table! {
     user (id) {
         id -> Int4,
         username -> Varchar,
-        hashed_password -> Varchar,
-        user_type -> Varchar,
+        hashedpassword -> Varchar,
+        // user_type -> Varchar,
     }
 }
 
 diesel::table! {
     user_role (user_id, user_roles) {
         user_id -> Int4,
-        user_roles -> Int4
+        user_roles -> Int2
     }
 }
 

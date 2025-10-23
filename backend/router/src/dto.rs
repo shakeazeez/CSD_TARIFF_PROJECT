@@ -7,25 +7,33 @@ pub struct LoginDTO {
     pub password: String
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CreateDTO {
     pub username: String, 
     pub password: String,
     pub role: String,
-    pub industry: String, 
-    pub originCountry: String,
-    pub destinationCountries: Vec<String>,
-    pub itemsSold: Vec<String>
+    pub industry: Option<String>, 
+    #[serde(rename = "originCountry")]
+    pub origin_country: Option<String>,
+    #[serde(rename = "destinationCountries")]
+    pub destination_countries: Option<Vec<String>>,
+    #[serde(rename = "itemsSold")]
+    pub items_sold: Option<Vec<String>>
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TokenDTO {
-    username: String,
-    pub token: String,
+    username: Option<String>,
+    pub token: Option<String>,
+    #[serde(rename = "pin")]
     pin: Option<Vec<i32>>,
     industry: Option<String>,
+    #[serde(rename = "originCountry")]
     origin_country: Option<String>,
-    destination_countries: Option<Vec<i32>>,
+    #[serde(rename = "destinationCountries")]
+    destination_countries: Option<Vec<String>>,
+    #[serde(rename = "itemsSold")]
     items_sold: Option<String>,
-    historical_tariff_id: Option<i32>
+    #[serde(rename = "historicalTariffId")]
+    historical_tariff_id: Option<Vec<i32>>
 }

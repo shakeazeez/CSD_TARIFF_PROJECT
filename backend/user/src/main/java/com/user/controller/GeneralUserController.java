@@ -1,7 +1,6 @@
 package com.user.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.user.service.MemberUserService;
 import com.user.service.UserService;
+import com.user.user.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -70,8 +70,9 @@ public class GeneralUserController {
         return "Hello from authenticated";
     }
 
-    // @GetMapping("/hi/details")
-    // public Integer returnUsers() {
-    // return 1;
-    // }
+    // REMOVE THs
+    @GetMapping("/all")
+    public List<User> returnAllUsers() {
+        return userService.getAllUsers();
+    }
 }

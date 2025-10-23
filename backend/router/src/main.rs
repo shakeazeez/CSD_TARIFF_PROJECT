@@ -1,6 +1,6 @@
 use std::env;
 
-use actix_web::{web::{self, route}, App, HttpServer};
+use actix_web::{web::{self}, App, HttpServer};
 use diesel::{r2d2::{ConnectionManager, Pool}, Connection, PgConnection};
 use dotenv::dotenv;
 
@@ -38,21 +38,24 @@ pub fn init_login(cfg: &mut web::ServiceConfig) {
 }
 
 pub fn init_tariff(cfg: &mut web::ServiceConfig) {
-    cfg.route("/tariff{tail:.*}", web::to(router::tariff_route));
+    cfg.service(
+        web::scope("/tariff")
+            .route("/{tail:.*}", web::to(router::tariff_route))
+    );
 }
 
 pub fn init_user(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/{prefix:.(user|business|bank)}")
+        web::scope("/{prefix:(user|member|business|bank)}")
             .wrap(JwtMiddleware)
-            .route("{tail:.*}", web::to(router::user_route))
+            .route("/{tail:.*}", web::to(router::user_route))
     );
 }
 
 #[actix_web::main]
 async fn main() {
     
-    
+    env_logger::init();
     dotenv().ok();
     let connection = establish_connection();
     
@@ -61,7 +64,7 @@ async fn main() {
     
     HttpServer::new(move || {
         App::new()
-            .app_data(connection.clone())
+            .app_data(web::Data::new(connection.clone()))
             .configure(init_login)
             .configure(init_tariff)
             .configure(init_user)
@@ -69,7 +72,8 @@ async fn main() {
     .bind(host)
     .unwrap()
     .run()
-    .await;
+    .await
+    .unwrap();
     
     
     
