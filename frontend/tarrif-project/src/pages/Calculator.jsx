@@ -337,6 +337,8 @@ export function Calculator({ onMenuClick }) {
 
   // Function to fetch current tariff calculation from backend
   const fetchCurrent = async () => {
+    console.log("fetchCurrent started, current state:", current);
+
     if (!report || !partner || !hs || !cost) {
       setError("Please fill in all fields before calculating.");
       return;
@@ -355,6 +357,8 @@ export function Calculator({ onMenuClick }) {
         tariffCalculationQueryDTO
       );
 
+      console.log("fetchCurrent response:", response.data);
+
       // Update state with current tariff results
       setCurrent(response.data);
       // console.log("current:", current.item);
@@ -371,6 +375,7 @@ export function Calculator({ onMenuClick }) {
         error.response?.data?.message ||
         "This country combination for this item does not exists. Please check your inputs and try again."
       );
+      console.log("Error state: {}\n", error)
     } finally {
       setLoadingCurrent(false);
       fetchPast(); // Automatically fetch historical data after current calculation
@@ -841,6 +846,41 @@ export function Calculator({ onMenuClick }) {
                     title={title}
                     legend={legend}
                   />
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Current Data Loading State */}
+          {loadingCurrent && (
+            <motion.div variants={itemVariants}>
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <RefreshCw className="h-6 w-6 inline mr-2 animate-spin" />
+                    Loading Current Tariff Results
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>
+                    Fetching current tariff data, please wait...
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <RefreshCw
+                        className="h-12 w-12 mx-auto mb-4 animate-spin"
+                        style={{ color: colors.accent }}
+                      />
+                      <p style={{ color: colors.muted }}>
+                        Loading current tariff data...
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

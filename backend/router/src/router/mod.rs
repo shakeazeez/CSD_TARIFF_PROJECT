@@ -5,22 +5,51 @@ use reqwest::Client;
 
 use crate::{jwt::jwt_functions::Claims, tables::Role};
 
-pub async fn tariff_route(req :HttpRequest, body: web::Bytes) -> impl Responder {
-    let base_url = env::var("TARIFF_URL").unwrap();
-    let uri = req.uri().to_string();
-    let url = format!("{}{}", base_url, uri);
-    
+async fn establish_connection(req: &HttpRequest, url: &str, body: web::Bytes) -> Result<reqwest::Response, reqwest::Error> {
     let client = Client::new();
     let response = if req.method() == actix_web::http::Method::GET {
-        reqwest::get(url.as_str()).await
+        reqwest::get(url).await
     } else {
-        client.post(url.as_str())
+        client.post(url)
             .body(body)
             .header("Content-Type", "application/json")
             .send()
             .await
     };
     
+    response
+}
+
+
+pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
+    let base_url = env::var("NEWS_URL").unwrap();
+    let uri = req.uri().to_string();
+    let url = format!("{}{}", base_url, uri);
+    
+    let response = establish_connection(&req, &url, body).await;
+    
+    match response {
+        Ok(res) => {
+            println!("Successful request");
+            let status = res.status();
+            let bytes = res.bytes().await.unwrap_or_default();
+            HttpResponse::build(status)
+                .insert_header((header::CONTENT_TYPE, "application/json"))
+                .body(bytes)
+        }, 
+        Err(e) => {
+            println!("{}", e);
+            return HttpResponse::InternalServerError().finish();
+        }
+    }
+}
+
+pub async fn tariff_route(req :HttpRequest, body: web::Bytes) -> impl Responder {
+    let base_url = env::var("TARIFF_URL").unwrap();
+    let uri = req.uri().to_string();
+    let url = format!("{}{}", base_url, uri);
+    
+    let response = establish_connection(&req, &url, body).await;
     
     match response {
         Ok(res) => {
@@ -64,17 +93,7 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     
     let url = format!("{}{}", base_url, uri);
     
-    let client = Client::new();
-    let response = if req.method() == actix_web::http::Method::GET {
-        reqwest::get(url.as_str()).await
-    } else {
-        client.post(url.as_str())
-            .body(body)
-            .header("Content-Type", "application/json")
-            .send()
-            .await
-    };
-    
+    let response = establish_connection(&req, &url, body).await;
     
     match response {
         Ok(res) => {

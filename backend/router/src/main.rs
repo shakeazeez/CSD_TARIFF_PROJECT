@@ -35,7 +35,14 @@ pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
     pool
 }
 
-pub fn init_login(cfg: &mut web::ServiceConfig) {
+fn init_news(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/news")
+            .route("/{tail:.*}", web::to(router::news_route))
+    );
+}
+
+fn init_login(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")
             .route("/login", web::post().to(auth::login))
@@ -43,7 +50,7 @@ pub fn init_login(cfg: &mut web::ServiceConfig) {
     );
 }
 
-pub fn init_tariff(cfg: &mut web::ServiceConfig) {
+fn init_tariff(cfg: &mut web::ServiceConfig) {
     cfg.service(web::scope("/tariff").route("/{tail:.*}", web::to(router::tariff_route)));
 }
 
@@ -75,6 +82,7 @@ async fn main() {
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(connection.clone()))
+            .configure(init_news)
             .configure(init_login)
             .configure(init_tariff)
             .configure(init_user)

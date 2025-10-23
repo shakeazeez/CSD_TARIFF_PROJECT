@@ -21,6 +21,10 @@ public class TariffCalcApplication {
 	    if (openAiKey != null) {
 	        System.setProperty("OPEN_AI_KEY", openAiKey);
 	    }
+	    String thenewsApiKey = LemmaUtils.getEnvOrDotenv("THE_NEWS_API_KEY");
+	    if (thenewsApiKey != null) {
+	        System.setProperty("THE_NEWS_API_KEY", thenewsApiKey);
+	    }
 	    String dbUrl = LemmaUtils.getEnvOrDotenv("DATABASE_URL");
 	    if (dbUrl != null) {
 	        System.setProperty("DATABASE_URL", dbUrl);
