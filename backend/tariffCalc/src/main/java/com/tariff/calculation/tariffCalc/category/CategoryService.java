@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.tariff.calculation.tariffCalc.service.EmbeddingService;
-import com.tariff.calculation.tariffCalc.utility.LemmaUtils;
 
 import jakarta.annotation.PostConstruct;
 
@@ -29,19 +28,6 @@ public class CategoryService {
     public void initializeCategories() {
         try {
             log.info("CategoryService: Starting category initialization...");
-            
-            // Check if OpenAI API key is available
-            String apiKey = LemmaUtils.getEnvOrDotenv("OPEN_AI_KEY");
-            if (apiKey == null || apiKey.trim().isEmpty()) {
-                apiKey = LemmaUtils.getEnvOrDotenv("OPENAI_API_KEY");
-            }
-            log.info("CategoryService: API key found: {}", apiKey != null && !apiKey.trim().isEmpty());
-            
-            if (apiKey == null || apiKey.trim().isEmpty()) {
-                log.info("CategoryService: No API key found, skipping initialization");
-                // Skip initialization if no API key (e.g., during testing)
-                return;
-            }
 
             long categoryCount = categoryRepo.count();
             log.info("CategoryService: Current category count: {}", categoryCount);
@@ -53,20 +39,43 @@ public class CategoryService {
                     Category category = new Category();
                     category.setName(industry.getName());
                     category.setDesc(industry.getDescription());
-                    float[] emb = embeddingService.getEmbedding(industry.getDescription());
-                    StringBuilder sb = new StringBuilder("[");
-                    for (int i = 0; i < emb.length; i++) {
-                        if (i > 0) sb.append(",");
-                        sb.append(emb[i]);
+                    // Do not embed 'Other' to avoid skewing similarity; leave embedding null
+                    if (!"other".equalsIgnoreCase(industry.getName())) {
+                        float[] emb = embeddingService.getEmbedding(industry.getDescription());
+                        category.setEmbedding(emb);
                     }
-                    sb.append("]");
-                    category.setEmbedding(sb.toString());
                     categoryRepo.save(category);
                     log.info("CategoryService: Saved category: {}", industry.getName());
                 });
                 log.info("CategoryService: Category initialization completed");
             } else {
-                log.info("CategoryService: Categories already exist, skipping initialization");
+                log.info("CategoryService: Categories already exist, checking for missing embeddings...");
+                List<Category> all = categoryRepo.findAll();
+                long missing = all.stream().filter(c -> c.getEmbedding() == null || c.getEmbedding().length == 0).count();
+                if (missing > 0) {
+                    log.info("CategoryService: Backfilling embeddings for {} categories...", missing);
+                    for (Category c : all) {
+                        // Skip 'Other' entirely for embedding/backfill
+                        if ("other".equalsIgnoreCase(c.getName())) {
+                            // If 'Other' currently has an embedding, clear it to avoid influencing KNN
+                            if (c.getEmbedding() != null && c.getEmbedding().length > 0) {
+                                c.setEmbedding(null);
+                                categoryRepo.save(c);
+                                log.debug("CategoryService: Cleared embedding for 'Other'");
+                            }
+                            continue;
+                        }
+                        if (c.getEmbedding() == null || c.getEmbedding().length == 0) {
+                            float[] emb = embeddingService.getEmbedding(c.getDesc() != null ? c.getDesc() : c.getName());
+                            c.setEmbedding(emb);
+                            categoryRepo.save(c);
+                            log.debug("CategoryService: Backfilled embedding for: {}", c.getName());
+                        }
+                    }
+                    log.info("CategoryService: Backfill complete");
+                } else {
+                    log.info("CategoryService: All categories already have embeddings");
+                }
             }
         } catch (Exception e) {
             log.error("CategoryService: Error during category initialization: {}", e.getMessage(), e);
