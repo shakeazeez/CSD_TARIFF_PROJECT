@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.user.dto.CreateUserDTO;
-import com.user.dto.LoginDTO;
 import com.user.dto.TokenDTO;
-import com.user.security.exception.ApplicationAuthenticationException;
 import com.user.service.AuthUserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,31 +31,6 @@ public class AuthUserController {
 
     public AuthUserController(AuthUserService authUserService) {
         this.authUserService = authUserService;
-    }
-
-    @Operation(summary = "Login user", responses = {
-            @ApiResponse(responseCode = "200", description = "Login successful", content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = TokenDTO.class))
-            }),
-            @ApiResponse(responseCode = "401", description = "Unauthorised", content = @Content)
-    })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User login credentials", 
-        required = true, content = @Content(mediaType = "application/json", 
-            schema = @Schema(implementation = LoginDTO.class), 
-            examples = @ExampleObject(value = "{ \"username\": \"demo_user\", \"password\": \"DemoPass123!\" }")
-    ))
-    @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(@RequestBody LoginDTO loginDTO) {
-        try {
-            TokenDTO login = authUserService.login(loginDTO);
-            return ResponseEntity.ok(login);
-        } catch (ApplicationAuthenticationException | IllegalArgumentException e) {
-            log.info(e.getMessage());
-            return ResponseEntity.status(401).build();
-        } catch (Exception e) {
-            log.info(e.getMessage()); 
-            return ResponseEntity.internalServerError().build();
-        }
     }
 
     @Operation(summary = "Register user", responses = {

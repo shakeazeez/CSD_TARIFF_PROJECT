@@ -26,6 +26,7 @@ public class BankUser extends User {
     @Column(name = "industry")
     private Industry industry;
 
+    @Column(name = "origin_country")
     private String originCountry;
 
     public BankUser(String username, String hashedPassword, Map<Integer, Integer> history,
