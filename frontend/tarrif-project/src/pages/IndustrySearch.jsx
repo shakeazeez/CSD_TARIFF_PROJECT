@@ -277,7 +277,7 @@ export function IndustrySearch() {
     <div className="flex">
       {/* Left sidebar for search filters */}
       <div className="w-1/4 bg-white p-4 border-r border-gray-200">
-        <h2 className="text-2xl font-bold mb-2">Tariff Trends</h2>
+        <h2 className="text-2xl font-bold mb-2">Tariff Statistics</h2>
 
         {/* Basic Filter section with outline */}
         <div className="mb-6 border border-gray-200 rounded-md p-4">
@@ -390,7 +390,7 @@ export function IndustrySearch() {
         <button
           onClick={fetchItems}
           disabled={loadingItems}
-          className="w-full bg-gray-900 text-white py-2 rounded-md flex items-center justify-center mb-6"
+          className="w-full bg-[#B5D1C3] text-gray-700 py-2 rounded-md flex items-center justify-center mb-6"
         >
           <span className="mr-2">🔍</span>
           {loadingItems ? "Loading..." : "Search"}
@@ -460,16 +460,16 @@ export function IndustrySearch() {
       </div>
 
       {/* Main content area for results */}
-      <div className="w-3/4 bg-gray-50 p-6">
+      <div className="w-3/4 p-6">
         {/* Loading and error states */}
         {loadingDetails && (
-          <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+          <div className="border border-gray-200 p-4 rounded-md shadow-sm mb-4">
             <p className="text-gray-500">Loading tariff details...</p>
           </div>
         )}
 
         {errorDetails && (
-          <div className="bg-white p-4 rounded-md shadow-sm mb-4 border-l-4 border-red-500">
+          <div className="border border-gray-200 p-4 rounded-md shadow-sm mb-4 border-l-4 border-red-500">
             <p className="text-red-500">{errorDetails}</p>
           </div>
         )}
@@ -485,7 +485,7 @@ export function IndustrySearch() {
           return (
             <div
               key={item.hscode}
-              className="bg-white mb-8 rounded-md shadow-sm overflow-hidden"
+              className="border border-gray-200 mb-8 rounded-md shadow-sm overflow-hidden"
             >
               {/* Item header */}
               <div className="border-b border-gray-100 p-4 flex justify-between items-center">
@@ -661,7 +661,7 @@ export function IndustrySearch() {
         {Object.keys(tariffDetails).length === 0 &&
           !loadingDetails &&
           selectedItems.length > 0 && (
-            <div className="bg-white p-6 rounded-md shadow-sm text-center">
+            <div className="border border-gray-200 p-6 rounded-md shadow-sm text-center">
               <p className="text-gray-500">
                 Select items and search to view tariff details
               </p>
