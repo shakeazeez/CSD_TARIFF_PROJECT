@@ -24,7 +24,7 @@ mod tables;
 type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
-    let database_url = env::var("DATABASE_URL").expect("Database url not set");
+    let database_url = env::var("RUST_DATABASE_URL").expect("Database url not set");
 
     let manager = ConnectionManager::<PgConnection>::new(&database_url);
     let pool = DbPool::builder().build(manager).unwrap();
