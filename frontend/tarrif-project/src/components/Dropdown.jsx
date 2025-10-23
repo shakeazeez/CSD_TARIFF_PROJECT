@@ -25,16 +25,22 @@ import { cn } from "../lib/utils"
 import { Input } from "./ui/input"
 import { useTheme } from "../contexts/ThemeContext.jsx"
 
-const Dropdown = ({ title, options = [], onChange }) => {
+const Dropdown = ({ title, options = [], onChange, value }) => {
   // Get theme colors for custom styling
   const { colors } = useTheme()
   
   const [open, setOpen] = React.useState(false)
   const [searchValue, setSearchValue] = React.useState("")
-  const [selectedValue, setSelectedValue] = React.useState("")
+  const [selectedValue, setSelectedValue] = React.useState(value || "")
   const [selectedLabel, setSelectedLabel] = React.useState("")
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1)
   const searchInputRef = React.useRef(null)
+
+  // Update selected value and label when value prop changes to show the country name
+  React.useEffect(() => {
+      const option = options.find(opt => opt.code === value)
+      setSelectedLabel(option ? option.id : "") 
+  }, [value, options])
 
   // Filter options based on search input
   const filteredOptions = React.useMemo(() => {
