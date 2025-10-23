@@ -277,12 +277,12 @@ export function IndustrySearch() {
     <div className="flex">
       {/* Left sidebar for search filters */}
       <div className="w-1/4 bg-white p-4 border-r border-gray-200">
-        <h2 className="text-2xl font-bold mb-2">Tariff Search</h2>
+        <h2 className="text-2xl font-bold mb-2">Tariff Trends</h2>
 
-        {/* HERE */}
-        <div className="mb-6">
+        {/* Basic Filter section with outline */}
+        <div className="mb-6 border border-gray-200 rounded-md p-4">
           <h2 className="text-lg font-semibold mb-2">Basic Filter</h2>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-gray-600 mb-4">
             Filter tariff by reporting country and industry
           </p>
 
@@ -350,9 +350,9 @@ export function IndustrySearch() {
 
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 border border-gray-200 rounded-md p-4">
           <h2 className="text-lg font-semibold mb-2">Date Range Filter</h2>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-gray-600 mb-4">
             Filter tariff data by date range
           </p>
 
@@ -396,9 +396,9 @@ export function IndustrySearch() {
           {loadingItems ? "Loading..." : "Search"}
         </button>
         
-        <div>
+        <div className="mb-6 border border-gray-200 rounded-md p-4">
           <h2 className="text-lg font-semibold mb-2">Filter Items</h2>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-gray-600 mb-4">
             {selectedItems.length} of {itemList.length} selected
           </p>
 
