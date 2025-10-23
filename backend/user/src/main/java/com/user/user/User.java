@@ -35,7 +35,11 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "username")
     private String username;
+    
+    @Column(name = "hashedpassword")
     private String hashedPassword;
 
     @ElementCollection
@@ -48,7 +52,7 @@ public class User {
     @ElementCollection
     @Enumerated
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "user_role")
+    @Column(name = "user_roles")
     private List<Role> role;
 
     public User(String username, String hashedPassword, Map<Integer, Integer> history,
