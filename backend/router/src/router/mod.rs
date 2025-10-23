@@ -1,6 +1,6 @@
-use std::{env, fmt};
+use std::{env};
 
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header, web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use reqwest::Client;
 
 use crate::{jwt::jwt_functions::Claims, tables::Role};
@@ -27,7 +27,9 @@ pub async fn tariff_route(req :HttpRequest, body: web::Bytes) -> impl Responder 
             println!("Successful request");
             let status = res.status();
             let bytes = res.bytes().await.unwrap_or_default();
-            HttpResponse::build(status).body(bytes)
+            HttpResponse::build(status)
+                .insert_header((header::CONTENT_TYPE, "application/json"))
+                .body(bytes)
         }, 
         Err(e) => {
             println!("{e}");
@@ -79,7 +81,9 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
             println!("Successful request");
             let status = res.status();
             let bytes = res.bytes().await.unwrap_or_default();
-            HttpResponse::build(status).body(bytes)
+            HttpResponse::build(status)
+                .insert_header((header::CONTENT_TYPE, "application/json"))
+                .body(bytes)
         }, 
         Err(e) => {
             println!("{e}");
