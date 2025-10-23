@@ -28,7 +28,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
     private final TariffRepo tariffRepo;
     private final CountryRepo countryRepo;
 
-    // private final Logger log = LoggerFactory.getLogger(BankIndustrySearchServiceImpl.class);
+    private final Logger log = LoggerFactory.getLogger(BankIndustrySearchServiceImpl.class);
 
     public BankIndustrySearchServiceImpl (ItemRepo itemRepo, TariffRepo tariffRepo, CountryRepo countryRepo) {
         this.itemRepo = itemRepo;
@@ -58,18 +58,18 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
 
         List<Item> filteredItemList = new ArrayList<>();
 
-        // log.info("Items to be printed" + preItemList.toString() + "\n\n\n");
+        //log.info("Items to be printed" + preItemList.toString() + "\n\n\n");
 
         // items that users can select should at least have 1 entry of tariff details for the date range
         for (Item item: preItemList) {
             Country reportingCountry =  countryRepo.findByCountryName(countryName)
                                         .orElseThrow(() -> new IllegalArgumentException("Country not found."));
 
-            // log.info("Reporting country FOUND: " +reportingCountry.toString() + "\n\n\n");
+            //log.info("Reporting country FOUND: " +reportingCountry.toString() + "\n\n\n");
 
             List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem(reportingCountry, item);
 
-            // log.info("tariffList" + tariffList.toString() + "\n\n\n");
+            //log.info("tariffList" + tariffList.toString() + "\n\n\n");
 
             for (Tariff tariff: tariffList) {
                 int yearReported = tariff.getLocalDate().getYear();
@@ -154,7 +154,14 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
                         .max(Comparator.comparing(Tariff::getLocalDate));
                     double rate1 = latest1.map(Tariff::getPercentageRate).orElse(0.0);
                     double rate2 = latest2.map(Tariff::getPercentageRate).orElse(0.0);
-                    return Double.compare(rate1, rate2); 
+                    
+                    int rateCompare = Double.compare(rate1, rate2);
+                    if (rateCompare != 0) {
+                        return rateCompare;
+                    }
+        
+                    // If rates are equal, use country name as tiebreaker for consistent ordering
+                    return e1.getKey().getCountryName().compareTo(e2.getKey().getCountryName());
                 })
             .limit(10)
             .collect(Collectors.toList());   
@@ -163,6 +170,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
             for (Map.Entry<Country, List<Tariff>> entry : topTenCountries) {
                 Country partnerCountry = entry.getKey();
                 List<Tariff> tariffs = entry.getValue().stream()
+                    .filter(t -> t.getLocalDate() != null)
                     .sorted(Comparator.comparing(Tariff::getLocalDate))
                     .toList();
 
