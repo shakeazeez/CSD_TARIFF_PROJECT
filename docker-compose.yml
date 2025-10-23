@@ -6,7 +6,7 @@ services:
       args:
         MAVEN_OPTS: -Dmaven.repo.local=/root/.m2/repository
     ports:
-      - "8080:8080"
+      - "8082:8082"
       - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL: ${DATABASE_URL}
@@ -33,6 +33,40 @@ services:
     restart: unless-stopped
     depends_on:
       - news
+
+  rust-router:
+    build:
+      context: ./backend/router
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    # Ignore first
+    environment:
+        DATABASE_URL_CONNECTION: ${RUST_DATABASE_URL}
+        FRONTEND_URL: ${FRONTEND_URL}
+        TARIFF_URL: http://backend:8081
+        USER_URL: http://backend:8082
+        NEWS_URL: http://news:8083
+        RUST_LOG: info
+    volumes:
+      # ✅ Mount source code for development (hot reload)
+        - ./backend/router/src:/app/src:ro
+           
+        # ✅ Mount migrations directory
+        - ./backend/router/migrations:/app/migrations:ro
+           
+        # ✅ Mount config files
+        - ./backend/router/diesel.toml:/app/diesel.toml:ro
+        - ./backend/router/.env.rust:/app/.env
+        # ✅ Mount target directory for faster rebuilds (optional)
+        - rust_target_cache:/app/target
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
+        reservations:
+          memory: 256MB
+    restart: unless-stopped
 
   news:
     build:
@@ -65,7 +99,8 @@ services:
       - backend
     environment:
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
-      
+
 
 volumes:
   maven_cache:
+  rust_target_cache:
