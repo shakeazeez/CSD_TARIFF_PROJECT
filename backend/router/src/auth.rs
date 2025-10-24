@@ -50,16 +50,19 @@ pub async fn login(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<LoginDTO>,
 ) -> impl Responder {
-    let acc: Vec<AuthUser> = get_user_details(&database, &login_details.username).await;
-
+    println!("Received: {:?}", login_details);
+    let name = login_details.username.as_deref().unwrap();
+    let acc: Vec<AuthUser> = get_user_details(&database, &name.to_string()).await;
+    
     if acc.len() != 1 {
         return HttpResponse::InternalServerError()
             .json("There is more than one user with the same username");
     }
 
     let roles = get_user_roles(&database, acc[0].id).await;
-    println!("{:?}", acc[0]);
-    match verify_password(&acc[0].hashedpassword, login_details.password.clone()) {
+    // println!("{:?}", acc[0]);
+    let password = login_details.password.as_deref().unwrap();
+    match verify_password(&acc[0].hashedpassword, password.to_string()) {
         Ok(_) => {
             let generated_token = jwt_functions::generate_token(&acc[0], &roles[0]);
 
@@ -97,6 +100,7 @@ pub async fn login(
             if status.is_success() {
                 let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
                 token_dto.token = Some(generated_token);
+                token_dto.username = Some(acc[0].username.to_owned());
                 return HttpResponse::build(status).json(token_dto);
             }
             return HttpResponse::build(status).json(body);

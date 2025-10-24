@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LoginDTO {
-    pub username: String,
-    pub password: String
+    pub username: Option<String>,
+    pub password: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -23,7 +23,7 @@ pub struct CreateDTO {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TokenDTO {
-    username: Option<String>,
+    pub username: Option<String>,
     pub token: Option<String>,
     #[serde(rename = "pin")]
     pin: Option<Vec<i32>>,

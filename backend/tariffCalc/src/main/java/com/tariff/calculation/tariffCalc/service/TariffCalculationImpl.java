@@ -55,6 +55,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158,
             764, 840, 704, 784);
     private final EmbeddingService embeddingService;
+    private int keyCounter = 1;
+    private String apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_1"); 
 
     public TariffCalculationImpl(
             CountryRepo countryRepo,
@@ -104,17 +106,29 @@ public class TariffCalculationImpl implements TariffCalculationService {
         String itemNum = String.format("%06d", item.getItemCode());
 
         // log.info("ItemNum: \n\n" + itemNum); // verify that the item code has 6 digits
-
+        
+        String copyKey = apiKey;
         MoachDTO result = restClientMoach.get()
                 .uri("/tariff-data?product=" + itemNum + "&destination=" + countryNumber
-                        + "&token=" + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                        + "&token=" + apiKey)
                 .retrieve()
                 .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
                     // This one occurs if that country doesnt trade that item......
                     log.info("Api not found");
                     throw new ApiFailureException(response.getStatusText());
                 })
+                .onStatus((status) -> status.value() == 401, (request, response) -> {
+                    // This one occurs if that country doesnt trade that item......
+                    log.info("Switching api keys....");
+                    keyCounter = (keyCounter + 1) % 4;
+                    apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
+                })
                 .body(MoachDTO.class);
+        
+        if (!copyKey.equals(apiKey)) {
+            return loadTariffFromApi(countryCode, item);
+        }
+        
         log.info("The result: " + result);
         if (result == null || result.tariffData() == null) {
             throw new ApiFailureException("Unable to call api properly");
@@ -309,13 +323,20 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         ItemRetrievalDTO result;
 
+        String copyKey = apiKey;
         if (!country.getCountryName().equals("world")) {
             result = restClientMoach.get()
                     .uri("/hs-code-match?q=" + itemName + "&category=" + country.getCountryNumber() + "&token="
-                            + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                            + apiKey)
                     .retrieve()
                     .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                         throw new ApiFailureException(response.getStatusText());
+                    })
+                    .onStatus((status) -> status.value() == 401, (request, response) -> {
+                        // This one occurs if that country doesnt trade that item......
+                        log.info("Switching api keys....");
+                        keyCounter = (keyCounter + 1) % 4;
+                        apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
                     })
                     .body(ItemRetrievalDTO.class);
         } else {
@@ -326,10 +347,20 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                         throw new ApiFailureException(response.getStatusText());
                     })
+                    .onStatus((status) -> status.value() == 401, (request, response) -> {
+                        // This one occurs if that country doesnt trade that item......
+                        log.info("Switching api keys....");
+                        keyCounter = (keyCounter + 1) % 4;
+                        apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
+                    })
                     .body(ItemRetrievalDTO.class);
 
         }
-
+        
+        if (!copyKey.equals(apiKey)) {
+            return loadItemFromApi(itemName, country);
+        }
+        
         log.info("Query results" + result.toString());
         if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
