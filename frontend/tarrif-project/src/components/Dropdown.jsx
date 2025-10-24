@@ -224,7 +224,7 @@ const Dropdown = ({ title, options = [], onChange, value }) => {
                         />
                       )}
                     </span>
-                    <span className="block truncate">{option.id}</span>
+                    <span className="block truncate ml-2">{option.id}</span>
                     <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
                       {option.code}
                     </span>
