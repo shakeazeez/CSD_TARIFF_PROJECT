@@ -280,6 +280,7 @@ export function Login(){
                 password: form.password,
                 ...(isSignUp && { role })
             };
+            console.log("Sending login data:", data);
 
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
