@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Chart from "../components/Chart";
-import { styleEffect } from "framer-motion";
+import { Header } from "../components/Header.jsx";
+import Dropdown from "../components/Dropdown";
+import { Label } from "../components/ui/label";
+import { useTheme } from "../contexts/ThemeContext.jsx";
+import { Input } from "../components/ui/input"; // input component
+import Calendar from "../components/ui/calendar";
 
-export function IndustrySearch() {
+export function IndustrySearch({onMenuClick}) {
   const backendURL = import.meta.env.VITE_BACKEND_URL;
+  const { colors } = useTheme();
 
   /*
    * Drop down for countries and industry selection
@@ -29,76 +35,35 @@ export function IndustrySearch() {
     fetchData();
   }, []);
 
+  // Transform country list for dropdown component compatibility
+  // Converts backend format to {id, code} format expected by Dropdown component
+  const modCountryList =
+    countryList && Array.isArray(countryList)
+      ? countryList.map((item) => ({
+          id: item.countryName, // Display name for dropdown
+          code: item.countryName, // Value sent to backend
+        }))
+      : [];
+
+  // Transform industry list for dropdown component compatibility
+  const modIndustryList =
+    industryList && Array.isArray(industryList)
+      ? industryList.map((item) => ({
+          id: item, // Display name for dropdown
+          code: item, // Value sent to backend
+        }))
+      : [];
+
   // states to hold input that user enters
-  // const [destCountry, setDestCountry] = useState("");
   const [homeCountry, setHomeCountry] = useState("");
   const [industry, setIndustry] = useState("");
-
-  // Update filtering to handle Country objects correctly
-  const filteredHomeCountries = countryList.filter((c) => 
-    c.countryName.toLowerCase().includes(homeCountry.toLowerCase())
-  );
-
-  const filteredIndustries = industryList.filter((i) =>
-    i.toLowerCase().includes(industry.toLowerCase())
-  );
-
-  // states to track which dropdown is open atm
-  // const [destDropDownOpen, setShowDestDropdown] = useState(false);
-  const [homeDropDownOpen, setShowHomeDropdown] = useState(false);
-  const [industryDropDownOpen, setIndDropDown] = useState(false);
-
-  // references used to check for user clicking outside the dropdown
-  // close dropdown menu if user clicks on something not in the dropdown
-  // const destRef = useRef(null);
-  const homeRef = useRef(null);
-  const industryRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      //   if (destRef.current && !destRef.current.contains(event.target)) {
-      //     setShowDestDropdown(false);
-      //   }
-      if (homeRef.current && !homeRef.current.contains(event.target)) {
-        setShowHomeDropdown(false);
-      }
-      if (industryRef.current && !industryRef.current.contains(event.target)) {
-        setIndDropDown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // focus to show dropdown when selected by user
-  // const handleDestFocus = () => setShowDestDropdown(true);
-  const handleHomeFocus = () => setShowHomeDropdown(true);
-  const handleIndustryFocus = () => setIndDropDown(true);
-
-  // close the dropdown menu after user makes selection
-  //   const selectDestCountry = (country) => {
-  //     setDestCountry(country);
-  //     setShowDestDropdown(false);
-  //   };
-
-  // Update to handle Country objects
-  const selectHomeCountry = (country) => {
-    setHomeCountry(country.countryName);
-    setShowHomeDropdown(false);
-  };
-
-  const selectIndustry = (ind) => {
-    setIndustry(ind);
-    setIndDropDown(false);
-  };
 
   /*
    * Start and End date, input or calendar select
    */
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
@@ -109,16 +74,13 @@ export function IndustrySearch() {
     const tenYearsAgo = new Date();
     tenYearsAgo.setFullYear(today.getFullYear() - 10);
 
-    const formatDate = (date) => date.toISOString().split("T")[0];
-
-    setStartDate(formatDate(tenYearsAgo));
-    setEndDate(formatDate(today));
+    setStartDate(tenYearsAgo);
+    setEndDate(today);
   }, []);
 
   // check the start and end dates
-  const validateStartDateChanges = (e) => {
-    const newStartDate = e.target.value;
-    if (endDate != "" && new Date(newStartDate) > new Date(endDate)) {
+  const validateStartDateChanges = (newStartDate) => {
+    if (endDate && newStartDate > endDate) {
       setStartDateError(true);
       console.log("End date cannot be before start date.");
       return;
@@ -128,9 +90,8 @@ export function IndustrySearch() {
     }
   };
 
-  const validateEndDateChanges = (e) => {
-    const newEndDate = e.target.value;
-    if (startDate != "" && new Date(newEndDate) < new Date(startDate)) {
+  const validateEndDateChanges = (newEndDate) => {
+    if (startDate && newEndDate < startDate) {
       setEndDateError(true);
       console.log("Start date cannot be before end date.");
       return;
@@ -153,8 +114,8 @@ export function IndustrySearch() {
     homeCountry: homeCountry,
     // destCountry,
     industry: industry,
-    startDate: startDate,
-    endDate: endDate,
+    startDate: startDate ? startDate.toISOString().split("T")[0] : "",
+    endDate: endDate ? endDate.toISOString().split("T")[0] : "",
   };
 
   const fetchItems = async () => {
@@ -164,7 +125,7 @@ export function IndustrySearch() {
       console.log("Retrieving items of homeCountry: industry.");
       // The response contains a list of strings (item names)
       setItemList(response.data);
-    } catch (error) {
+    } catch {
       console.error("Failed to retrieve items.");
       setErrorItems("Unable to retrieve items.");
     } finally {
@@ -222,8 +183,8 @@ export function IndustrySearch() {
         homeCountry: homeCountry,
         // destCountry,
         industry: industry,
-        startDate: startDate,
-        endDate: endDate,
+        startDate: startDate ? startDate.toISOString().split("T")[0] : "",
+        endDate: endDate ? endDate.toISOString().split("T")[0] : "",
       });
 
       const detailsMap = {};
@@ -274,80 +235,59 @@ export function IndustrySearch() {
   const [expandedOther, setExpandedOther] = useState({});
 
   return (
+    <>
+    {/* Header at the top */}
+    <Header onMenuClick={onMenuClick} showUserInfo={true} />
+
     <div className="flex">
       {/* Left sidebar for search filters */}
       <div className="w-1/4 bg-white p-4 border-r border-gray-200">
-        <h2 className="text-2xl font-bold mb-2">Tariff Statistics</h2>
+        <h2 className="text-2xl font-bold mb-2">Tariff Trends</h2>
 
-        {/* Basic Filter section with outline */}
+        {/* HERE */}
         <div className="mb-6 border border-gray-200 rounded-md p-4">
           <h2 className="text-lg font-semibold mb-2">Basic Filter</h2>
           <p className="text-sm text-gray-600 mb-4">
             Filter tariff by reporting country and industry
           </p>
 
-          <div className="mb-3">
-            <label className="block text-sm font-medium mb-1">
+
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="reporting-country"
+              style={{ color: colors.foreground }}
+            >
               Reporting Country
-            </label>
-            <div className="relative" ref={homeRef}>
-              <div className="flex items-center border rounded-md">
-                <input
-                  type="text"
-                  value={homeCountry}
-                  onChange={(e) => setHomeCountry(e.target.value)}
-                  onFocus={handleHomeFocus}
-                  placeholder="Select reporting country"
-                  className="w-full p-2 outline-none bg-transparent"
-                />
-                <span className="px-2 text-gray-400">▼</span>
-              </div>
-              {homeDropDownOpen && countryList.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                  {filteredHomeCountries.map((c) => (
-                    <li
-                      key={c.countryCode || c.countryName}
-                      onClick={() => selectHomeCountry(c)}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    >
-                      {c.countryName}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            </Label>
+            <Dropdown
+              options={modCountryList}
+              value={homeCountry}
+              onChange={(option) =>
+                setHomeCountry(option ? option.code : "")
+              }
+              placeholder="Select reporting country"
+              className="w-full"
+            />
           </div>
 
-          <div className="mb-3">
-            <label className="block text-sm font-medium mb-1">Industry</label>
-            <div className="relative" ref={industryRef}>
-              <div className="flex items-center border rounded-md">
-                <input
-                  type="text"
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                  onFocus={handleIndustryFocus}
-                  placeholder="Select industry"
-                  className="w-full p-2 outline-none bg-transparent"
-                />
-                <span className="px-2 text-gray-400">▼</span>
-              </div>
-              {industryDropDownOpen && industryList.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                  {filteredIndustries.map((ind) => (
-                    <li
-                      key={ind}
-                      onClick={() => selectIndustry(ind)}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    >
-                      {ind}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label
+              htmlFor="industry"
+              style={{ color: colors.foreground }}
+            >
+              Industry
+            </Label>
+            <Dropdown
+              options={modIndustryList}
+              value={industry}
+              onChange={(option) =>
+                setIndustry(option ? option.code : "")
+              }
+              placeholder="Select industry"
+              className="w-full"
+            />
           </div>
-
         </div>
 
         <div className="mb-6 border border-gray-200 rounded-md p-4">
@@ -357,12 +297,17 @@ export function IndustrySearch() {
           </p>
 
           <div className="mb-3">
-            <label className="block text-sm mb-1">From Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={validateStartDateChanges}
-              className="w-full p-2 border rounded-md"
+            <Label
+              htmlFor="start-date"
+              style={{ color: colors.foreground }}
+            >
+              From Date
+            </Label>
+            <Calendar
+              placeholder="Select start date"
+              selectedDate={startDate}
+              onDateSelect={validateStartDateChanges}
+              maxDate={endDate}
             />
             {startDateError && (
               <p className="text-red-500 text-xs mt-1">
@@ -372,12 +317,17 @@ export function IndustrySearch() {
           </div>
 
           <div>
-            <label className="block text-sm mb-1">To Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={validateEndDateChanges}
-              className="w-full p-2 border rounded-md"
+            <Label
+              htmlFor="end-date"
+              style={{ color: colors.foreground }}
+            >
+              To Date
+            </Label>
+            <Calendar
+              placeholder="Select end date"
+              selectedDate={endDate}
+              onDateSelect={validateEndDateChanges}
+              minDate={startDate}
             />
             {endDateError && (
               <p className="text-red-500 text-xs mt-1">
@@ -390,7 +340,7 @@ export function IndustrySearch() {
         <button
           onClick={fetchItems}
           disabled={loadingItems}
-          className="w-full bg-[#B5D1C3] text-gray-700 py-2 rounded-md flex items-center justify-center mb-6"
+          className="w-full bg-gray-900 text-white py-2 rounded-md flex items-center justify-center mb-6"
         >
           <span className="mr-2">🔍</span>
           {loadingItems ? "Loading..." : "Search"}
@@ -458,18 +408,20 @@ export function IndustrySearch() {
           </div>
         </div>
       </div>
-
+    </div>
+    
+    <div>
       {/* Main content area for results */}
-      <div className="w-3/4 p-6">
+      <div className="w-3/4 bg-gray-50 p-6">
         {/* Loading and error states */}
         {loadingDetails && (
-          <div className="border border-gray-200 p-4 rounded-md shadow-sm mb-4">
+          <div className="bg-white p-4 rounded-md shadow-sm mb-4">
             <p className="text-gray-500">Loading tariff details...</p>
           </div>
         )}
 
         {errorDetails && (
-          <div className="border border-gray-200 p-4 rounded-md shadow-sm mb-4 border-l-4 border-red-500">
+          <div className="bg-white p-4 rounded-md shadow-sm mb-4 border-l-4 border-red-500">
             <p className="text-red-500">{errorDetails}</p>
           </div>
         )}
@@ -485,7 +437,7 @@ export function IndustrySearch() {
           return (
             <div
               key={item.hscode}
-              className="border border-gray-200 mb-8 rounded-md shadow-sm overflow-hidden"
+              className="bg-white mb-8 rounded-md shadow-sm overflow-hidden"
             >
               {/* Item header */}
               <div className="border-b border-gray-100 p-4 flex justify-between items-center">
@@ -661,13 +613,15 @@ export function IndustrySearch() {
         {Object.keys(tariffDetails).length === 0 &&
           !loadingDetails &&
           selectedItems.length > 0 && (
-            <div className="border border-gray-200 p-6 rounded-md shadow-sm text-center">
+            <div className="bg-white p-6 rounded-md shadow-sm text-center">
               <p className="text-gray-500">
                 Select items and search to view tariff details
               </p>
             </div>
           )}
       </div>
+    
     </div>
+  </>
   );
 }
