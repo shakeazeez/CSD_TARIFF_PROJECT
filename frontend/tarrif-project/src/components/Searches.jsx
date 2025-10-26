@@ -19,12 +19,13 @@ const Searches = ({ backendURL }) => {
    * If user is guest, load recent searches from local storage
    */
   useEffect(() => {
+    // console.log("Searches useEffect triggered, isAuthenticated:", isAuthenticated);
     if (isAuthenticated) {
       fetchTopSearchesIds();
     } else {
-      loadSearches();
+      loadRecentSearches();
     }
-  }, []);
+  }, [isAuthenticated]);
 
   /* 
    * Fetch top searches ids for logged in users from backend
@@ -33,6 +34,7 @@ const Searches = ({ backendURL }) => {
    * 
    */
   const fetchTopSearchesIds = async () => {
+    // console.log("Starting fetchTopSearchesIds for logged in user");
     try { // calls backend to get the top searches for logged in users
       const response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/history`, // returns List<Integer> of tariffIds
         {
@@ -41,6 +43,7 @@ const Searches = ({ backendURL }) => {
           },
         }
       );
+      // console.log("Received top search IDs from backend:", response.data);
       localStorage.setItem("generalUserTopSearches", JSON.stringify(response.data)); // saves the tariffIds in local storage
       setTopSearchesIds(response.data); // update state the fetching of details can be triggered next
     } catch (e) {
@@ -64,8 +67,10 @@ const Searches = ({ backendURL }) => {
    * Updates recentSearchesIds state.
    * For every stored tariffId, triggers a fetch to backend to get the full search details. (using fetchSearches function)
    */
-  const loadSearches = () => {
+  const loadRecentSearches = () => {
+    // console.log("Loading recent searches for guest user");
     const storedSearchesIds = localStorage.getItem("guestRecentSearches");
+    // console.log("Stored guest searches:", storedSearchesIds);
 
     if (storedSearchesIds) {
       let idsArray;
@@ -81,6 +86,7 @@ const Searches = ({ backendURL }) => {
         idsArray = storedSearchesIds.split(",").map((s) => Number(s.trim()));
       }
 
+      // console.log("Guest search IDs array:", idsArray);
       setRecentSearchesIds(idsArray);  // store the tariffIds in state
       idsArray.forEach(tariffId => fetchSearches(tariffId, setRecentSearchesData)); // fetch the search details for each tariffId and store in state
     }
@@ -167,7 +173,7 @@ const Searches = ({ backendURL }) => {
       <div>
         {ids.length === 0 ? (
           <div className="text-center py-6" style={{ color: colors?.muted || '#6b7280' }}>
-            <p>{isAuthenticated ? "No favorite searches yet" : "No recent searches"}</p>
+            <p>{isAuthenticated ? "No favourite searches yet" : "No recent searches"}</p>
           </div>
         ) : (
           <div className="flex flex-wrap gap-3 justify-center">
@@ -179,7 +185,7 @@ const Searches = ({ backendURL }) => {
               return (
                 <div
                   key={id}
-                  className="flex-shrink-0 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-sm flex items-center justify-center"
+                      className="flex-shrink-0 p-3 rounded-lg cursor-pointer transition-all duration-200 shadow hover:shadow-lg flex items-center justify-center"
                   style={{
                     backgroundColor: `${colors?.border || '#e5e7eb'}80`,
                     borderColor: `${colors?.border || '#e5e7eb'}80`,

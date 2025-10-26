@@ -27,6 +27,7 @@ import { useTheme } from "../contexts/ThemeContext.jsx"; // Custom theme context
 import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
 import {
   Calculator as CalculatorIcon,
+  History,
   Menu,
   Sun,
   Moon,
@@ -77,18 +78,18 @@ const itemVariants = {
 // ====================================
 
 export function Calculator({ onMenuClick }) {
+  // To receive the data that was passed during navigation
+  const location = useLocation();
+
+  // Get authentication context for user management
+  const { isAuthenticated } = useAuth()
+
   // ====================================
   // THEME INTEGRATION
   // ====================================
 
   // Get theme context for component-level color management
   const { colors, theme, toggleTheme, isDark } = useTheme();
-
-  // To receive the data that was passed during navigation
-  const location = useLocation();
-
-  // Get authentication context for user management
-  const { isAuthenticated } = useAuth()
 
   // Toast hook
   // ====================================
@@ -124,7 +125,6 @@ export function Calculator({ onMenuClick }) {
 
   const [autoFetch, setAutoFetch] = useState(false);
 
-  // for search history
   // auto fetch when form fields are populated from search history
   useEffect(() => {
     if (autoFetch && report && partner && hs && cost) {
@@ -138,6 +138,10 @@ export function Calculator({ onMenuClick }) {
       }, 200);
     }
   }, [autoFetch]);
+
+  useEffect(() => {
+    window.scrollTo({top: 0, behavior: "smooth"});
+  })
 
   // Pinning
   const [pinned, setPinned] = useState([]);
@@ -931,6 +935,7 @@ export function Calculator({ onMenuClick }) {
             >
               <CardHeader>
                 <CardTitle style={{ color: colors.foreground }}>
+                  <History className="h-6 w-6 inline mr-2" />
                   {isAuthenticated ? "Your Top Searches" : "Search History"}
                 </CardTitle>
                 <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
