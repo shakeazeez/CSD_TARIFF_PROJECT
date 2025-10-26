@@ -57,17 +57,38 @@ public class TariffOverviewImpl implements TariffOverviewService {
     // https://wits.worldbank.org/API/V1/SDMX/V21/datasource/TRN/reporter/840/partner/156/product/020110/year/all/datatype/reported?format=JSON
     private List<Tariff> loadTariffsFromApi(Country reportingCountry, Country partnerCountry, Item item)
             throws ApiFailureException {
+        // log.info("7. inside loadTariffFromAPI\n");
         String reportingCountryNumber = Integer.toString(reportingCountry.getCountryNumber());
                 
         while (reportingCountryNumber.length() < 3) {
             reportingCountryNumber = "0" + reportingCountryNumber;
         }
+
         String partnerCountryNumber = Integer.toString(partnerCountry.getCountryNumber());
+
+        // log.info("7. reporting country number:{}\n", reportingCountryNumber);
                 
         while (partnerCountryNumber.length() < 3) {
             partnerCountryNumber = "0" + partnerCountryNumber;
         }
-        String itemNum = Integer.toString(item.getItemCode()).substring(0, 6);
+
+        //  log.info("8. partner country number:{}\n", partnerCountryNumber);
+
+        //  log.info("9. item.getItemCode() as integer: {}\n", item.getItemCode());
+        // Integer itemCode = item.getItemCode();
+        // log.info("10. is ItemCode an integer: {}", itemCode);
+
+        // log.info(item.getItemCode().toString());
+
+        String itemNum = String.format("%06d", item.getItemCode()); // since itemCode is stored as an integer, the leading zero gets cut off
+        // String itemNum = Integer.toString(item.getItemCode());
+
+       //  log.info("11. itemNum as a string, check if there's leading zero: " + itemNum);
+
+        // log.info("itemNum: " + itemNum);
+
+        // String itemNum = Integer.toString(item.getItemCode()).substring(0, 6);
+
         WitsDTO result = null;
         try {
             result = restClientWits.get()
@@ -141,16 +162,25 @@ public class TariffOverviewImpl implements TariffOverviewService {
     }
 
     public TariffOverviewResponseDTO getTariffOverview(TariffCalculationQueryDTO queryDTO) {
+        // log.info("1. === getTariffOverview called with: reporting={}, partner={}, item={} ===\n", 
+             // queryDTO.reportingCountry(), queryDTO.partnerCountry(), queryDTO.item());
+    
         Country reportingCountry = countryRepo.findByCountryName(queryDTO.reportingCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Reporting country not found"));
 
+                // log.info("2. Found reporting country: {}\n", reportingCountry.getCountryName());
+
         Country partnerCountry = countryRepo.findByCountryName(queryDTO.partnerCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Partner country not found"));
+
+                // log.info("3. Found partner country: {}\n", partnerCountry.getCountryName());
 
         Item item = itemRepo.findByItemNameAndCountry(LemmaUtils.toSingular(queryDTO.item().toLowerCase().trim()), reportingCountry)
                 .orElseGet(() -> itemRepo.findByItemNameAndCountry(LemmaUtils.toSingular(queryDTO.item().trim()).toLowerCase(), 
                             countryRepo.findByCountryName("world").orElseThrow())
                 .orElseThrow(() -> new IllegalArgumentException("Item not found for item " + queryDTO.item())));
+
+        // log.info("4. Found item: {} with code: {}\n", item.getItemName(), item.getItemCode());
 
         log.info("No problem with Item Query");
 
@@ -158,12 +188,18 @@ public class TariffOverviewImpl implements TariffOverviewService {
         final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry,
                 partnerCountry, item);
 
+        // log.info("5. Found {} existing tariffs in database\n", tariffList.size());
+
         log.info(tariffList.toString());
         // if not, load from api
         if (tariffList.size() <= 1) {
             log.info("Attempting to load....");
+            // log.info("6. Attempting to load from API because tariffList.size() = {}\n", tariffList.size());
             tariffList.addAll(loadTariffsFromApi(reportingCountry, partnerCountry, item));
-        }
+        } 
+        // else {
+            // log.info("6. Using existing tariffs from database, skipping API call\n");
+        // }
 
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
                 .map(tariff -> new HistoricalTariffData(

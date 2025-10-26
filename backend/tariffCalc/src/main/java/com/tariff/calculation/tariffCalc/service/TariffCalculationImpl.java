@@ -55,6 +55,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158,
             764, 840, 704, 784);
     private final EmbeddingService embeddingService;
+    private int keyCounter = 1;
+    private String apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_1"); 
 
     public TariffCalculationImpl(
             CountryRepo countryRepo,
@@ -98,16 +100,35 @@ public class TariffCalculationImpl implements TariffCalculationService {
             countryNumber = "0" + countryNumber;
         }
 
+        // log.info("Itemcode: \n\n" + item.getItemCode()); // verify that the leading
+        // zero got removed
+
+        String itemNum = String.format("%06d", item.getItemCode());
+
+        // log.info("ItemNum: \n\n" + itemNum); // verify that the item code has 6 digits
+        
+        String copyKey = apiKey;
         MoachDTO result = restClientMoach.get()
-                .uri("/tariff-data?product=" + item.getItemCode() + "&destination=" + countryNumber
-                        + "&token=" + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                .uri("/tariff-data?product=" + itemNum + "&destination=" + countryNumber
+                        + "&token=" + apiKey)
                 .retrieve()
                 .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
                     // This one occurs if that country doesnt trade that item......
                     log.info("Api not found");
                     throw new ApiFailureException(response.getStatusText());
                 })
+                .onStatus((status) -> status.value() == 401, (request, response) -> {
+                    // This one occurs if that country doesnt trade that item......
+                    log.info("Switching api keys....");
+                    keyCounter = (keyCounter + 1) % 4;
+                    apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
+                })
                 .body(MoachDTO.class);
+        
+        if (!copyKey.equals(apiKey)) {
+            return loadTariffFromApi(countryCode, item);
+        }
+        
         log.info("The result: " + result);
         if (result == null || result.tariffData() == null) {
             throw new ApiFailureException("Unable to call api properly");
@@ -117,7 +138,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
         List<Tariff> res = new ArrayList<>();
 
         // sigh... This is gna be disgusting. Also, IDK why is there multiple data....
-        // log.info(result.tariffData().toString());
+        // log.info("first entry of result: {}\n", result.tariffData().toString());
+        log.info(result.tariffData().toString());
         TariffData tariffData = result.tariffData().get(0);
         TariffRate tariffRate = tariffData.getTariffRate();
 
@@ -153,7 +175,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 customRateInfo = customRateInfo.substring(0, customRateInfo.indexOf('%'));
             }
 
+            // log.info("US case of parse double might be raising issue: {} \n\n", customRateInfo);
             Double customRateValue = customRateInfo.equals("free") ? 0 : Double.parseDouble(customRateInfo) / 100.0;
+            // log.info("custom rate info after parsing \n\n", customRateInfo);
             // log.info("Attempting to finding by Code");
             log.info(countries.toString());
             countries.forEach((code) -> {
@@ -172,9 +196,27 @@ public class TariffCalculationImpl implements TariffCalculationService {
             // This is the world case
             Country world = countryRepo.findByCountryName("world").get();
             String generalRateInfo = tariffRate.generalDutyRate().toLowerCase();
-            Double generalRateValue = generalRateInfo != null && !generalRateInfo.equals("free")
-                    ? Double.parseDouble(generalRateInfo)
-                    : 0.0;
+
+            // log.info("US case of parse double with worlds might be raising issue: {} \n\n", generalRateInfo); 
+            // returns 2.4 cents/kg
+
+            Double generalRateValue = 0.0;
+
+            if (generalRateInfo != null && !generalRateInfo.equals("free")) {
+                String generalRate = generalRateInfo.replaceAll("[^0-9.]", "");
+                // log.info("generalRateValue after extracting numbers: {}", generalRate);
+
+                if (!generalRate.isEmpty()) {
+                    generalRateValue = Double.parseDouble(generalRate);
+                }
+            }
+
+            // log.info("generalRateValue after parsing numbers: {}", generalRateValue);
+
+            // Double generalRateValue = generalRateInfo != null &&
+            // !generalRateInfo.equals("free")
+            // ? Double.parseDouble(generalRateInfo)
+            // : 0.0;
 
             Tariff tariff = tariffRepo.save(
                     new Tariff(countryCode, world, item, generalRateValue, "General Rate of Duty", LocalDate.now()));
@@ -224,9 +266,22 @@ public class TariffCalculationImpl implements TariffCalculationService {
             String regionTariffRate = preProcessed.contains("%") ? preProcessed.substring(0, preProcessed.indexOf('%'))
                     : "";
 
+            // log.info("Regional tariff rate parse double with worlds might be raising issue: {} \n\n", regionTariffRate); // regionTariffRate returns Ad Valorem Rate: 0
+
+            String regionRate = regionTariffRate.replaceAll("[^0-9.]", ""); // remove all non-digit except '.'
+            // log.info("regionrate after fixing: {}\n", regionRate);
+            double regionTariffRateValue = regionRate.isEmpty() ? 0.0 : Double.parseDouble(regionRate);
+
+            // log.info("regionTariffRateValue after fixing: {}\n", regionTariffRateValue);
+
+
+
             // log.info("Region tariff rate : " + regionTariffRate);
-            double regionTariffRateValue = (regionTariffRate == null || "".equals(regionTariffRate)) ? 0.0
-                    : Double.parseDouble(regionTariffRate);
+
+            // double regionTariffRateValue = (regionTariffRate == null ||
+            // "".equals(regionTariffRate)) ? 0.0
+            // : Double.parseDouble(regionTariffRate);
+
             // log.info("No problem with Tariff Loading" + regionTariffRateValue);
             // log.info("No problem with Tariff Saving");
             log.info("Countries: " + country);
@@ -268,13 +323,20 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         ItemRetrievalDTO result;
 
+        String copyKey = apiKey;
         if (!country.getCountryName().equals("world")) {
             result = restClientMoach.get()
                     .uri("/hs-code-match?q=" + itemName + "&category=" + country.getCountryNumber() + "&token="
-                            + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
+                            + apiKey)
                     .retrieve()
                     .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                         throw new ApiFailureException(response.getStatusText());
+                    })
+                    .onStatus((status) -> status.value() == 401, (request, response) -> {
+                        // This one occurs if that country doesnt trade that item......
+                        log.info("Switching api keys....");
+                        keyCounter = (keyCounter + 1) % 4;
+                        apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
                     })
                     .body(ItemRetrievalDTO.class);
         } else {
@@ -285,10 +347,20 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                         throw new ApiFailureException(response.getStatusText());
                     })
+                    .onStatus((status) -> status.value() == 401, (request, response) -> {
+                        // This one occurs if that country doesnt trade that item......
+                        log.info("Switching api keys....");
+                        keyCounter = (keyCounter + 1) % 4;
+                        apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
+                    })
                     .body(ItemRetrievalDTO.class);
 
         }
-
+        
+        if (!copyKey.equals(apiKey)) {
+            return loadItemFromApi(itemName, country);
+        }
+        
         log.info("Query results" + result.toString());
         if (result == null || result.data() == null) {
             throw new ApiFailureException("Api call failed");
