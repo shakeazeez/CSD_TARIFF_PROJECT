@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import Chart from "../components/Chart";
+import IndustryChart from "../components/IndustryChart";
 import { Header } from "../components/Header.jsx";
 import Dropdown from "../components/Dropdown";
 import { Label } from "../components/ui/label";
 import { useTheme } from "../contexts/ThemeContext.jsx";
 import { Input } from "../components/ui/input"; // input component
 import Calendar from "../components/ui/calendar";
+import { AlignCenter } from "lucide-react";
 
 export function IndustrySearch({ onMenuClick }) {
   const backendURL = import.meta.env.VITE_BACKEND_URL;
@@ -125,6 +126,12 @@ export function IndustrySearch({ onMenuClick }) {
   const fetchItems = async () => {
     setLoadingItems(true);
     setErrorItems(null); // Clear any previous errors
+    // Clear all previous results for a fresh search
+    setItemList([]);
+    setSelectedItems([]);
+    setTariffDetails({});
+    setItemErrors([]);
+    setErrorDetails(null);
     try {
       const response = await axios.post(
         `${backendURL}/tariff/items`,
@@ -152,6 +159,7 @@ export function IndustrySearch({ onMenuClick }) {
   const [tariffDetails, setTariffDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [errorDetails, setErrorDetails] = useState(null);
+  const [itemErrors, setItemErrors] = useState([]);
 
   // Add a debounce timer ref
   const debounceTimerRef = useRef(null);
@@ -162,12 +170,17 @@ export function IndustrySearch({ onMenuClick }) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Only fetch after 1 second of inactivity
-    if (selectedItems.length > 0) {
-      debounceTimerRef.current = setTimeout(() => {
-        fetchTariffDetails();
-      }, 1000);
+    // Clear tariff details if no items are selected
+    if (selectedItems.length === 0) {
+      setTariffDetails({});
+      setItemErrors([]);
+      return;
     }
+
+    // Only fetch after 1 second of inactivity
+    debounceTimerRef.current = setTimeout(() => {
+      fetchTariffDetails();
+    }, 1000);
 
     // Cleanup function to clear timeout when component unmounts
     return () => {
@@ -182,6 +195,7 @@ export function IndustrySearch({ onMenuClick }) {
 
     setLoadingDetails(true);
     setErrorDetails(null);
+    setItemErrors([]); // Clear previous item errors
 
     // BACKEND returns => hscode, item name, current tariff, list of partner countries (rates and corresponding dates)
     try {
@@ -204,9 +218,26 @@ export function IndustrySearch({ onMenuClick }) {
       });
 
       setTariffDetails(detailsMap);
+
+      // Check for missing items and create error messages
+      const returnedItemNames = response.data.map((item) => item.itemName);
+      const missingItems = selectedItems.filter(
+        (item) => !returnedItemNames.includes(item)
+      );
+
+      if (missingItems.length > 0) {
+        const errorMessages = missingItems.map(
+          (item) => `Unable to load tariff details for "${item}".`
+        );
+        setItemErrors(errorMessages);
+      }
     } catch (error) {
       console.error("Failed to fetch tariff details:", error);
-      setErrorDetails("Unable to load tariff details.");
+      // Set errors for all selected items since the request failed
+      const errorMessages = selectedItems.map(
+        (item) => `Unable to load tariff details for "${item}".`
+      );
+      setItemErrors(errorMessages);
     } finally {
       setLoadingDetails(false);
     }
@@ -263,24 +294,24 @@ export function IndustrySearch({ onMenuClick }) {
   const [expandedOther, setExpandedOther] = useState({});
 
   return (
-    <div className="min-h-screen">
+    <div className="h-screen flex flex-col">
       {/* Header at the top */}
       <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
-      <div className="flex">
+      <div className="flex flex-1 min-h-0">
         {/* Left sidebar for search filters */}
         <div
-          className="w-1/4 p-4 border-r"
+          className="w-1/4 p-4 border-r overflow-y-auto"
           style={{
             backgroundColor: `${colors.surface}15`,
             borderColor: colors.border,
           }}
         >
           <h2
-            className="text-2xl font-bold mb-2"
+            className="text-2xl font-bold mb-6 mt-2"
             style={{ color: colors.foreground }}
           >
-            Tariff Trends
+            ↗ Industry Trends
           </h2>
 
           {/* HERE */}
@@ -389,6 +420,7 @@ export function IndustrySearch({ onMenuClick }) {
             className="w-full py-2 rounded-md flex items-center justify-center mb-6"
             style={{
               backgroundColor: colors.accent,
+              alignItems: "center",
               borderColor: colors.accent,
               color: "#ffffff",
             }}
@@ -402,7 +434,7 @@ export function IndustrySearch({ onMenuClick }) {
             }}
           >
             <span className="mr-2"></span>
-            {loadingItems ? "Loading..." : "🔍 Search"}
+            {loadingItems ? "Loading..." : "🔎Search"}
           </button>
 
           <div
@@ -462,9 +494,19 @@ export function IndustrySearch({ onMenuClick }) {
                       key={item}
                       onClick={() => {
                         if (isSelected) {
-                          setSelectedItems(
-                            selectedItems.filter((id) => id !== item)
+                          const newSelectedItems = selectedItems.filter(
+                            (id) => id !== item
                           );
+                          setSelectedItems(newSelectedItems);
+                          // Immediately remove error for this item
+                          setItemErrors((prev) =>
+                            prev.filter((error) => !error.includes(`"${item}"`))
+                          );
+                          // Clear all errors if no items remain selected
+                          if (newSelectedItems.length === 0) {
+                            setItemErrors([]);
+                            setTariffDetails({});
+                          }
                         } else {
                           setSelectedItems([...selectedItems, item]);
                         }
@@ -526,11 +568,17 @@ export function IndustrySearch({ onMenuClick }) {
         </div>
 
         {/* Main content area for results */}
-        <div className="w-3/4 p-6">
+        <div className="w-3/4 p-6 overflow-y-auto">
+          <h2
+            className="text-2xl font-bold mb-6"
+            style={{ color: colors.foreground }}
+          >
+            Results
+          </h2>
           {/* Loading and error states */}
           {loadingDetails && (
             <div
-              className="p-4 rounded-md shadow-sm mb-4"
+              className="p-6 rounded-md shadow-sm mb-6"
               style={{
                 color: colors.foreground,
               }}
@@ -539,207 +587,192 @@ export function IndustrySearch({ onMenuClick }) {
             </div>
           )}
 
-          {errorDetails && (
+          {/* Item-specific errors */}
+          {itemErrors.length > 0 && selectedItems.length > 0 && (
             <div
-              className="p-4 rounded-md shadow-sm mb-4 border-l-4"
+              className="p-6 rounded-md shadow-sm mb-6 border-l-4"
               style={{
-                borderColor: colors.error,
+                borderColor: colors.warning,
+                backgroundColor: `${colors.warning}10`,
                 color: colors.foreground,
               }}
             >
-              <p style={{ color: colors.error }}>{errorDetails}</p>
+              <h3
+                className="font-semibold mb-2"
+                style={{ color: colors.warning }}
+              >
+                Some items could not be loaded:
+              </h3>
+              <ul className="list-disc list-inside space-y-1">
+                {itemErrors.map((error, index) => (
+                  <li
+                    key={index}
+                    className="text-sm"
+                    style={{ color: colors.foreground }}
+                  >
+                    {error}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
-          {Object.values(tariffDetails).map((item) => {
-            const tariffDetailsList = item.tariffDetailsList;
-            const topPartners = getTopPartners(tariffDetailsList, 3);
-            const otherPartners = getOtherPartners(
-              tariffDetailsList,
-              topPartners
-            );
+          {Object.values(tariffDetails)
+            .filter((item) => selectedItems.includes(item.itemName))
+            .map((item) => {
+              const tariffDetailsList = item.tariffDetailsList;
+              const topPartners = getTopPartners(tariffDetailsList, 3);
+              const otherPartners = getOtherPartners(
+                tariffDetailsList,
+                topPartners
+              );
 
-            return (
-              <div
-                key={item.hscode}
-                className="mb-8 rounded-md shadow-sm overflow-hidden"
-              >
-                {/* Item header */}
-                <div className="border-b border-gray-100 p-4 flex justify-between items-center">
-                  <div>
-                    <div className="text-gray-500 text-sm">{item.hscode}</div>
-                    <h2 className="text-lg font-medium">{item.itemName}</h2>
-                  </div>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <span>📌</span>
-                  </button>
-                </div>
-
-                {/* Top 3 section */}
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium">
-                      Top 3 Best Tariff Rate Partner Countries
-                    </h3>
+              return (
+                <div
+                  key={item.hscode}
+                  className="mb-8 rounded-md overflow-hidden border"
+                  style={{
+                    borderColor: "colors.border",
+                    backgroundColor: `${colors.surface}95`,
+                  }}
+                >
+                  {/* Item header */}
+                  <div className="border-b border-gray-100 p-6 flex justify-between items-center mb-6">
+                    <div>
+                      <div className="text-gray-500 text-sm">{item.hscode}</div>
+                      <h2 className="text-lg font-medium">{item.itemName}</h2>
+                    </div>
                     <button className="text-gray-400 hover:text-gray-600">
-                      <span>▲</span>
+                      <span>📌</span>
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    {topPartners.map((partner) => {
-                      const tariffs = partner.tariffs || [];
+                  {/* Top 3 section */}
+                  <div className="p-6 mb-8">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-medium">
+                        Top 3 Best Tariff Rate Partner Countries
+                      </h3>
+                    </div>
 
-                      const labels =
-                        tariffs.length > 0
-                          ? tariffs.map(
-                              (t) =>
-                                t.localDate?.split("-")[0] ||
-                                startDate.split("-")[0]
-                            )
-                          : generateYearRange(startDate, endDate);
+                    <div className="grid grid-cols-3 gap-6">
+                      {topPartners.map((partner) => {
+                        const tariffs = partner.tariffs || [];
 
-                      // Fix chart data formatting
-                      const values =
-                        tariffs.length > 0
-                          ? tariffs.map((t) => t.percentageRate * 100)
-                          : [0];
+                        const labels =
+                          tariffs.length > 0
+                            ? tariffs.map(
+                                (t) =>
+                                  t.localDate?.split("-")[0] ||
+                                  startDate.split("-")[0]
+                              )
+                            : generateYearRange(startDate, endDate);
 
-                      const legend = [partner.country.countryName];
-                      const avg = partner.averageRate;
+                        // Fix chart data formatting
+                        const values =
+                          tariffs.length > 0
+                            ? tariffs.map((t) => t.percentageRate)
+                            : [0];
 
-                      return (
-                        <div
-                          key={partner.country.countryName}
-                          className="partner-box border rounded-lg p-4"
-                        >
-                          <h4 className="text-md font-medium mb-2">
-                            {partner.country.countryName}
-                          </h4>
-                          <div className="h-40">
-                            <Chart
-                              labels={labels}
-                              value={values}
-                              title="Tariff Over Time"
-                              legend={legend}
-                            />
-                          </div>
-                          <div className="mt-2">
-                            <div className="text-sm text-gray-500">
-                              Current Rate
+                        const legend = [partner.country.countryName];
+                        const avg = partner.averageRate;
+
+                        return (
+                          <div
+                            key={partner.country.countryName}
+                            className="partner-box border rounded-lg p-6"
+                            style={{
+                              borderColor: colors.border,
+                              backgroundColor: `${colors.surface}98`,
+                            }}
+                          >
+                            <h4 className="text-md font-medium mb-2">
+                              {partner.country.countryName}
+                            </h4>
+                            <div className="h-[300px] mb-6">
+                              <IndustryChart
+                                labels={labels}
+                                value={values}
+                                legend={legend}
+                              />
                             </div>
-                            <div className="font-medium">{avg.toFixed(2)}%</div>
-                          </div>
-                          <div className="mt-2">
-                            <div className="text-sm text-gray-500">
-                              Avg Past Rate
+                            <div className="text-center">
+                              <span
+                                className="text-sm font-medium"
+                                style={{ color: colors.foreground }}
+                              >
+                                Average Rate: {avg.toFixed(2)}%
+                              </span>
                             </div>
-                            <div className="font-medium">
-                              {(avg + 0.7).toFixed(2)}%
-                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Other partner countries section */}
-                <div className="border-t border-gray-100 p-4">
-                  <div
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() =>
-                      setExpandedOther((prev) => ({
-                        ...prev,
-                        [item.hscode]: !prev[item.hscode],
-                      }))
-                    }
-                  >
-                    <h3 className="text-lg font-medium">
-                      Other Partner Countries
-                    </h3>
-                    <span>{expandedOther[item.hscode] ? "▲" : "▼"}</span>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {expandedOther[item.hscode] && (
-                    <div className="mt-4">
-                      <table className="w-full">
-                        <tbody>
+                  {/* Divider */}
+                  <div className="border-t border-gray-300 mx-6 my-10"></div>
+
+                  {/* Other partner countries section */}
+                  <div className="px-6 pt-4 pb-6">
+                    <div
+                      className="flex items-center justify-between cursor-pointer"
+                      onClick={() =>
+                        setExpandedOther((prev) => ({
+                          ...prev,
+                          [item.hscode]: !prev[item.hscode],
+                        }))
+                      }
+                    >
+                      <h3 className="text-lg font-medium">
+                        Other Partner Countries Average Rate
+                      </h3>
+                      <span>{expandedOther[item.hscode] ? "▲" : "▼"}</span>
+                    </div>
+
+                    {expandedOther[item.hscode] && (
+                      <div className="mt-4">
+                        <div className="space-y-2">
                           {otherPartners.map((partner) => {
                             const avg = partner.averageRate || 0;
-                            const pastAvg = avg + 0.5 || 0;
-
-                            // Calculate rate change indicator
-                            let rateChangeIndicator = null;
-                            const rateDiff = (avg - pastAvg).toFixed(2);
-
-                            if (rateDiff < -0.5) {
-                              rateChangeIndicator = (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                  ↓ {Math.abs(rateDiff)}% better
-                                </span>
-                              );
-                            } else if (rateDiff > 0.5) {
-                              rateChangeIndicator = (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                                  ↑ {Math.abs(rateDiff)}% worse
-                                </span>
-                              );
-                            } else {
-                              rateChangeIndicator = (
-                                <span className="inline-flex items-center px-2 py-1 text-xs text-gray-500">
-                                  — No change
-                                </span>
-                              );
-                            }
-
                             return (
-                              <tr
+                              <div
                                 key={partner.country.countryName}
-                                className="border-b border-gray-100"
+                                className="flex justify-between items-center p-3 border rounded-md"
+                                style={{
+                                  borderColor: colors.border,
+                                  backgroundColor: `${colors.surface}98`,
+                                }}
                               >
-                                <td className="py-3 pl-2 w-1/4">
+                                <span
+                                  className="text-sm font-medium"
+                                  style={{ color: colors.foreground }}
+                                >
                                   {partner.country.countryName}
-                                </td>
-                                <td className="py-3">
-                                  <div className="mb-1">
-                                    <span className="text-sm text-gray-500">
-                                      Current Rate
-                                    </span>
-                                    <span className="float-right">
-                                      {avg.toFixed(2)}%
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-sm text-gray-500">
-                                      Avg Past Rate
-                                    </span>
-                                    <span className="float-right">
-                                      {pastAvg.toFixed(2)}%
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="py-3 text-right pr-2">
-                                  {rateChangeIndicator}
-                                </td>
-                              </tr>
+                                </span>
+                                <span
+                                  className="text-sm font-medium"
+                                  style={{ color: colors.foreground }}
+                                >
+                                  {avg.toFixed(2)}%
+                                </span>
+                              </div>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
           {/* No results state */}
           {Object.keys(tariffDetails).length === 0 &&
             !loadingDetails &&
             selectedItems.length > 0 && (
               <div
-                className="p-6 rounded-md shadow-sm text-center"
+                className="p-6 rounded-md shadow-sm text-center mt-8"
                 style={{
                   color: colors.foreground,
                 }}
