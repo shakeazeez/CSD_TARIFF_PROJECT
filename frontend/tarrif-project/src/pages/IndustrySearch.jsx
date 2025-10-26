@@ -642,7 +642,9 @@ export function IndustrySearch({ onMenuClick }) {
                       <div className="text-gray-500 text-sm">{item.hscode}</div>
                       <h2 className="text-lg font-medium">{item.itemName}</h2>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button className="text-gray-400 hover:text-gray-600"
+                      //onClick={() => togglePin(item.itemName)} -- for later on pinning for banks
+                    >
                       <span>📌</span>
                     </button>
                   </div>
