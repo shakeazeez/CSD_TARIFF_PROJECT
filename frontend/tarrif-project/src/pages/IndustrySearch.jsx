@@ -8,7 +8,7 @@ import { useTheme } from "../contexts/ThemeContext.jsx";
 import { Input } from "../components/ui/input"; // input component
 import Calendar from "../components/ui/calendar";
 
-export function IndustrySearch({onMenuClick}) {
+export function IndustrySearch({ onMenuClick }) {
   const backendURL = import.meta.env.VITE_BACKEND_URL;
   const { colors } = useTheme();
 
@@ -23,10 +23,14 @@ export function IndustrySearch({onMenuClick}) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const countryResponse = await axios.get(`${backendURL}/tariff/countries`);
+        const countryResponse = await axios.get(
+          `${backendURL}/tariff/countries`
+        );
         setCountryList(countryResponse.data);
 
-        const industryResponse = await axios.get(`${backendURL}/tariff/industries`); // endpoint does not exist...yet
+        const industryResponse = await axios.get(
+          `${backendURL}/tariff/industries`
+        ); // endpoint does not exist...yet
         setIndustryList(industryResponse.data);
       } catch (error) {
         console.error("Failed to load data", error);
@@ -120,8 +124,12 @@ export function IndustrySearch({onMenuClick}) {
 
   const fetchItems = async () => {
     setLoadingItems(true);
+    setErrorItems(null); // Clear any previous errors
     try {
-      const response = await axios.post(`${backendURL}/tariff/items`, userInput);
+      const response = await axios.post(
+        `${backendURL}/tariff/items`,
+        userInput
+      );
       console.log("Retrieving items of homeCountry: industry.");
       // The response contains a list of strings (item names)
       setItemList(response.data);
@@ -178,14 +186,17 @@ export function IndustrySearch({onMenuClick}) {
     // BACKEND returns => hscode, item name, current tariff, list of partner countries (rates and corresponding dates)
     try {
       // Update the endpoint to match the backend controller mapping
-      const response = await axios.post(`${backendURL}/tariff/items/tariffDetails`, {
-        selectedItems: selectedItems,
-        homeCountry: homeCountry,
-        // destCountry,
-        industry: industry,
-        startDate: startDate ? startDate.toISOString().split("T")[0] : "",
-        endDate: endDate ? endDate.toISOString().split("T")[0] : "",
-      });
+      const response = await axios.post(
+        `${backendURL}/tariff/items/tariffDetails`,
+        {
+          selectedItems: selectedItems,
+          homeCountry: homeCountry,
+          // destCountry,
+          industry: industry,
+          startDate: startDate ? startDate.toISOString().split("T")[0] : "",
+          endDate: endDate ? endDate.toISOString().split("T")[0] : "",
+        }
+      );
 
       const detailsMap = {};
       response.data.forEach((item) => {
@@ -218,16 +229,33 @@ export function IndustrySearch({onMenuClick}) {
       (p) => !topCountryNames.includes(p.country.countryName)
     );
   }
-  
+
+  // function generateYearRange(start, end) {
+  //   const startYear = parseInt(start.split("-")[0]);
+  //   const endYear = parseInt(end.split("-")[0]);
+  //   const years = [];
+
+  //   for (let year = startYear; year <= endYear; year++) {
+  //     years.push(year.toString());
+  //   }
+
+  //   return years;
+  // }
+
   function generateYearRange(start, end) {
-    const startYear = parseInt(start.split("-")[0]);
-    const endYear = parseInt(end.split("-")[0]);
+    // Handle Date objects by converting to string format
+    const startStr =
+      start instanceof Date ? start.toISOString().split("T")[0] : start;
+    const endStr = end instanceof Date ? end.toISOString().split("T")[0] : end;
+
+    const startYear = parseInt(startStr.split("-")[0]);
+    const endYear = parseInt(endStr.split("-")[0]);
     const years = [];
-    
+
     for (let year = startYear; year <= endYear; year++) {
       years.push(year.toString());
     }
-    
+
     return years;
   }
 
@@ -235,393 +263,494 @@ export function IndustrySearch({onMenuClick}) {
   const [expandedOther, setExpandedOther] = useState({});
 
   return (
-    <>
-    {/* Header at the top */}
-    <Header onMenuClick={onMenuClick} showUserInfo={true} />
+    <div className="min-h-screen">
+      {/* Header at the top */}
+      <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
-    <div className="flex">
-      {/* Left sidebar for search filters */}
-      <div className="w-1/4 bg-white p-4 border-r border-gray-200">
-        <h2 className="text-2xl font-bold mb-2">Tariff Trends</h2>
-
-        {/* HERE */}
-        <div className="mb-6 border border-gray-200 rounded-md p-4">
-          <h2 className="text-lg font-semibold mb-2">Basic Filter</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Filter tariff by reporting country and industry
-          </p>
-
-
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="reporting-country"
-              style={{ color: colors.foreground }}
-            >
-              Reporting Country
-            </Label>
-            <Dropdown
-              options={modCountryList}
-              value={homeCountry}
-              onChange={(option) =>
-                setHomeCountry(option ? option.code : "")
-              }
-              placeholder="Select reporting country"
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="industry"
-              style={{ color: colors.foreground }}
-            >
-              Industry
-            </Label>
-            <Dropdown
-              options={modIndustryList}
-              value={industry}
-              onChange={(option) =>
-                setIndustry(option ? option.code : "")
-              }
-              placeholder="Select industry"
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        <div className="mb-6 border border-gray-200 rounded-md p-4">
-          <h2 className="text-lg font-semibold mb-2">Date Range Filter</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Filter tariff data by date range
-          </p>
-
-          <div className="mb-3">
-            <Label
-              htmlFor="start-date"
-              style={{ color: colors.foreground }}
-            >
-              From Date
-            </Label>
-            <Calendar
-              placeholder="Select start date"
-              selectedDate={startDate}
-              onDateSelect={validateStartDateChanges}
-              maxDate={endDate}
-            />
-            {startDateError && (
-              <p className="text-red-500 text-xs mt-1">
-                Start date cannot be after end date.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label
-              htmlFor="end-date"
-              style={{ color: colors.foreground }}
-            >
-              To Date
-            </Label>
-            <Calendar
-              placeholder="Select end date"
-              selectedDate={endDate}
-              onDateSelect={validateEndDateChanges}
-              minDate={startDate}
-            />
-            {endDateError && (
-              <p className="text-red-500 text-xs mt-1">
-                End date cannot be before start date.
-              </p>
-            )}
-          </div>
-        </div>
-
-        <button
-          onClick={fetchItems}
-          disabled={loadingItems}
-          className="w-full bg-gray-900 text-white py-2 rounded-md flex items-center justify-center mb-6"
+      <div className="flex">
+        {/* Left sidebar for search filters */}
+        <div
+          className="w-1/4 p-4 border-r"
+          style={{
+            backgroundColor: `${colors.surface}15`,
+            borderColor: colors.border,
+          }}
         >
-          <span className="mr-2">🔍</span>
-          {loadingItems ? "Loading..." : "Search"}
-        </button>
-        
-        <div className="mb-6 border border-gray-200 rounded-md p-4">
-          <h2 className="text-lg font-semibold mb-2">Filter Items</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            {selectedItems.length} of {itemList.length} selected
-          </p>
+          <h2
+            className="text-2xl font-bold mb-2"
+            style={{ color: colors.foreground }}
+          >
+            Tariff Trends
+          </h2>
 
-          <div className="flex items-center mb-3 text-sm">
-            <button
-              onClick={() => setSelectedItems([...itemList])}
-              className="text-blue-600 hover:underline"
+          {/* HERE */}
+          <div
+            className="mb-6 border rounded-md p-4"
+            style={{
+              borderColor: colors.border,
+              backgroundColor: `${colors.surface}95`,
+            }}
+          >
+            <h2
+              className="text-lg font-semibold mb-2"
+              style={{ color: colors.foreground }}
             >
-              All
-            </button>
-            <span className="mx-2 text-gray-400">|</span>
-            <button
-              onClick={() => setSelectedItems([])}
-              className="text-blue-600 hover:underline"
-            >
-              None
-            </button>
+              Basic Filter
+            </h2>
+            <p className="text-sm mb-4" style={{ color: colors.muted }}>
+              Filter tariff by reporting country and industry
+            </p>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="reporting-country"
+                style={{ color: colors.foreground }}
+              >
+                Reporting Country
+              </Label>
+              <Dropdown
+                options={modCountryList}
+                value={homeCountry}
+                onChange={(option) => setHomeCountry(option ? option.code : "")}
+                placeholder="Select reporting country"
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="industry" style={{ color: colors.foreground }}>
+                Industry
+              </Label>
+              <Dropdown
+                options={modIndustryList}
+                value={industry}
+                onChange={(option) => setIndustry(option ? option.code : "")}
+                placeholder="Select industry"
+                className="w-full"
+              />
+            </div>
           </div>
 
-          {loadingItems && (
-            <p className="text-sm text-gray-500">Loading items...</p>
-          )}
-          {errorItems && <p className="text-sm text-red-500">{errorItems}</p>}
+          <div
+            className="mb-6 border rounded-md p-4"
+            style={{
+              borderColor: colors.border,
+              backgroundColor: `${colors.surface}95`,
+            }}
+          >
+            <h2
+              className="text-lg font-semibold mb-2"
+              style={{ color: colors.foreground }}
+            >
+              Date Range Filter
+            </h2>
+            <p className="text-sm mb-4" style={{ color: colors.muted }}>
+              Filter tariff data by date range
+            </p>
 
-          <div className="max-h-60 overflow-y-auto">
-            {itemList.length > 0 ? (
-              itemList.map((item) => (
-                <div key={item} className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    id={item}
-                    value={item}
-                    checked={selectedItems.includes(item)}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      const value = e.target.value;
-                      if (checked) {
-                        setSelectedItems([...selectedItems, value]);
-                      } else {
-                        setSelectedItems(
-                          selectedItems.filter((id) => id !== value)
-                        );
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <label htmlFor={item} className="text-sm cursor-pointer">
-                    {item}
-                  </label>
-                </div>
-              ))
-            ) : !loadingItems ? (
-              <p className="text-sm text-gray-500">
-                No items found. Try different search criteria.
+            <div className="mb-3">
+              <Label htmlFor="start-date" style={{ color: colors.foreground }}>
+                From Date
+              </Label>
+              <Calendar
+                placeholder="Select start date"
+                selectedDate={startDate}
+                onDateSelect={validateStartDateChanges}
+                maxDate={endDate}
+              />
+              {startDateError && (
+                <p className="text-xs mt-1" style={{ color: colors.error }}>
+                  Start date cannot be after end date.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="end-date" style={{ color: colors.foreground }}>
+                To Date
+              </Label>
+              <Calendar
+                placeholder="Select end date"
+                selectedDate={endDate}
+                onDateSelect={validateEndDateChanges}
+                minDate={startDate}
+              />
+              {endDateError && (
+                <p className="text-xs mt-1" style={{ color: colors.error }}>
+                  End date cannot be before start date.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={fetchItems}
+            disabled={loadingItems}
+            className="w-full py-2 rounded-md flex items-center justify-center mb-6"
+            style={{
+              backgroundColor: colors.accent,
+              borderColor: colors.accent,
+              color: "#ffffff",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.hover;
+              e.currentTarget.style.color = "#ffffff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = colors.accent;
+              e.currentTarget.style.color = "#ffffff";
+            }}
+          >
+            <span className="mr-2"></span>
+            {loadingItems ? "Loading..." : "🔍 Search"}
+          </button>
+
+          <div
+            className="mb-6 border rounded-md p-4"
+            style={{
+              borderColor: colors.border,
+              backgroundColor: `${colors.surface}95`,
+            }}
+          >
+            <h2
+              className="text-lg font-semibold mb-2"
+              style={{ color: colors.foreground }}
+            >
+              Filter Items
+            </h2>
+            <p className="text-sm mb-4" style={{ color: colors.muted }}>
+              {selectedItems.length} of {itemList.length} selected
+            </p>
+
+            <div className="flex items-center mb-3 text-sm">
+              <button
+                onClick={() => setSelectedItems([...itemList])}
+                className="hover:underline"
+                style={{ color: colors.accent }}
+              >
+                All
+              </button>
+              <span className="mx-2" style={{ color: colors.muted }}>
+                |
+              </span>
+              <button
+                onClick={() => setSelectedItems([])}
+                className="hover:underline"
+                style={{ color: colors.accent }}
+              >
+                None
+              </button>
+            </div>
+
+            {loadingItems && (
+              <p className="text-sm" style={{ color: colors.muted }}>
+                Loading items...
               </p>
-            ) : null}
+            )}
+            {errorItems && (
+              <p className="text-sm" style={{ color: colors.error }}>
+                {errorItems}
+              </p>
+            )}
+
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {itemList.length > 0 ? (
+                itemList.map((item) => {
+                  const isSelected = selectedItems.includes(item);
+                  return (
+                    <div
+                      key={item}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedItems(
+                            selectedItems.filter((id) => id !== item)
+                          );
+                        } else {
+                          setSelectedItems([...selectedItems, item]);
+                        }
+                      }}
+                      className="cursor-pointer rounded-md border p-3 transition-all duration-200 hover:shadow-sm"
+                      style={{
+                        borderColor: isSelected ? colors.accent : colors.border,
+                        color: isSelected
+                          ? colors.foreground
+                          : colors.foreground,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = colors.accent;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = colors.border;
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{item}</span>
+                        {isSelected && (
+                          <div
+                            className="w-4 h-4 rounded-full flex items-center justify-center"
+                            style={{
+                              backgroundColor: "#d1d5db",
+                            }}
+                          >
+                            <span
+                              className="text-xs"
+                              style={{ color: "#374151" }}
+                            >
+                              ✓
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : !loadingItems ? (
+                <div
+                  className="text-center py-8 px-4 rounded-md border-2 border-dashed"
+                  style={{
+                    borderColor: colors.border,
+                    color: colors.muted,
+                  }}
+                >
+                  <p className="text-sm">
+                    No items found. Try different search criteria.
+                  </p>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <div>
-      {/* Main content area for results */}
-      <div className="w-3/4 bg-gray-50 p-6">
-        {/* Loading and error states */}
-        {loadingDetails && (
-          <div className="bg-white p-4 rounded-md shadow-sm mb-4">
-            <p className="text-gray-500">Loading tariff details...</p>
-          </div>
-        )}
 
-        {errorDetails && (
-          <div className="bg-white p-4 rounded-md shadow-sm mb-4 border-l-4 border-red-500">
-            <p className="text-red-500">{errorDetails}</p>
-          </div>
-        )}
-
-        {Object.values(tariffDetails).map((item) => {
-          const tariffDetailsList = item.tariffDetailsList;
-          const topPartners = getTopPartners(tariffDetailsList, 3);
-          const otherPartners = getOtherPartners(
-            tariffDetailsList,
-            topPartners
-          );
-
-          return (
+        {/* Main content area for results */}
+        <div className="w-3/4 p-6">
+          {/* Loading and error states */}
+          {loadingDetails && (
             <div
-              key={item.hscode}
-              className="bg-white mb-8 rounded-md shadow-sm overflow-hidden"
+              className="p-4 rounded-md shadow-sm mb-4"
+              style={{
+                color: colors.foreground,
+              }}
             >
-              {/* Item header */}
-              <div className="border-b border-gray-100 p-4 flex justify-between items-center">
-                <div>
-                  <div className="text-gray-500 text-sm">{item.hscode}</div>
-                  <h2 className="text-lg font-medium">{item.itemName}</h2>
-                </div>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <span>📌</span>
-                </button>
-              </div>
+              <p style={{ color: colors.muted }}>Loading tariff details...</p>
+            </div>
+          )}
 
-              {/* Top 3 section */}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium">
-                    Top 3 Best Tariff Rate Partner Countries
-                  </h3>
+          {errorDetails && (
+            <div
+              className="p-4 rounded-md shadow-sm mb-4 border-l-4"
+              style={{
+                borderColor: colors.error,
+                color: colors.foreground,
+              }}
+            >
+              <p style={{ color: colors.error }}>{errorDetails}</p>
+            </div>
+          )}
+
+          {Object.values(tariffDetails).map((item) => {
+            const tariffDetailsList = item.tariffDetailsList;
+            const topPartners = getTopPartners(tariffDetailsList, 3);
+            const otherPartners = getOtherPartners(
+              tariffDetailsList,
+              topPartners
+            );
+
+            return (
+              <div
+                key={item.hscode}
+                className="mb-8 rounded-md shadow-sm overflow-hidden"
+              >
+                {/* Item header */}
+                <div className="border-b border-gray-100 p-4 flex justify-between items-center">
+                  <div>
+                    <div className="text-gray-500 text-sm">{item.hscode}</div>
+                    <h2 className="text-lg font-medium">{item.itemName}</h2>
+                  </div>
                   <button className="text-gray-400 hover:text-gray-600">
-                    <span>▲</span>
+                    <span>📌</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  {topPartners.map((partner) => {
-                    const tariffs = partner.tariffs || [];
-
-                    const labels =
-                      tariffs.length > 0
-                        ? tariffs.map(
-                            (t) =>
-                              t.localDate?.split("-")[0] ||
-                              startDate.split("-")[0]
-                          )
-                        : generateYearRange(startDate, endDate);
-
-                    // Fix chart data formatting
-                    const values =
-                      tariffs.length > 0
-                        ? tariffs.map((t) => t.percentageRate * 100)
-                        : [0];
-
-                    const legend = [partner.country.countryName];
-                    const avg = partner.averageRate;
-
-                    return (
-                      <div
-                        key={partner.country.countryName}
-                        className="partner-box border rounded-lg p-4"
-                      >
-                        <h4 className="text-md font-medium mb-2">
-                          {partner.country.countryName}
-                        </h4>
-                        <div className="h-40">
-                          <Chart
-                            labels={labels}
-                            value={values}
-                            title="Tariff Over Time"
-                            legend={legend}
-                          />
-                        </div>
-                        <div className="mt-2">
-                          <div className="text-sm text-gray-500">
-                            Current Rate
-                          </div>
-                          <div className="font-medium">{avg.toFixed(2)}%</div>
-                        </div>
-                        <div className="mt-2">
-                          <div className="text-sm text-gray-500">
-                            Avg Past Rate
-                          </div>
-                          <div className="font-medium">
-                            {(avg + 0.7).toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Other partner countries section */}
-              <div className="border-t border-gray-100 p-4">
-                <div
-                  className="flex items-center justify-between cursor-pointer"
-                  onClick={() =>
-                    setExpandedOther((prev) => ({
-                      ...prev,
-                      [item.hscode]: !prev[item.hscode],
-                    }))
-                  }
-                >
-                  <h3 className="text-lg font-medium">
-                    Other Partner Countries
-                  </h3>
-                  <span>{expandedOther[item.hscode] ? "▲" : "▼"}</span>
-                </div>
-
-                {expandedOther[item.hscode] && (
-                  <div className="mt-4">
-                    <table className="w-full">
-                      <tbody>
-                        {otherPartners.map((partner) => {
-                          const avg = partner.averageRate || 0;
-                          const pastAvg = avg + 0.5 || 0;
-
-                          // Calculate rate change indicator
-                          let rateChangeIndicator = null;
-                          const rateDiff = (avg - pastAvg).toFixed(2);
-
-                          if (rateDiff < -0.5) {
-                            rateChangeIndicator = (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                ↓ {Math.abs(rateDiff)}% better
-                              </span>
-                            );
-                          } else if (rateDiff > 0.5) {
-                            rateChangeIndicator = (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                                ↑ {Math.abs(rateDiff)}% worse
-                              </span>
-                            );
-                          } else {
-                            rateChangeIndicator = (
-                              <span className="inline-flex items-center px-2 py-1 text-xs text-gray-500">
-                                — No change
-                              </span>
-                            );
-                          }
-
-                          return (
-                            <tr
-                              key={partner.country.countryName}
-                              className="border-b border-gray-100"
-                            >
-                              <td className="py-3 pl-2 w-1/4">
-                                {partner.country.countryName}
-                              </td>
-                              <td className="py-3">
-                                <div className="mb-1">
-                                  <span className="text-sm text-gray-500">
-                                    Current Rate
-                                  </span>
-                                  <span className="float-right">
-                                    {avg.toFixed(2)}%
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-sm text-gray-500">
-                                    Avg Past Rate
-                                  </span>
-                                  <span className="float-right">
-                                    {pastAvg.toFixed(2)}%
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-3 text-right pr-2">
-                                {rateChangeIndicator}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                {/* Top 3 section */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium">
+                      Top 3 Best Tariff Rate Partner Countries
+                    </h3>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <span>▲</span>
+                    </button>
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
 
-        {/* No results state */}
-        {Object.keys(tariffDetails).length === 0 &&
-          !loadingDetails &&
-          selectedItems.length > 0 && (
-            <div className="bg-white p-6 rounded-md shadow-sm text-center">
-              <p className="text-gray-500">
-                Select items and search to view tariff details
-              </p>
-            </div>
-          )}
+                  <div className="grid grid-cols-3 gap-4">
+                    {topPartners.map((partner) => {
+                      const tariffs = partner.tariffs || [];
+
+                      const labels =
+                        tariffs.length > 0
+                          ? tariffs.map(
+                              (t) =>
+                                t.localDate?.split("-")[0] ||
+                                startDate.split("-")[0]
+                            )
+                          : generateYearRange(startDate, endDate);
+
+                      // Fix chart data formatting
+                      const values =
+                        tariffs.length > 0
+                          ? tariffs.map((t) => t.percentageRate * 100)
+                          : [0];
+
+                      const legend = [partner.country.countryName];
+                      const avg = partner.averageRate;
+
+                      return (
+                        <div
+                          key={partner.country.countryName}
+                          className="partner-box border rounded-lg p-4"
+                        >
+                          <h4 className="text-md font-medium mb-2">
+                            {partner.country.countryName}
+                          </h4>
+                          <div className="h-40">
+                            <Chart
+                              labels={labels}
+                              value={values}
+                              title="Tariff Over Time"
+                              legend={legend}
+                            />
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-sm text-gray-500">
+                              Current Rate
+                            </div>
+                            <div className="font-medium">{avg.toFixed(2)}%</div>
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-sm text-gray-500">
+                              Avg Past Rate
+                            </div>
+                            <div className="font-medium">
+                              {(avg + 0.7).toFixed(2)}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Other partner countries section */}
+                <div className="border-t border-gray-100 p-4">
+                  <div
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() =>
+                      setExpandedOther((prev) => ({
+                        ...prev,
+                        [item.hscode]: !prev[item.hscode],
+                      }))
+                    }
+                  >
+                    <h3 className="text-lg font-medium">
+                      Other Partner Countries
+                    </h3>
+                    <span>{expandedOther[item.hscode] ? "▲" : "▼"}</span>
+                  </div>
+
+                  {expandedOther[item.hscode] && (
+                    <div className="mt-4">
+                      <table className="w-full">
+                        <tbody>
+                          {otherPartners.map((partner) => {
+                            const avg = partner.averageRate || 0;
+                            const pastAvg = avg + 0.5 || 0;
+
+                            // Calculate rate change indicator
+                            let rateChangeIndicator = null;
+                            const rateDiff = (avg - pastAvg).toFixed(2);
+
+                            if (rateDiff < -0.5) {
+                              rateChangeIndicator = (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                  ↓ {Math.abs(rateDiff)}% better
+                                </span>
+                              );
+                            } else if (rateDiff > 0.5) {
+                              rateChangeIndicator = (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                                  ↑ {Math.abs(rateDiff)}% worse
+                                </span>
+                              );
+                            } else {
+                              rateChangeIndicator = (
+                                <span className="inline-flex items-center px-2 py-1 text-xs text-gray-500">
+                                  — No change
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <tr
+                                key={partner.country.countryName}
+                                className="border-b border-gray-100"
+                              >
+                                <td className="py-3 pl-2 w-1/4">
+                                  {partner.country.countryName}
+                                </td>
+                                <td className="py-3">
+                                  <div className="mb-1">
+                                    <span className="text-sm text-gray-500">
+                                      Current Rate
+                                    </span>
+                                    <span className="float-right">
+                                      {avg.toFixed(2)}%
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm text-gray-500">
+                                      Avg Past Rate
+                                    </span>
+                                    <span className="float-right">
+                                      {pastAvg.toFixed(2)}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-3 text-right pr-2">
+                                  {rateChangeIndicator}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* No results state */}
+          {Object.keys(tariffDetails).length === 0 &&
+            !loadingDetails &&
+            selectedItems.length > 0 && (
+              <div
+                className="p-6 rounded-md shadow-sm text-center"
+                style={{
+                  color: colors.foreground,
+                }}
+              >
+                <p style={{ color: colors.muted }}>
+                  Select items and search to view tariff details
+                </p>
+              </div>
+            )}
+        </div>
       </div>
-    
     </div>
-  </>
   );
 }

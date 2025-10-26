@@ -21,136 +21,142 @@
  * @param {Date} [props.maxDate] - Maximum selectable date.
  */
 
-import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
-import { ChevronDown } from "lucide-react"
-import { cn } from "../../lib/utils"
-import { useTheme } from "../../contexts/ThemeContext.jsx"
+import * as React from "react";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { ChevronDown } from "lucide-react";
+import { cn } from "../../lib/utils";
+import { useTheme } from "../../contexts/ThemeContext.jsx";
 
 const Calendar = ({
   placeholder = "Select date",
   selectedDate,
   onDateSelect,
   minDate,
-  maxDate
+  maxDate,
 }) => {
   // Get theme colors for custom styling
-  const { colors } = useTheme()
+  const { colors } = useTheme();
 
-  const [open, setOpen] = React.useState(false)
-  const [currentMonth, setCurrentMonth] = React.useState(new Date().getMonth())
-  const [currentYear, setCurrentYear] = React.useState(new Date().getFullYear())
-  const [showMonthSelector, setShowMonthSelector] = React.useState(false)
-  const [showYearSelector, setShowYearSelector] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
+  const [currentMonth, setCurrentMonth] = React.useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = React.useState(
+    new Date().getFullYear()
+  );
+  const [showMonthSelector, setShowMonthSelector] = React.useState(false);
+  const [showYearSelector, setShowYearSelector] = React.useState(false);
 
   // Handle popover open/close
   const handleOpenChange = (newOpen) => {
-    setOpen(newOpen)
+    setOpen(newOpen);
     if (!newOpen) {
-      setShowMonthSelector(false)
-      setShowYearSelector(false)
+      setShowMonthSelector(false);
+      setShowYearSelector(false);
     }
-  }
+  };
 
   // Format date to yyyy-mm-dd
   const formatDate = (date) => {
-    if (!date) return ""
-    const year = date.getFullYear()
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const day = date.getDate().toString().padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   // Get days in month
   const getDaysInMonth = (month, year) => {
-    return new Date(year, month + 1, 0).getDate()
-  }
+    return new Date(year, month + 1, 0).getDate();
+  };
 
   // Get first day of month (0 = Sunday, 1 = Monday, etc.)
   const getFirstDayOfMonth = (month, year) => {
-    return new Date(year, month, 1).getDay()
-  }
+    return new Date(year, month, 1).getDay();
+  };
 
   // Check if date is today
   const isToday = (day, month, year) => {
-    const today = new Date()
-    return today.getDate() === day &&
-           today.getMonth() === month &&
-           today.getFullYear() === year
-  }
+    const today = new Date();
+    return (
+      today.getDate() === day &&
+      today.getMonth() === month &&
+      today.getFullYear() === year
+    );
+  };
 
   // Check if date is selected
   const isSelected = (day, month, year) => {
-    if (!selectedDate) return false
-    return selectedDate.getDate() === day &&
-           selectedDate.getMonth() === month &&
-           selectedDate.getFullYear() === year
-  }
+    if (!selectedDate) return false;
+    return (
+      selectedDate.getDate() === day &&
+      selectedDate.getMonth() === month &&
+      selectedDate.getFullYear() === year
+    );
+  };
 
   // Check if date is disabled
   const isDisabled = (day, month, year) => {
-    const date = new Date(year, month, day)
-    if (minDate && date < minDate) return true
-    if (maxDate && date > maxDate) return true
-    return false
-  }
+    const date = new Date(year, month, day);
+    if (minDate && date < minDate) return true;
+    if (maxDate && date > maxDate) return true;
+    return false;
+  };
 
   // Handle date selection
   const handleDateSelect = (day, month, year) => {
-    const selectedDate = new Date(year, month, day)
-    setOpen(false)
-    setShowMonthSelector(false)
-    setShowYearSelector(false)
+    const selectedDate = new Date(year, month, day);
+    setOpen(false);
+    setShowMonthSelector(false);
+    setShowYearSelector(false);
     if (onDateSelect) {
-      onDateSelect(selectedDate)
+      onDateSelect(selectedDate);
     }
-  }
+  };
 
   // Handle month selection
   const handleMonthSelect = (monthIndex) => {
-    setCurrentMonth(monthIndex)
-    setShowMonthSelector(false)
-  }
+    setCurrentMonth(monthIndex);
+    setShowMonthSelector(false);
+  };
 
   // Handle year selection
   const handleYearSelect = (year) => {
-    setCurrentYear(year)
-    setShowYearSelector(false)
-  }
+    setCurrentYear(year);
+    setShowYearSelector(false);
+  };
 
   // Generate years for selector (current year ± 10 years)
   const generateYears = () => {
-    const years = []
-    const currentYearNum = new Date().getFullYear()
+    const years = [];
+    const currentYearNum = new Date().getFullYear();
     for (let i = currentYearNum - 10; i <= currentYearNum + 10; i++) {
-      years.push(i)
+      years.push(i);
     }
-    return years
-  }
+    return years;
+  };
 
   // Generate calendar days
   const renderCalendarDays = () => {
-    const daysInMonth = getDaysInMonth(currentMonth, currentYear)
-    const firstDay = getFirstDayOfMonth(currentMonth, currentYear)
-    const days = []
+    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+    const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+    const days = [];
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
-      days.push(
-        <div key={`empty-${i}`} className="h-8 w-8"></div>
-      )
+      days.push(<div key={`empty-${i}`} className="h-8 w-8"></div>);
     }
 
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const isTodayDate = isToday(day, currentMonth, currentYear)
-      const isSelectedDate = isSelected(day, currentMonth, currentYear)
-      const isDisabledDate = isDisabled(day, currentMonth, currentYear)
+      const isTodayDate = isToday(day, currentMonth, currentYear);
+      const isSelectedDate = isSelected(day, currentMonth, currentYear);
+      const isDisabledDate = isDisabled(day, currentMonth, currentYear);
 
       days.push(
         <button
           key={day}
-          onClick={() => !isDisabledDate && handleDateSelect(day, currentMonth, currentYear)}
+          onClick={() =>
+            !isDisabledDate && handleDateSelect(day, currentMonth, currentYear)
+          }
           disabled={isDisabledDate}
           className={cn(
             "h-8 w-8 rounded-md text-sm font-medium transition-all duration-200",
@@ -162,23 +168,41 @@ const Calendar = ({
             isTodayDate && !isSelectedDate && "bg-accent text-accent-foreground"
           )}
           style={{
-            backgroundColor: isSelectedDate ? colors.primary : isTodayDate ? colors.accent : 'transparent',
-            color: isSelectedDate ? colors.primaryForeground : isTodayDate ? colors.accentForeground : colors.foreground,
-            borderColor: colors.border
+            backgroundColor: isSelectedDate
+              ? colors.primary
+              : isTodayDate
+              ? colors.accent
+              : "transparent",
+            color: isSelectedDate
+              ? colors.primaryForeground
+              : isTodayDate
+              ? colors.accentForeground
+              : colors.foreground,
+            borderColor: colors.border,
           }}
         >
           {day}
         </button>
-      )
+      );
     }
 
-    return days
-  }
+    return days;
+  };
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ]
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   return (
     <div className="w-full">
@@ -193,13 +217,13 @@ const Calendar = ({
             style={{
               backgroundColor: colors.input,
               borderColor: colors.border,
-              color: colors.foreground
+              color: colors.foreground,
             }}
           >
             <span
               className="transition-colors duration-300"
               style={{
-                color: selectedDate ? colors.foreground : colors.muted
+                color: selectedDate ? colors.foreground : colors.muted,
               }}
             >
               {selectedDate ? formatDate(selectedDate) : placeholder}
@@ -221,7 +245,7 @@ const Calendar = ({
             style={{
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              color: colors.foreground
+              color: colors.foreground,
             }}
             side="bottom"
             align="start"
@@ -236,14 +260,16 @@ const Calendar = ({
                 {/* Month Selector */}
                 <button
                   onClick={() => {
-                    setShowMonthSelector(!showMonthSelector)
-                    setShowYearSelector(false)
+                    setShowMonthSelector(!showMonthSelector);
+                    setShowYearSelector(false);
                   }}
                   className="text-sm font-medium hover:bg-accent px-2 py-1 rounded border transition-colors duration-200 flex items-center justify-center min-w-[80px]"
                   style={{
                     color: colors.foreground,
-                    backgroundColor: showMonthSelector ? colors.accent : 'transparent',
-                    borderColor: colors.border
+                    backgroundColor: showMonthSelector
+                      ? colors.accent
+                      : "transparent",
+                    borderColor: colors.border,
                   }}
                 >
                   {monthNames[currentMonth]}
@@ -252,14 +278,16 @@ const Calendar = ({
                 {/* Year Selector */}
                 <button
                   onClick={() => {
-                    setShowYearSelector(!showYearSelector)
-                    setShowMonthSelector(false)
+                    setShowYearSelector(!showYearSelector);
+                    setShowMonthSelector(false);
                   }}
                   className="text-sm font-medium hover:bg-accent px-2 py-1 rounded border transition-colors duration-200 flex items-center justify-center min-w-[60px]"
                   style={{
                     color: colors.foreground,
-                    backgroundColor: showYearSelector ? colors.accent : 'transparent',
-                    borderColor: colors.border
+                    backgroundColor: showYearSelector
+                      ? colors.accent
+                      : "transparent",
+                    borderColor: colors.border,
                   }}
                 >
                   {currentYear}
@@ -282,8 +310,12 @@ const Calendar = ({
                       "hover:bg-accent hover:text-accent-foreground"
                     )}
                     style={{
-                      backgroundColor: currentMonth === index ? colors.accent : 'transparent',
-                      color: currentMonth === index ? colors.accentForeground : colors.foreground
+                      backgroundColor:
+                        currentMonth === index ? colors.accent : "transparent",
+                      color:
+                        currentMonth === index
+                          ? colors.accentForeground
+                          : colors.foreground,
                     }}
                   >
                     {month.slice(0, 3)}
@@ -308,8 +340,12 @@ const Calendar = ({
                         "hover:bg-accent hover:text-accent-foreground"
                       )}
                       style={{
-                        backgroundColor: currentYear === year ? colors.accent : 'transparent',
-                        color: currentYear === year ? colors.accentForeground : colors.foreground
+                        backgroundColor:
+                          currentYear === year ? colors.accent : "transparent",
+                        color:
+                          currentYear === year
+                            ? colors.accentForeground
+                            : colors.foreground,
                       }}
                     >
                       {year}
@@ -321,7 +357,7 @@ const Calendar = ({
 
             {/* Days of Week Header */}
             <div className="grid grid-cols-7 gap-1 p-4 pt-2">
-              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
                 <div
                   key={day}
                   className="h-8 w-8 text-center text-xs font-medium text-muted-foreground flex items-center justify-center"
@@ -340,7 +376,7 @@ const Calendar = ({
         </PopoverPrimitive.Portal>
       </PopoverPrimitive.Root>
     </div>
-  )
-}
+  );
+};
 
-export default Calendar
+export default Calendar;
