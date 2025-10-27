@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 
@@ -37,5 +36,5 @@ pub struct TokenDTO {
     #[serde(rename = "itemsSold")]
     items_sold: Option<String>,
     #[serde(rename = "historicalTariffId")]
-    historical_tariff_id: Option<HashMap<i32, String>>
+    historical_tariff_id: Option<IndexMap<i32, String>>
 }
