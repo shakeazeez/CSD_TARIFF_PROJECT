@@ -1,8 +1,8 @@
 package com.user.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -12,6 +12,7 @@ import com.user.dto.CreateUserDTO;
 import com.user.dto.TokenDTO;
 import com.user.enums.Industry;
 import com.user.enums.Role;
+import com.user.history.History;
 import com.user.user.User;
 import com.user.user.BankUser;
 import com.user.user.BusinessUser;
@@ -43,22 +44,22 @@ public class AuthUserServiceImpl implements AuthUserService {
 
         switch (createUserDTO.role().toUpperCase()) {
             case "MEMBER": {
-                creation = new MemberUser(createUserDTO.username(), passwordHash, new HashMap<>(), new ArrayList<>(),
+                creation = new MemberUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
                         new ArrayList<>());
                 break;
             }
             case "BANK": {
-                creation = new BankUser(createUserDTO.username(), passwordHash, new HashMap<>(), new ArrayList<>(),
+                creation = new BankUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
                         Industry.valueOf(createUserDTO.industry().toUpperCase()), createUserDTO.originCountry());
                 break;
             }
             case "BUSINESS": {
-                creation = new BusinessUser(createUserDTO.username(), passwordHash, new HashMap<>(), new ArrayList<>(),
+                creation = new BusinessUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
                         createUserDTO.itemsSold(), createUserDTO.destinationCountries(), createUserDTO.originCountry());
                 break;
             }
             case "ADMIN": {
-                creation = new User(createUserDTO.username(), passwordHash, new HashMap<>(), new ArrayList<>());
+                creation = new User(createUserDTO.username(), passwordHash, new ArrayList<>());
                 break;
             }
             default: {
@@ -69,18 +70,14 @@ public class AuthUserServiceImpl implements AuthUserService {
         creation.getRole().add(Role.valueOf(createUserDTO.role().toUpperCase()));
         generalUserRepo.save(creation);
 
-        Map<Integer, Integer> sortedMap = creation.getHistory()
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue((a, b) -> b - a))
-                .limit(5)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (e1, e2) -> e1,
-                        LinkedHashMap::new));
-
-        List<Integer> sortedSet = sortedMap.keySet().stream().collect(Collectors.toCollection(ArrayList::new));
+        List<History> history = creation.getHistory();
+        
+        Map<Integer, LocalDate> intToHistory = new HashMap<>();
+        
+        for (int i = 0; i < 5; i++) {
+            History temp = history.get(i);
+            intToHistory.put(temp.getTariffId(), temp.getLocalDate());
+        } 
 
         switch (createUserDTO.role().toUpperCase()) {
             case "MEMBER": {
@@ -88,7 +85,7 @@ public class AuthUserServiceImpl implements AuthUserService {
                         createUserDTO.username(),
                         null,
                         ((MemberUser) creation).getPinnedTariffId(),
-                        sortedSet);
+                        intToHistory);
             }
             case "BANK": {
                 return new TokenDTO(
@@ -96,7 +93,7 @@ public class AuthUserServiceImpl implements AuthUserService {
                         null,
                         createUserDTO.industry(),
                         createUserDTO.originCountry(),
-                        sortedSet);
+                        intToHistory);
             }
             case "BUSINESS": {
                 return new TokenDTO(
@@ -105,13 +102,13 @@ public class AuthUserServiceImpl implements AuthUserService {
                         createUserDTO.itemsSold(),
                         createUserDTO.destinationCountries(),
                         createUserDTO.originCountry(),
-                        sortedSet);
+                        intToHistory);
             }
             case "ADMIN": {
                 return new TokenDTO(
                         createUserDTO.username(),
                         null,
-                        sortedSet);
+                        intToHistory);
             }
             default: {
                 return null;

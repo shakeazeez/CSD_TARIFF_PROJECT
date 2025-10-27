@@ -29,12 +29,12 @@ public class BankUser extends User {
     @Column(name = "origin_country")
     private String originCountry;
 
-    public BankUser(String username, String hashedPassword, Map<Integer, Integer> history,
+    public BankUser(String username, String hashedPassword,
             List<Role> role,
             Industry industry,
             String originCountry) {
 
-        super(username, hashedPassword, history, role);
+        super(username, hashedPassword, role);
         this.industry = industry;
         this.originCountry = originCountry;
     }

@@ -1,6 +1,8 @@
 package com.user.controller;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +38,10 @@ public class GeneralUserController {
     }
 
     @PostMapping("/{username}/history/{tariffId}")
-    public ResponseEntity<List<Integer>> addHistory(@PathVariable String username,
+    public ResponseEntity<Map<Integer, LocalDate>> addHistory(@PathVariable String username,
             @PathVariable Integer tariffId) {
         try {
-            List<Integer> history = userService.addHistory(username, tariffId);
+            Map<Integer, LocalDate> history = userService.addHistory(username, tariffId);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
@@ -47,9 +49,9 @@ public class GeneralUserController {
     }
 
     @GetMapping("/{username}/history")
-    public ResponseEntity<List<Integer>> getHistory(@PathVariable String username) {
+    public ResponseEntity<Map<Integer, LocalDate>> getHistory(@PathVariable String username) {
         try {
-            List<Integer> history = userService.retrieveHistory(username);
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);

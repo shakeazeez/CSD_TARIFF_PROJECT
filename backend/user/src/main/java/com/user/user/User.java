@@ -1,9 +1,11 @@
 package com.user.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import com.user.enums.Role;
+import com.user.history.History;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -19,6 +21,8 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,15 +42,20 @@ public class User {
 
     @Column(name = "username")
     private String username;
-    
+
     @Column(name = "hashedpassword")
     private String hashedPassword;
 
-    @ElementCollection
-    @CollectionTable(name = "user_history", joinColumns = @JoinColumn(name = "user_id"))
-    @MapKeyColumn(name = "history_key")
-    @Column(name = "history_value")
-    private Map<Integer, Integer> history;
+    // @ElementCollection
+    // @CollectionTable(name = "user_history", joinColumns = @JoinColumn(name =
+    // "user_id"))
+    // @MapKeyColumn(name = "history_key")
+    // @Column(name = "history_value")
+    // private Map<Integer, Integer> history;
+
+    @OneToMany
+    @Column(name = "history")
+    private List<History> history;
 
     // Will add all the ontop stuff on here
     @ElementCollection
@@ -55,11 +64,11 @@ public class User {
     @Column(name = "user_roles")
     private List<Role> role;
 
-    public User(String username, String hashedPassword, Map<Integer, Integer> history,
+    public User(String username, String hashedPassword,
             List<Role> role) {
         this.username = username;
         this.hashedPassword = hashedPassword;
-        this.history = history;
+        this.history = new ArrayList<>();
         this.role = role;
     }
 }

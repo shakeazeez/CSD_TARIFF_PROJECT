@@ -1,10 +1,16 @@
 package com.user.service;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.user.history.History;
+import com.user.history.HistoryRepo;
 import com.user.user.User;
 import com.user.user.UserRepo;
 
@@ -14,53 +20,62 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserServiceImpl implements UserService {
-    
+
     private final UserRepo userRepo;
-    
-    public UserServiceImpl(UserRepo userRepo) {
+    private final HistoryRepo historyRepo;
+
+    public UserServiceImpl(UserRepo userRepo, HistoryRepo historyRepo) {
         this.userRepo = userRepo;
+        this.historyRepo = historyRepo;
     }
-    
+
     @Transactional
-    public List<Integer> addHistory(String username, Integer tariffId) {
+    public Map<Integer, LocalDate> addHistory(String username, Integer tariffId) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Map<Integer, Integer> history = user.getHistory();
+        Optional<History> historyEntry = historyRepo.findByTariffIdAndUser(tariffId, user);
 
-        if (history == null) {
-            history = new HashMap<>();
+        if (historyEntry.isEmpty()) {
+            historyRepo.save(new History(tariffId, user));
+        } else {
+            History temp = historyEntry.get();
+            temp.setCounter(temp.getCounter() + 1);
+            temp.setLocalDate(LocalDate.now());
+            historyRepo.save(temp);
         }
 
-        history.put(tariffId, history.getOrDefault(tariffId, 0) + 1);
-
-        user.setHistory(history);
-        userRepo.save(user);
-
         // return the most searched top 5 tariffs
-        return history.entrySet().stream()
-                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // sort by frequency in descending order
-                .limit(5)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        List<History> searched = historyRepo.findByUser(user);
+        searched.sort((a, b) -> b.getCounter() - a.getCounter());
+
+        Map<Integer, LocalDate> res = new LinkedHashMap<>();
+        for (int i = 0; i < 5; i++) {
+            History temp = searched.get(i);
+            res.put(temp.getCounter(), temp.getLocalDate());
+        }
+
+        return res;
     }
 
     @Transactional
-    public List<Integer> retrieveHistory(String username) {
+    public Map<Integer, LocalDate> retrieveHistory(String username) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Map<Integer, Integer> history = user.getHistory();
+        List<History> searched = historyRepo.findByUser(user);
+        searched.sort((a, b) -> b.getCounter() - a.getCounter());
+
+        Map<Integer, LocalDate> res = new LinkedHashMap<>();
+        for (int i = 0; i < 5; i++) {
+            History temp = searched.get(i);
+            res.put(temp.getCounter(), temp.getLocalDate());
+        }
 
         // return the most searched top 5 tariffs
-        return history.entrySet().stream()
-                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // sort by frequency in descending order
-                .limit(5)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        return res;
     }
-    
-    
+
     public List<User> getAllUsers() {
         return userRepo.findAll();
     }
