@@ -12,6 +12,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tariff.calculation.tariffCalc.category.Category;
 import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
@@ -57,12 +58,14 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final EmbeddingService embeddingService;
     private int keyCounter = 1;
     private String apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_1"); 
+    private final ObjectMapper objectMapper;
 
     public TariffCalculationImpl(
             CountryRepo countryRepo,
             ItemRepo itemRepo,
             TariffRepo tariffRepo,
             RestClient.Builder restClientBuilder,
+            ObjectMapper objectMapper, 
             EmbeddingService embeddingService) {
         this.countryRepo = countryRepo;
         this.itemRepo = itemRepo;
@@ -75,6 +78,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 .requestFactory(factory)
                 .build();
         this.embeddingService = embeddingService;
+        this.objectMapper = objectMapper;
     }
 
     /*
@@ -108,7 +112,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         // log.info("ItemNum: \n\n" + itemNum); // verify that the item code has 6 digits
         
         String copyKey = apiKey;
-        MoachDTO result = restClientMoach.get()
+        String resultString = restClientMoach.get()
                 .uri("/tariff-data?product=" + itemNum + "&destination=" + countryNumber
                         + "&token=" + apiKey)
                 .retrieve()
@@ -123,8 +127,14 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     keyCounter = (keyCounter + 1) % 4;
                     apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
                 })
-                .body(MoachDTO.class);
+                .body(String.class);
         
+        MoachDTO result;
+        try {
+            result = objectMapper.readValue(resultString, MoachDTO.class);
+        } catch (Exception e) {
+            throw new ApiFailureException("I give up");
+        }
         if (!copyKey.equals(apiKey)) {
             return loadTariffFromApi(countryCode, item);
         }
@@ -321,40 +331,47 @@ public class TariffCalculationImpl implements TariffCalculationService {
     // https://mtech-api.com/client/api/hs-code-match?q=tennis+shoes&category=156&token=YOUR_API_TOKEN
     public Item loadItemFromApi(String itemName, Country country) throws ApiFailureException {
 
-        ItemRetrievalDTO result;
-
+        String resultString;
         String copyKey = apiKey;
         if (!country.getCountryName().equals("world")) {
-            result = restClientMoach.get()
+            resultString = restClientMoach.get()
                     .uri("/hs-code-match?q=" + itemName + "&category=" + country.getCountryNumber() + "&token="
                             + apiKey)
                     .retrieve()
                     .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                         throw new ApiFailureException(response.getStatusText());
                     })
-                    .onStatus((status) -> status.value() == 401, (request, response) -> {
+                    .onStatus((status) -> status.value() == 401 || status.value() == 403, (request, response) -> {
                         // This one occurs if that country doesnt trade that item......
                         log.info("Switching api keys....");
                         keyCounter = (keyCounter + 1) % 4;
                         apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
                     })
-                    .body(ItemRetrievalDTO.class);
+                    .body(String.class);
         } else {
-            result = restClientMoach.get()
+            resultString = restClientMoach.get()
                     .uri("/hs-code-match?q=" + itemName + "&category=wto&token="
                             + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
                     .retrieve()
                     .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
                         throw new ApiFailureException(response.getStatusText());
                     })
-                    .onStatus((status) -> status.value() == 401, (request, response) -> {
+                    .onStatus((status) -> status.value() == 401 || status.value() == 403, (request, response) -> {
                         // This one occurs if that country doesnt trade that item......
                         log.info("Switching api keys....");
                         keyCounter = (keyCounter + 1) % 4;
                         apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
                     })
-                    .body(ItemRetrievalDTO.class);
+                    .body(String.class);
 
+        }
+        
+        log.info(resultString);
+        ItemRetrievalDTO result;
+        try {
+            result = objectMapper.readValue(resultString, ItemRetrievalDTO.class);
+        } catch (Exception e) {
+            throw new ApiFailureException("I give up");
         }
         
         if (!copyKey.equals(apiKey)) {
