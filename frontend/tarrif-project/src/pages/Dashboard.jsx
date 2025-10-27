@@ -39,6 +39,7 @@ import {
     User,
     Settings,
     LogOut,
+    History,
     ConstructionIcon
 } from 'lucide-react' // SVG icons
 
@@ -620,6 +621,27 @@ export function Dashboard({ onMenuClick }){
     </Card>
 </motion.div>
 
+            {/* Search History Section */}
+            <div className="mt-8">
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <History className="h-6 w-6 inline mr-2" />
+                    {isAuthenticated ? "Your Top Searches" : "Search History"}
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <searchMethods.SearchDisplay onSearchClick={handleCalculatorNavigation} colors={colors} />
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Quick Actions */}
             <motion.div variants={itemVariants}>
               <Card
@@ -832,26 +854,6 @@ export function Dashboard({ onMenuClick }){
               </Card>
             </motion.div>
           </motion.div>
-
-          {/* Search History Section */}
-          <div className="mt-8">
-            <Card
-              style={{
-                backgroundColor: `${colors.surface}95`,
-                borderColor: colors.border,
-              }}
-            >
-              <CardHeader>
-                <CardTitle style={{ color: colors.foreground }}>
-                  {isAuthenticated ? "Your Top Searches" : "Search History"}
-                </CardTitle>
-                <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <searchMethods.SearchDisplay onSearchClick={handleCalculatorNavigation} colors={colors} />
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </motion.div>
     );

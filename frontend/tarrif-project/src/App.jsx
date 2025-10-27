@@ -16,6 +16,7 @@ import { NotFound } from './pages/NotFound.jsx'
 import { Toaster } from './components/Toaster.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 import { Business } from './pages/Business.jsx'
+import { ChatBot } from './pages/ChatBot.jsx'
 
 /**
  * Protected Route component that redirects to login if not authenticated
@@ -98,6 +99,10 @@ function App() {
               <Route path="/faq" element={
                 <FAQ onMenuClick={() => setSidebarOpen(true)} />
               }/>
+              <Route path="/chatbot" element={
+                <ChatBot onMenuClick={() => setSidebarOpen(true)} />
+              }>
+              </Route>
               <Route path="/settings" element={
                 <ComingSoon feature="Settings" />
               }/>
