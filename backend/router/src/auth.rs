@@ -97,6 +97,7 @@ pub async fn login(
             }
             let status = response.status();
             let body = response.text().await.unwrap();
+            // println!("Failed due to some reason {}", status);
             if status.is_success() {
                 let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
                 token_dto.token = Some(generated_token);
@@ -109,6 +110,7 @@ pub async fn login(
     };
 }
 
+            
 pub async fn create_user(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<CreateDTO>,
@@ -140,6 +142,7 @@ pub async fn create_user(
             let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
             token_dto.token = Some(jwt_functions::generate_token(&acc[0], &roles[0]));
             // println!("{:?}", token_dto);
+            println!("Status: {}", status);
             return HttpResponse::build(status).json(token_dto);
         }
         Err(e) => {

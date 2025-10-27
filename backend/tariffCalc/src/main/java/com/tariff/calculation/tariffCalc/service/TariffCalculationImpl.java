@@ -503,7 +503,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         return new GeneralTariffDTO(tariff.getReportingCountry().getCountryName(),
                 tariff.getPartnerCountry().getCountryName(),
-                tariff.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", ""),
+                tariff.getItem().getItemName(),
                 tariff.getPercentageRate(),
                 tariff.getDescription());
     }

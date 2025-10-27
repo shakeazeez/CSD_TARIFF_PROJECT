@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
         searched.sort((a, b) -> b.getCounter() - a.getCounter());
 
         Map<Integer, LocalDate> res = new LinkedHashMap<>();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < Math.min(5, searched.size()); i++) {
             History temp = searched.get(i);
             res.put(temp.getCounter(), temp.getLocalDate());
         }
@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
         searched.sort((a, b) -> b.getCounter() - a.getCounter());
 
         Map<Integer, LocalDate> res = new LinkedHashMap<>();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < Math.min(5, searched.size()); i++) {
             History temp = searched.get(i);
             res.put(temp.getCounter(), temp.getLocalDate());
         }

@@ -13,6 +13,7 @@ import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,7 +46,6 @@ public class User {
 
     @Column(name = "hashedpassword")
     private String hashedPassword;
-
     // @ElementCollection
     // @CollectionTable(name = "user_history", joinColumns = @JoinColumn(name =
     // "user_id"))
@@ -53,13 +53,12 @@ public class User {
     // @Column(name = "history_value")
     // private Map<Integer, Integer> history;
 
-    @OneToMany
-    @Column(name = "history")
+    @OneToMany(mappedBy = "user")
     private List<History> history;
 
     // Will add all the ontop stuff on here
     @ElementCollection
-    @Enumerated
+    @Enumerated(EnumType.ORDINAL)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "user_roles")
     private List<Role> role;

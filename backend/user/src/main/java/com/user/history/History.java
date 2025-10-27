@@ -2,17 +2,21 @@ package com.user.history;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.user.user.User;
 
-import org.springframework.data.annotation.Id;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
 @Data
+@Entity
 public class History {
 
     @Id
@@ -28,9 +32,10 @@ public class History {
     
     @Column(name = "latest_date")
     private LocalDate localDate;
-    
+
     @ManyToOne
-    @Column(name = "user")
+    @JoinColumn(name = "user_id")
+    @JsonBackReference
     private User user;
     
     

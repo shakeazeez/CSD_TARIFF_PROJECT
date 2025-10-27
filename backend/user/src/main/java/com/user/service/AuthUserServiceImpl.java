@@ -70,22 +70,13 @@ public class AuthUserServiceImpl implements AuthUserService {
         creation.getRole().add(Role.valueOf(createUserDTO.role().toUpperCase()));
         generalUserRepo.save(creation);
 
-        List<History> history = creation.getHistory();
-        
-        Map<Integer, LocalDate> intToHistory = new HashMap<>();
-        
-        for (int i = 0; i < 5; i++) {
-            History temp = history.get(i);
-            intToHistory.put(temp.getTariffId(), temp.getLocalDate());
-        } 
-
         switch (createUserDTO.role().toUpperCase()) {
             case "MEMBER": {
                 return new TokenDTO(
                         createUserDTO.username(),
                         null,
                         ((MemberUser) creation).getPinnedTariffId(),
-                        intToHistory);
+                        new HashMap<>());
             }
             case "BANK": {
                 return new TokenDTO(
@@ -93,7 +84,7 @@ public class AuthUserServiceImpl implements AuthUserService {
                         null,
                         createUserDTO.industry(),
                         createUserDTO.originCountry(),
-                        intToHistory);
+                        new HashMap<>());
             }
             case "BUSINESS": {
                 return new TokenDTO(
@@ -102,13 +93,13 @@ public class AuthUserServiceImpl implements AuthUserService {
                         createUserDTO.itemsSold(),
                         createUserDTO.destinationCountries(),
                         createUserDTO.originCountry(),
-                        intToHistory);
+                        new HashMap<>());
             }
             case "ADMIN": {
                 return new TokenDTO(
                         createUserDTO.username(),
                         null,
-                        intToHistory);
+                        new HashMap<>());
             }
             default: {
                 return null;
