@@ -38,7 +38,8 @@ public class History {
     @JsonBackReference
     private User user;
     
-    
+    public History() {}
+
     public History(int tariffId, User user) {
         this.tariffId = tariffId;
         this.counter = 1;

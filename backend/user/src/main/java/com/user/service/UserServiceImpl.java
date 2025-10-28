@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
         Map<Integer, LocalDate> res = new LinkedHashMap<>();
         for (int i = 0; i < Math.min(5, searched.size()); i++) {
             History temp = searched.get(i);
-            res.put(temp.getCounter(), temp.getLocalDate());
+            res.put(temp.getTariffId(), temp.getLocalDate());
         }
 
         return res;
@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         Map<Integer, LocalDate> res = new LinkedHashMap<>();
         for (int i = 0; i < Math.min(5, searched.size()); i++) {
             History temp = searched.get(i);
-            res.put(temp.getCounter(), temp.getLocalDate());
+            res.put(temp.getTariffId(), temp.getLocalDate());
         }
 
         // return the most searched top 5 tariffs

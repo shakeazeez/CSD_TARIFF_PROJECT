@@ -24,7 +24,7 @@ const Searches = ({ backendURL }) => {
     } else {
       loadSearches();
     }
-  }, []);
+  }, [isAuthenticated]);
 
   /* 
    * Fetch top searches ids for logged in users from backend
@@ -34,15 +34,17 @@ const Searches = ({ backendURL }) => {
    */
   const fetchTopSearchesIds = async () => {
     try { // calls backend to get the top searches for logged in users
-      const response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/history`, // returns List<Integer> of tariffIds
+      const response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/history`, // returns Map<Integer, LocalDate> of tariffIds
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken")}`,
           },
         }
       );
-      localStorage.setItem("generalUserTopSearches", JSON.stringify(response.data)); // saves the tariffIds in local storage
-      setTopSearchesIds(response.data); // update state the fetching of details can be triggered next
+
+      const tariffIds = Object.keys(response.data).map(Number); // array of tariffIds as numbers
+      localStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds)); // saves the tariffIds in local storage
+      setTopSearchesIds(tariffIds); // update state the fetching of details can be triggered next
     } catch (e) {
       console.error("Error fetching relevant searches:", e);
     }
@@ -146,8 +148,9 @@ const Searches = ({ backendURL }) => {
           },
         }
       );
-      localStorage.setItem("generalUserTopSearches", JSON.stringify(response.data));
-      setTopSearchesIds(response.data);
+      const tariffIds = Object.keys(response.data).map(Number); // array of tariffIds as numbers
+      localStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds));
+      setTopSearchesIds(tariffIds);
       fetchSearches(tariffId, setTopSearchesData);
     } catch (error) {
       console.error("Error adding recent searches:", error);
@@ -156,7 +159,8 @@ const Searches = ({ backendURL }) => {
 
   // expose the appropriate methods and data for Calculator and Dashboard pages to use (for guest user or general user)
   const addSearch = isAuthenticated ? addRelevantSearch : addRecentSearch; // backend for logged in, localStorage for guest
-  const ids = isAuthenticated ? topSearchesIds : recentSearchesIds; // tariffIds
+  // const ids = isAuthenticated ? topSearchesIds : recentSearchesIds; // tariffIds
+  const ids = Array.isArray(isAuthenticated ? topSearchesIds : recentSearchesIds) ? (isAuthenticated ? topSearchesIds : recentSearchesIds) : []; // tariffIds
   const data = isAuthenticated ? topSearchesData : recentSearchesData; // search details of each tariffId
 
   return {
@@ -165,7 +169,7 @@ const Searches = ({ backendURL }) => {
     searchesIds: ids, // array of tariffIds
     SearchDisplay: ({ onSearchClick, colors }) => (
       <div>
-        {ids.length === 0 ? (
+        {(!ids || !Array.isArray(ids) || ids.length === 0) ? (
           <div className="text-center py-6" style={{ color: colors?.muted || '#6b7280' }}>
             <p>{isAuthenticated ? "No favorite searches yet" : "No recent searches"}</p>
           </div>
