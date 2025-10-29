@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
-    @RestController
+@RestController
 @RequestMapping("/news/history")
 @RequiredArgsConstructor
 public class ChatHistoryController {
