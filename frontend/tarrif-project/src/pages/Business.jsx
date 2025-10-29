@@ -125,7 +125,9 @@ export function Business({onMenuClick}) {
                 code: item.countryName, // Value sent to backend
             }))
             : [];
-
+    // login -> certain values not null -> itemList returns business page 
+    // Put in get mapping 
+    // Get mapping is business/{username}
 
 
     return (

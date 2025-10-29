@@ -43,8 +43,11 @@ public class BusinessServiceImpl implements BusinessService {
             }
             
             return new BusinessInfoDTO(
+                // query origin is reporting 
                 bUser.getOriginCountry(),
+                // item queried list
                 bUser.getItemsSold(),
+                // partner country list 
                 bUser.getDestinationCountries(),
                 store
             );
