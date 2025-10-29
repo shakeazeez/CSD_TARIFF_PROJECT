@@ -473,7 +473,7 @@ export function Calculator({ onMenuClick }) {
           searchMethods.addSearch(fallbackCurrent.tariffId);
         }
         
-        setSuccess("Current tariff data not available. Showing latest historical data instead.");
+        // setSuccess("Current tariff data not available. Showing latest historical data instead.");
       } else if (hasCurrentData) {
         console.log("Current data already available, not using fallback");
         setHasCurrent(true); // Ensure state is consistent
@@ -491,6 +491,7 @@ export function Calculator({ onMenuClick }) {
           "Unable to retrieve data. Please verify your inputs and try again."
       );
     } finally {
+      setSuccess("Tariff calculation completed successfully!");
       setLoadingPast(false);
       setLoadingCurrent(false);
     }
