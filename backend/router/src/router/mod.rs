@@ -142,6 +142,7 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
 }
 
 pub async fn news_history(req: HttpRequest, body: web::Bytes) -> impl Responder {
+    println!("This request requires token");
     let extensions = req.extensions();
     if extensions
         .get::<jsonwebtoken::TokenData<Claims>>()

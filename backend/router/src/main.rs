@@ -54,7 +54,7 @@ fn init_tariff(cfg: &mut web::ServiceConfig) {
     cfg.service(web::scope("/tariff").route("/{tail:.*}", web::to(router::tariff_route)));
 }
 
-pub fn init_user(cfg: &mut web::ServiceConfig) {
+fn init_user(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/{prefix:(user|member|business|bank)}")
             .wrap(JwtMiddleware)
@@ -62,7 +62,7 @@ pub fn init_user(cfg: &mut web::ServiceConfig) {
     );
 }
 
-pub fn init_news_history(cfg: &mut web::ServiceConfig) {
+fn init_news_history(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/news/history")
             .wrap(JwtMiddleware)
@@ -91,6 +91,7 @@ async fn main() {
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(connection.clone()))
+            .configure(init_news_history)
             .configure(init_news)
             .configure(init_login)
             .configure(init_tariff)
