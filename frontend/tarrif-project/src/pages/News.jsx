@@ -3,7 +3,7 @@ import { Header } from "../components/Header.jsx";
 import axios from "axios";
 
 export function News({ onMenuClick }) {
-
+    const backendURL = import.meta.env.VITE_BACKEND_URL;
     const [newsData, setNewsData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedNews, setSelectedNews] = useState(null); // <-- modal state
@@ -16,10 +16,11 @@ export function News({ onMenuClick }) {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const response = await axios.get("https://api.example.com/news");
+                const response = await axios.get(`${backendURL}/news/articles`);
                 // ensure we store an array; fallback to testingData if unexpected shape
-                const data = Array.isArray(response.data) ? response.data : testingData;
-                setNewsData(data);
+                // const data = Array.isArray(response.data) ? response.data : testingData;
+                // console.log(response.data);
+                setNewsData(response.data);
             } catch (error) {
                 console.error("Error fetching news data:", error);
                 setNewsData(testingData); // Fallback to testing data on error
@@ -83,7 +84,8 @@ export function News({ onMenuClick }) {
 
                             {/* optional footer for actions/metadata */}
                             <footer className="mt-4 text-sm text-gray-500 flex justify-between">
-                                <span>{news.source ?? "Unknown source"}</span>
+                                {/* <span>{news.url ?? "Unknown source"}</span> */}
+                                <a href={news.url}>Link to News</a>
                                 <button
                                     className="text-sm text-blue-600 hover:underline"
                                     onClick={() => setSelectedNews(news)}

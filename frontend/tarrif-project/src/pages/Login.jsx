@@ -836,26 +836,6 @@ export function Login(){
                                     {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                                 </Button>
                             </motion.div>
-
-                            {/* DEMO CREDENTIALS */}
-                            {!isSignUp && (
-                                <motion.div
-                                    variants={itemVariants}
-                                    className="text-center pt-3 border-t"
-                                    style={{ borderColor: colors.border }}
-                                >
-                                    <p
-                                        className="text-xs mb-2 transition-colors duration-300"
-                                        style={{ color: colors.muted }}
-                                    >
-                                        Demo Credentials:
-                                    </p>
-                                    <div className="text-xs space-y-1">
-                                        <p style={{ color: colors.muted }}>Username: demo_user</p>
-                                        <p style={{ color: colors.muted }}>Password: DemoPass123!</p>
-                                    </div>
-                                </motion.div>
-                            )}
                         </form>
                     </CardContent>
                 </Card>

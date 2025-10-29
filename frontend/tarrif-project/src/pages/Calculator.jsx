@@ -594,6 +594,7 @@ export function Calculator({ onMenuClick }) {
       <AnimatePresence>
         {success && (
           <motion.div
+            key="success-notification"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -620,6 +621,7 @@ export function Calculator({ onMenuClick }) {
 
         {error && (
           <motion.div
+            key="error-notification"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
