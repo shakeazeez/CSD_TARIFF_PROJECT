@@ -7,14 +7,37 @@ use crate::{jwt::jwt_functions::Claims, tables::Role};
 
 async fn establish_connection(req: &HttpRequest, url: &str, body: web::Bytes) -> Result<reqwest::Response, reqwest::Error> {
     let client = Client::new();
-    let response = if req.method() == actix_web::http::Method::GET {
-        reqwest::get(url).await
-    } else {
-        client.post(url)
+    let response = if req.method() == actix_web::http::Method::DELETE {
+        client.delete(url)
             .body(body)
             .header("Content-Type", "application/json")
             .send()
             .await
+
+    } else if req.method() == actix_web::http::Method::PUT{
+            client.put(url)
+            .body(body)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+        
+        
+    }else if req.method() == actix_web::http::Method::POST{
+            client.post(url)
+            .body(body)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+        
+    }else if req.method() == actix_web::http::Method::OPTIONS{
+            client.request(actix_web::http::Method::OPTIONS, url)
+            .body(body)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+        
+    }else {
+        reqwest::get(url).await
     };
     
     response
@@ -22,6 +45,10 @@ async fn establish_connection(req: &HttpRequest, url: &str, body: web::Bytes) ->
 
 
 pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
+    if req.method() == actix_web::http::Method::OPTIONS {
+        return HttpResponse::Ok().finish();
+    }
+
     let base_url = env::var("NEWS_URL").unwrap();
     let uri = req.uri().to_string();
     let url = format!("{}{}", base_url, uri);

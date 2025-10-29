@@ -50,7 +50,6 @@ pub async fn login(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<LoginDTO>,
 ) -> impl Responder {
-    println!("Received: {:?}", login_details);
     let name = login_details.username.as_deref().unwrap();
     let acc: Vec<AuthUser> = get_user_details(&database, &name.to_string()).await;
     

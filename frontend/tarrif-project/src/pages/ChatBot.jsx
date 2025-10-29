@@ -100,13 +100,19 @@ export function ChatBot({ onMenuClick }) {
 
   const [input, setInput] = useState(""); // user's current query
 
-  // for query history, in the form of array - query: response
-  const [guestQueryHistory, setGuestQueryHistory] = useState([]); // for guest user
+  // for guest conversations: array of { id, title, messages: [{query,response,sources}], createdAt }
+  const [guestConversations, setGuestConversations] = useState([]);
+  const [activeConversationIndex, setActiveConversationIndex] = useState(0);
+  const activeConversationRef = useRef(0);
+  const currentQueryConversationIndexRef = useRef(null); // to track which conversation the current query belongs to
   const [UserQueryHistory, setUserQueryHistory] = useState([]); // for logged in user
 
   const [responseData, setResponseData] = useState({}); // for updating the response to backend (logged in user)
 
   const [currentQueryAndAnswer, setCurrentQueryAndAnswer] = useState(null); // currently displayed question and response
+
+  // ref to the chat messages container for auto-scrolling
+  const chatContainerRef = useRef(null);
 
   const [expandedQueryIndex, setExpandedQueryIndex] = useState(null); // index of expanded question for answer display
 
@@ -115,6 +121,10 @@ export function ChatBot({ onMenuClick }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [creatingNewConversation, setCreatingNewConversation] = useState(false); // guard to prevent spamming new chats
+  const [deletingConversation, setDeletingConversation] = useState(false); // guard to prevent multiple delete calls
+  const NEW_CONV_COOLDOWN_MS = 3000; // 3 second cooldown between new conversation creations
+  const { toast } = useToast();
 
   // voice input functionality states
   const [isListening, setIsListening] = useState(false);
@@ -145,66 +155,119 @@ export function ChatBot({ onMenuClick }) {
   // check if browser supports speech recognition
   useEffect(() => {
     if (isAuthenticated) { // fetch from backend, endpoint not implemented yet
-      // fetchChatHistory();
+      fetchChatHistory();
     } else {
       loadGuestQueryHistory();
     }
     // check for speech recognition support
     setIsVoiceSupported('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-  }, []);
+  }, [isAuthenticated]);
+
+  // Auto-scroll whenever history updates (new message or updated response)
+  useEffect(() => {
+    try {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    } catch (e) {}
+  }, [guestConversations]);
+
+  // Helper to persist guest conversations to localStorage only for unauthenticated users
+  const persistGuestConversations = (convs) => {
+    try {
+      if (!isAuthenticated) {
+        localStorage.setItem("guestConversations", JSON.stringify(convs));
+      }
+    } catch (e) { /* ignore storage errors */ }
+  }
 
   useEffect(() => {
     if (isAuthenticated) {
       // update backend endpoint
       // updateQueryToBackend();
     }
-  }, [guestQueryHistory]);
+  }, [guestConversations]);
 
   /*
    * Laods the guest user's query history from local storage and updates the queryHistory state
    * Called from the useEffect on component mount
    */
   const loadGuestQueryHistory = () => {
-    const guestQueryHistory = localStorage.getItem("guestQueryHistory");
-
-    if (guestQueryHistory) {
+    // Try new format first
+    const stored = localStorage.getItem("guestConversations");
+    if (stored) {
       try {
-        setGuestQueryHistory(JSON.parse(guestQueryHistory));
-      } catch (error) {
-        console.log("Error parsing query history from local storage: {}", error);
-        setGuestQueryHistory([]);
+        const parsed = JSON.parse(stored);
+  setGuestConversations(parsed);
+  const idx = parsed.length - 1 >= 0 ? parsed.length - 1 : 0;
+  setActiveConversationIndex(idx);
+  activeConversationRef.current = idx;
+        return;
+      } catch (e) {
+        console.warn("Failed to parse guestConversations", e);
       }
     }
+
+    // Fallback: old flat history format (guestQueryHistory)
+    const old = localStorage.getItem("guestQueryHistory");
+    if (old) {
+      try {
+        const msgs = JSON.parse(old);
+        const conv = {
+          id: Date.now(),
+          title: msgs && msgs.length > 0 ? (msgs[0].query || 'New Chat') : 'New Chat',
+          messages: msgs,
+          createdAt: new Date().toISOString()
+        };
+  setGuestConversations([conv]);
+  setActiveConversationIndex(0);
+  activeConversationRef.current = 0;
+  persistGuestConversations([conv]);
+        return;
+      } catch (e) {
+        console.warn("Failed to migrate old guestQueryHistory", e);
+      }
+    }
+
+    // No history: initialize with one empty conversation
+    const initial = [{ id: Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() }];
+    setGuestConversations(initial);
+    setActiveConversationIndex(0);
+    activeConversationRef.current = 0;
+  try { persistGuestConversations(initial); } catch (e) {}
   }
 
   // // fetch chat history
   // 1. call the backend endpoint to fetch the historical query data
   // 2. save the response data in queryhistorystate and local storage
-  // const fetchChatHistory = async () => {
-  //   try { // calls backend to get the chat history for logged in user
-  //     const response = await axios.get(`${backendURL}/news/history`, // THE ENDPOINT DOESNT EXIST YET
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${localStorage.getItem("authToken")}`, 
-  //         },
-  //       }
-  //     );
+  const fetchChatHistory = async () => {
+    try {
+      const username = localStorage.getItem("username");
+      if (!username) return;
+      const response = await axios.get(`${backendURL}/news/history/${username}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
 
-  // const filteredHistory = response.data.map(history => ({
-  //     response: history.synthesizedAnswer,
-  //     sources: history.articles.map(article => ({
-  //       title: article.title,
-  //       url: article.url
-  //     }))
-  //   }));
+      // response is an array of conversation objects
+      const convs = response.data.map(history => ({
+        id: history.id,
+        title: history.title,
+        messages: history.messages.map(m => ({ query: m.query, response: m.response, sources: m.sources })),
+        createdAt: history.createdAt
+      }));
 
-  //    localStorage.setItem("userQueryHistory", JSON.stringify(filteredHistory.data));
-
-  //     setUserQueryHistory(filteredHistory)
-  //   } catch (e) {
-  //     console.error("Error fetching chat history:", e);
-  //   }
-  // }
+      setGuestConversations(convs);
+      // For signed-in, set active to the latest (first in desc order)
+      setActiveConversationIndex(0);
+      activeConversationRef.current = 0;
+    } catch (e) {
+      console.error("Error fetching chat history:", e);
+    }
+  }
 
   // add query history to backend
   // const updateQueryToBackend = async () => {
@@ -239,36 +302,135 @@ export function ChatBot({ onMenuClick }) {
     setError("");
     setSuccess("");
 
+    // Capture the conversation index for this query
+    currentQueryConversationIndexRef.current = activeConversationRef.current;
+
+    // Capture the previous completed entry (so we can send it as context)
+    // Prefer the currently selected displayed conversation if it has a response
+    let previousEntry = null;
     try {
-      const response = await axios.post(
-        `${backendURL}/news/process`,
-        null, // no request body
-        { params: { query: input } } // query string
-      );
+      if (currentQueryAndAnswer && currentQueryAndAnswer.response) {
+        previousEntry = currentQueryAndAnswer;
+      } else {
+        // Use the ref for the active conversation index here to avoid a stale state race
+        const useIdx = (typeof activeConversationRef.current === 'number') ? activeConversationRef.current : (guestConversations.length - 1);
+        const conv = (Array.isArray(guestConversations) && guestConversations.length > 0)
+          ? guestConversations[(useIdx >= 0 && useIdx < guestConversations.length) ? useIdx : (guestConversations.length - 1)]
+          : null;
+        if (conv && conv.messages && conv.messages.length > 0) {
+          for (let i = conv.messages.length - 1; i >= 0; i--) {
+            if (conv.messages[i].response) { previousEntry = conv.messages[i]; break; }
+          }
+        }
+      }
+    } catch (e) { previousEntry = currentQueryAndAnswer; }
+
+    // Immediately create a pending message entry in the active conversation so the UI shows the user's message
+    const displayedQuery = input;
+    const pendingEntry = { query: displayedQuery, response: null, sources: [] };
+
+    setGuestConversations(prev => {
+      const updated = [...prev];
+      const refIdx = (typeof currentQueryConversationIndexRef.current === 'number') ? currentQueryConversationIndexRef.current : -1;
+      const idx = (refIdx >= 0 && refIdx < updated.length) ? refIdx : (updated.length - 1);
+      // ensure conversation exists
+      if (!updated[idx]) {
+        updated[idx] = { id: Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
+      }
+      updated[idx] = { ...updated[idx], messages: [...updated[idx].messages, pendingEntry] };
+                        try { persistGuestConversations(updated); } catch (e) {}
+      return updated;
+    });
+
+    // Make the pending entry the current displayed Q/A (so left panel highlights it)
+    setCurrentQueryAndAnswer(pendingEntry);
+    // clear input so it looks like the message was sent
+    setInput("");
+    // ensure container will scroll down after render
+
+    try {
+      // Build context from previous messages - only for guests
+      let queryToSend = displayedQuery;
+      if (!isAuthenticated) {
+        try {
+          const activeIdx = activeConversationRef.current;
+          const conv = guestConversations[activeIdx];
+          if (conv && Array.isArray(conv.messages) && conv.messages.length > 1) {
+            // Include the last 3 previous completed messages as context (exclude the pending last one)
+            const previousMessages = conv.messages.slice(0, -1);
+            const last3Messages = previousMessages.slice(-3); // Get last 3 messages
+            let contextParts = [];
+            last3Messages.forEach(msg => {
+              if (msg.query && msg.response) {
+                contextParts.push(`User: ${msg.query}\nAssistant: ${msg.response}`);
+              }
+            });
+            if (contextParts.length > 0) {
+              queryToSend = `CONTEXT_START\n${contextParts.join('\n')}\nCONTEXT_END\nFollow-up: ${displayedQuery}`;
+              console.log('Context built with last 3 messages:', contextParts.length, 'messages');
+            }
+          }
+        } catch (e) {
+          queryToSend = displayedQuery;
+          console.log('Error building context:', e);
+        }
+      }
+
+      const params = { query: queryToSend };
+      if (isAuthenticated) {
+        params.username = localStorage.getItem("username");
+        // Add conversationId if appending to existing conversation
+        const activeIdx = activeConversationRef.current;
+        if (activeIdx >= 0 && guestConversations[activeIdx] && guestConversations[activeIdx].id) {
+          params.conversationId = guestConversations[activeIdx].id;
+        }
+      }
+
+      const response = await axios.post(`${backendURL}/news/process`, null, { params });
+
+      // Update local conversation id with server id for threading
+      if (isAuthenticated && response.data.conversationId) {
+        setGuestConversations(prev => {
+          const updated = [...prev];
+          const idx = activeConversationRef.current;
+          if (idx >= 0 && updated[idx]) {
+            updated[idx].id = response.data.conversationId;
+          }
+          return updated;
+        });
+      }
 
       // extract the list of article sources
-      const sources = response.data.articles.map(article => ({
-        title: article.title,
-        url: article.url
-      }));
+      const sources = response.data.articles.map(article => ({ title: article.title, url: article.url }));
 
-      const newQueryAndAnswer = { query: input, response: response.data.synthesizedAnswer, sources };
-
-      console.log("newEntry: {}", newQueryAndAnswer);
-
-      setCurrentQueryAndAnswer(newQueryAndAnswer);
-      setExpandedQueryIndex(null); // clear highlighted history when new query is made
-      setExpandedSources(false); // reset source expansion
-
-      // update query history in local storage and history state
-      setGuestQueryHistory(prev => {
-        const updated = [...prev, newQueryAndAnswer];
-
-        localStorage.setItem("guestQueryHistory", JSON.stringify(updated));
-        // for logged in user, need to update backend too!!!, this is triggered by useEffect [queryHistory]
-
+      // Update the last pending entry in the active conversation with the assistant response
+      setGuestConversations(prev => {
+        const updated = [...prev];
+        const refIdx = (typeof currentQueryConversationIndexRef.current === 'number') ? currentQueryConversationIndexRef.current : -1;
+        const idx = (refIdx >= 0 && refIdx < updated.length) ? refIdx : (updated.length - 1);
+        if (!updated[idx]) return prev;
+        const msgs = Array.isArray(updated[idx].messages) ? [...updated[idx].messages] : [];
+        if (msgs.length === 0) {
+          msgs.push({ query: displayedQuery, response: response.data.synthesizedAnswer, sources });
+        } else {
+          msgs[msgs.length - 1] = { query: displayedQuery, response: response.data.synthesizedAnswer, sources };
+        }
+        updated[idx] = { ...updated[idx], messages: msgs, title: updated[idx].title && updated[idx].title !== 'New Chat' ? updated[idx].title : (displayedQuery || updated[idx].title) };
+  try { persistGuestConversations(updated); } catch (e) {}
         return updated;
       });
+
+      const updatedEntry = { query: displayedQuery, response: response.data.synthesizedAnswer, sources };
+      console.log("newEntry:", updatedEntry);
+
+      setCurrentQueryAndAnswer(updatedEntry);
+      setExpandedQueryIndex(null);
+      setExpandedSources(false);
+
+      if (isAuthenticated) {
+        // refresh history from backend to include newly saved record
+        fetchChatHistory();
+      }
 
       setSuccess("Query successful!");
       setInput("");
@@ -278,6 +440,14 @@ export function ChatBot({ onMenuClick }) {
       console.error("Error state: {}", error);
     } finally {
       setLoading(false);
+      // scroll chat to bottom so the new assistant response (or loading) is visible
+      setTimeout(() => {
+        try {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          }
+        } catch (e) {}
+      }, 50);
     }
   };
 
@@ -285,11 +455,88 @@ export function ChatBot({ onMenuClick }) {
    * To select a query history when user click on the right sidebar
    */
   const handleQueryHistoryClick = (index) => {
-    setExpandedQueryIndex(expandedQueryIndex === index ? null : index); // to hightlight the selected history
+    setExpandedQueryIndex(expandedQueryIndex === index ? null : index); // to highlight the selected history
+    // index here refers to the reverse index in the displayed list (most recent first)
+    // Convert to original conversation index
+    const convIdx = guestConversations.length - 1 - index;
+    if (Array.isArray(guestConversations) && guestConversations[convIdx]) {
+      setActiveConversationIndex(convIdx);
+      activeConversationRef.current = convIdx;
+      const conv = guestConversations[convIdx];
+      const lastMsg = conv.messages && conv.messages.length ? conv.messages[conv.messages.length - 1] : null;
+      if (lastMsg) setCurrentQueryAndAnswer(lastMsg);
+      setExpandedSources(false);
+    }
+  };
 
-    if (guestQueryHistory[index]) {
-      setCurrentQueryAndAnswer(guestQueryHistory[index]); // replace the current query display with selected query history
-      setExpandedSources(false); // reset article url expansion
+  const deleteConversation = (index) => {
+    if (deletingConversation) return; // prevent multiple calls
+    try {
+      const doDelete = window.confirm('Delete this conversation? This cannot be undone.');
+      if (!doDelete) return;
+
+      setDeletingConversation(true);
+
+      setGuestConversations(prev => {
+        const updated = Array.isArray(prev) ? [...prev] : [];
+        if (index < 0 || index >= updated.length) return prev;
+        const convToDelete = updated[index];
+        updated.splice(index, 1);
+
+        if (updated.length === 0) {
+          const initial = [{ id: Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() }];
+    try { persistGuestConversations(initial); } catch (e) {}
+          activeConversationRef.current = 0;
+          setActiveConversationIndex(0);
+          setCurrentQueryAndAnswer(null);
+          return initial;
+        }
+
+        // adjust active index/ref if needed
+        let newActive = activeConversationRef.current;
+        if (index === activeConversationRef.current) {
+          newActive = Math.max(0, activeConversationRef.current - 1);
+        } else if (index < activeConversationRef.current) {
+          newActive = activeConversationRef.current - 1;
+        }
+
+        activeConversationRef.current = newActive;
+        setActiveConversationIndex(newActive);
+  try { persistGuestConversations(updated); } catch (e) {}
+
+        const conv = updated[newActive];
+        const lastMsg = conv && conv.messages && conv.messages.length ? conv.messages[conv.messages.length - 1] : null;
+        setCurrentQueryAndAnswer(lastMsg);
+
+        // If user is authenticated and conversation has an id (server-side), attempt server delete
+        if (isAuthenticated && convToDelete && convToDelete.id) {
+          const username = localStorage.getItem('username');
+          const token = localStorage.getItem('authToken');
+          if (username && token) {
+            axios.delete(`${backendURL}/news/history/${username}/${convToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then(() => {
+                toast({ title: 'Deleted', description: 'Conversation deleted from server.' });
+              })
+              .catch(err => {
+                console.warn('Server delete failed', err?.response?.status);
+                if (err?.response?.status === 403) {
+                  toast({ title: 'Not allowed', description: 'You are not authorized to delete this conversation.' });
+                } else if (err?.response?.status === 404) {
+                  toast({ title: 'Not found', description: 'Conversation not found on server (it may have already been removed).' });
+                } else {
+                  toast({ title: 'Error', description: 'Failed to delete conversation on server.' });
+                }
+              });
+          }
+        }
+
+        return updated;
+      });
+    } catch (e) {
+      console.error('Failed to delete conversation', e);
+      setError('Failed to delete conversation');
+    } finally {
+      setDeletingConversation(false);
     }
   }
 
@@ -441,6 +688,7 @@ export function ChatBot({ onMenuClick }) {
             {/* CHAT MESSAGES CONTAINER */}
             <div
               className="flex-1 min-h-[500px] max-h-[70vh] overflow-y-auto p-6 space-y-6 rounded-t-2xl"
+              ref={chatContainerRef}
               style={{
                 background: isDark ? `${colors.surface}95` : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(10px)',
@@ -451,7 +699,7 @@ export function ChatBot({ onMenuClick }) {
               }}
             >
               {/* Welcome Message */}
-              {!currentQueryAndAnswer && (
+              {(!Array.isArray(guestConversations) || (guestConversations.length === 0) || !((guestConversations[activeConversationIndex >= 0 ? activeConversationIndex : (guestConversations.length - 1)] || {}).messages || []).length) && !currentQueryAndAnswer && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -473,144 +721,121 @@ export function ChatBot({ onMenuClick }) {
                     className="text-lg max-w-md mx-auto"
                     style={{ color: colors.muted }}
                   >
-                    Ask me anything about tariffs! I can help you with information and insights.
+                    {isAuthenticated
+                      ? "Welcome back! Here is your chat history on the right. Do you have any questions about tariffs?"
+                      : "Ask me anything about tariffs! I can help you with information and insights."
+                    }
                   </p>
                 </motion.div>
               )}
 
-              {/* CURRENT QUERY AND ANSWER */}
-              {currentQueryAndAnswer && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  variants={itemVariants}
-                >
-                  {/* User Message */}
-                  <div className="flex justify-end mb-4">
-                    <div
-                      className="max-w-3xl rounded-2xl px-6 py-4 shadow-lg"
-                      style={{
-                        backgroundColor: colors.accent,
-                        color: 'white',
-                        backdropFilter: 'blur(10px)'
-                      }}
-                    >
-                      <p className="text-sm font-medium">{currentQueryAndAnswer.query}</p>
-                    </div>
-                  </div>
-
-                  {/* AI Response */}
-                  <div className="flex justify-start">
-                    <Card
-                      className="max-w-4xl shadow-lg border"
-                      style={{
-                        backgroundColor: isDark ? `${colors.surface}90` : 'rgba(255, 255, 255, 0.9)',
-                        backdropFilter: 'blur(10px)',
-                        borderColor: `${colors.border}60`
-                      }}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center space-x-2">
-                          <Bot className="w-5 h-5" style={{ color: colors.accent }} />
-                          <CardTitle className="text-sm" style={{ color: colors.foreground }}>
-                            AI Assistant
-                          </CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p
-                          className="text-sm leading-relaxed mb-4 chat-message"
-                          style={{ color: colors.foreground }}
+              {/* Render messages for the active conversation */}
+              {Array.isArray(guestConversations) && guestConversations.length > 0 && (
+                (() => {
+                  const conv = guestConversations[activeConversationIndex >= 0 ? activeConversationIndex : (guestConversations.length - 1)];
+                  const msgs = conv && Array.isArray(conv.messages) ? conv.messages : [];
+                  return msgs.map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                      {/* User Message */}
+                      <div className="flex justify-end mb-4">
+                        <div
+                          className="max-w-3xl rounded-2xl px-6 py-4 shadow-lg"
+                          style={{
+                            backgroundColor: colors.accent,
+                            color: 'white',
+                            backdropFilter: 'blur(10px)'
+                          }}
                         >
-                          {currentQueryAndAnswer.response}
-                        </p>
+                          <p className="text-sm font-medium">{item.query}</p>
+                        </div>
+                      </div>
 
-                        {/* Sources section */}
-                        {Array.isArray(currentQueryAndAnswer.sources) && currentQueryAndAnswer.sources.length > 0 && (
-                          <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.border }}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={toggleSourceExpansion}
-                              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-opacity-50 mb-3"
-                              style={{
-                                backgroundColor: expandedSources ? `${colors.accent}15` : 'transparent',
-                                color: colors.foreground
-                              }}
-                            >
-                              <ExternalLink className="w-4 h-4" style={{ color: colors.accent }} />
-                              <span className="text-sm font-medium">
-                                {currentQueryAndAnswer.sources.length} Source{currentQueryAndAnswer.sources.length > 1 ? 's' : ''}
-                              </span>
-                              <ArrowRight
-                                className={`w-4 h-4 transition-transform duration-200 ${expandedSources ? 'rotate-90' : ''}`}
-                                style={{ color: colors.muted }}
-                              />
-                            </Button>
+                      {/* Assistant / AI Response (or loading state) */}
+                      <div className="flex justify-start mb-6">
+                        <Card
+                          className="max-w-4xl shadow-lg border"
+                          style={{
+                            backgroundColor: isDark ? `${colors.surface}90` : 'rgba(255, 255, 255, 0.9)',
+                            backdropFilter: 'blur(10px)',
+                            borderColor: `${colors.border}60`
+                          }}
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center space-x-2">
+                              <Bot className="w-5 h-5" style={{ color: colors.accent }} />
+                              <CardTitle className="text-sm" style={{ color: colors.foreground }}>
+                                AI Assistant
+                              </CardTitle>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            {item.response ? (
+                              <p className="text-sm leading-relaxed mb-4 chat-message" style={{ color: colors.foreground }}>
+                                {item.response}
+                              </p>
+                            ) : (
+                              <div className="mb-4">
+                                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} style={{ height: 12, width: '60%', background: `${colors.border}30`, borderRadius: 6, marginBottom: 8 }} />
+                                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }} style={{ height: 12, width: '90%', background: `${colors.border}20`, borderRadius: 6, marginBottom: 6 }} />
+                                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} style={{ height: 12, width: '80%', background: `${colors.border}20`, borderRadius: 6 }} />
+                                <div className="mt-2 text-xs text-muted-foreground" style={{ color: colors.muted }}>Generating answer...</div>
+                              </div>
+                            )}
 
-                            <AnimatePresence>
-                              {expandedSources && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="overflow-hidden"
+                            {/* Sources for this entry */}
+                            {Array.isArray(item.sources) && item.sources.length > 0 && (
+                              <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.border }}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={toggleSourceExpansion}
+                                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-opacity-50 mb-3"
+                                  style={{
+                                    backgroundColor: expandedSources ? `${colors.accent}15` : 'transparent',
+                                    color: colors.foreground
+                                  }}
                                 >
-                                  <div className="grid grid-cols-1 gap-3">
-                                    {currentQueryAndAnswer.sources.map((src, i) => (
-                                      <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                      >
-                                        <a
-                                          href={src.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="block p-4 rounded-xl border transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
-                                          style={{
-                                            backgroundColor: isDark ? colors.background : '#ffffff',
-                                            borderColor: colors.border,
-                                            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.1)'
-                                          }}
-                                        >
-                                          <div className="flex items-start space-x-3">
-                                            <div
-                                              className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-                                              style={{ backgroundColor: `${colors.accent}20` }}
-                                            >
-                                              <ExternalLink className="w-4 h-4" style={{ color: colors.accent }} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <p
-                                                className="text-sm font-medium mb-1 line-clamp-2 group-hover:text-opacity-80"
-                                                style={{ color: colors.foreground }}
-                                              >
-                                                {src.title || 'Untitled Source'}
-                                              </p>
-                                              <p
-                                                className="text-xs truncate"
-                                                style={{ color: colors.muted }}
-                                              >
-                                                {new URL(src.url).hostname}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </a>
-                                      </motion.div>
-                                    ))}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </motion.div>
+                                  <ExternalLink className="w-4 h-4" style={{ color: colors.accent }} />
+                                  <span className="text-sm font-medium">
+                                    {item.sources.length} Source{item.sources.length > 1 ? 's' : ''}
+                                  </span>
+                                  <ArrowRight
+                                    className={`w-4 h-4 transition-transform duration-200 ${expandedSources ? 'rotate-90' : ''}`}
+                                    style={{ color: colors.muted }}
+                                  />
+                                </Button>
+
+                                <AnimatePresence>
+                                  {expandedSources && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                                      <div className="grid grid-cols-1 gap-3">
+                                        {item.sources.map((src, j) => (
+                                          <motion.div key={j} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: j * 0.05 }}>
+                                            <a href={src.url} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-xl border transition-all duration-200 hover:shadow-md hover:scale-[1.02] group" style={{ backgroundColor: isDark ? colors.background : '#ffffff', borderColor: colors.border, boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                              <div className="flex items-start space-x-3">
+                                                <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${colors.accent}20` }}>
+                                                  <ExternalLink className="w-4 h-4" style={{ color: colors.accent }} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                  <p className="text-sm font-medium mb-1 line-clamp-2 group-hover:text-opacity-80" style={{ color: colors.foreground }}>{src.title || 'Untitled Source'}</p>
+                                                  <p className="text-xs truncate" style={{ color: colors.muted }}>{new URL(src.url).hostname}</p>
+                                                </div>
+                                              </div>
+                                            </a>
+                                          </motion.div>
+                                        ))}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </motion.div>
+                  ));
+                })()
               )}
 
 
@@ -760,15 +985,60 @@ export function ChatBot({ onMenuClick }) {
                 </div>
                 <Button
                   onClick={() => {
-                    setCurrentQueryAndAnswer(null);
-                    setInput("");
-                    setError("");
-                    setSuccess("");
+                    try {
+                      // Prevent spamming by checking if we are already creating a new conv
+                      if (creatingNewConversation) {
+                        toast({ title: 'Please wait', description: 'Creating a new conversation...' });
+                        return;
+                      }
+
+                      // Cooldown check: compare last created time
+                      const lastConv = Array.isArray(guestConversations) && guestConversations.length ? guestConversations[guestConversations.length - 1] : null;
+                      if (lastConv && lastConv.createdAt) {
+                        const lastMs = new Date(lastConv.createdAt).getTime();
+                        if (Date.now() - lastMs < NEW_CONV_COOLDOWN_MS) {
+                          toast({ title: 'Slow down', description: `You can create a new conversation every ${Math.ceil(NEW_CONV_COOLDOWN_MS/1000)}s` });
+                          return;
+                        }
+                      }
+
+                      setCreatingNewConversation(true);
+
+                      // Create a new conversation and switch to it (don't delete old conversations)
+                      const newConv = { id: isAuthenticated ? null : Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
+                      setGuestConversations(prev => {
+                        const updated = Array.isArray(prev) ? [...prev, newConv] : [newConv];
+                  try { persistGuestConversations(updated); } catch (e) {}
+                        // set active index to the new conversation (last)
+                        const newIdx = updated.length - 1;
+                        setActiveConversationIndex(newIdx);
+                        activeConversationRef.current = newIdx;
+                        return updated;
+                      });
+
+                      setCurrentQueryAndAnswer(null);
+                      setInput("");
+                      setError("");
+                      setSuccess("");
+                      setExpandedQueryIndex(null);
+                      setExpandedSources(false);
+                      // scroll container to top
+                      try { if (chatContainerRef.current) chatContainerRef.current.scrollTop = 0; } catch (e) {}
+
+                      // small delay to avoid rapid re-clicks, then re-enable
+                      setTimeout(() => setCreatingNewConversation(false), NEW_CONV_COOLDOWN_MS);
+                    } catch (e) {
+                      setCreatingNewConversation(false);
+                      console.error('Error creating new conversation', e);
+                    }
                   }}
+                  disabled={creatingNewConversation}
+                  aria-busy={creatingNewConversation}
                   className="flex items-center gap-2 px-3 py-1 rounded-lg transition-all duration-200 hover:opacity-80"
                   style={{
                     backgroundColor: `${colors.accent}20`,
-                    color: colors.accent
+                    color: colors.accent,
+                    opacity: creatingNewConversation ? 0.6 : 1
                   }}
                 >
                   <Plus className="w-4 h-4" />
@@ -794,22 +1064,19 @@ export function ChatBot({ onMenuClick }) {
                 overflowY: 'auto'
               }}
             >
-              {Array.isArray(guestQueryHistory) && guestQueryHistory.length > 0 ? (
-                [...guestQueryHistory].reverse().map((item, reverseIdx) => {
-                  const idx = guestQueryHistory.length - 1 - reverseIdx; // original index
+              {Array.isArray(guestConversations) && guestConversations.length > 0 ? (
+                [...guestConversations].reverse().map((conv, reverseIdx) => {
+                  const idx = guestConversations.length - 1 - reverseIdx; // original index
+                  const lastMsg = conv.messages && conv.messages.length ? conv.messages[conv.messages.length - 1] : null;
+                  const containerBg = expandedQueryIndex === idx
+                    ? `${colors.accent}20`
+                    : isDark ? `${colors.background}90` : 'rgba(255, 255, 255, 0.8)';
                   return (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: reverseIdx * 0.05 }}
-                    >
+                    <motion.div key={idx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: reverseIdx * 0.05 }}>
                       <Card
                         className={`transition-all duration-200 border cursor-pointer hover:shadow-lg hover:scale-[1.02] ${expandedQueryIndex === idx ? 'ring-2' : ''}`}
                         style={{
-                          backgroundColor: expandedQueryIndex === idx
-                            ? `${colors.accent}20`
-                            : isDark ? `${colors.background}90` : 'rgba(255, 255, 255, 0.8)',
+                          backgroundColor: containerBg,
                           borderColor: expandedQueryIndex === idx ? colors.accent : `${colors.border}60`,
                           ringColor: expandedQueryIndex === idx ? colors.accent : 'transparent',
                           backdropFilter: 'blur(10px)',
@@ -820,23 +1087,26 @@ export function ChatBot({ onMenuClick }) {
                         onClick={() => handleQueryHistoryClick(idx)}
                       >
                         <CardContent className="p-4">
-                          <div className="flex items-start space-x-3">
-                            <div
-                              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: `${colors.accent}20` }}
-                            >
-                              <MessageCircle
-                                className="w-4 h-4"
-                                style={{ color: colors.accent }}
-                              />
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${colors.accent}20` }}>
+                                <MessageCircle className="w-4 h-4" style={{ color: colors.accent }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium line-clamp-2 leading-relaxed" style={{ color: colors.foreground }}>
+                                  {conv.title || (lastMsg ? lastMsg.query : 'New Chat')}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className="text-sm font-medium line-clamp-2 leading-relaxed"
-                                style={{ color: colors.foreground }}
+                            <div className="flex-shrink-0 ml-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); deleteConversation(idx); }}
+                                title="Delete conversation"
+                                className="p-1 rounded-md hover:bg-red-100"
+                                style={{ color: colors.muted }}
                               >
-                                {item.query}
-                              </p>
+                                ✕
+                              </button>
                             </div>
                           </div>
                         </CardContent>
@@ -846,27 +1116,11 @@ export function ChatBot({ onMenuClick }) {
                 })
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                    style={{ backgroundColor: `${colors.muted}20` }}
-                  >
-                    <MessageCircle
-                      className="w-8 h-8"
-                      style={{ color: colors.muted }}
-                    />
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${colors.muted}20` }}>
+                    <MessageCircle className="w-8 h-8" style={{ color: colors.muted }} />
                   </div>
-                  <p
-                    className="text-sm"
-                    style={{ color: colors.muted }}
-                  >
-                    No conversations yet.
-                  </p>
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: colors.muted }}
-                  >
-                    Start by asking a question!
-                  </p>
+                  <p className="text-sm" style={{ color: colors.muted }}>No conversations yet.</p>
+                  <p className="text-xs mt-1" style={{ color: colors.muted }}>Start by asking a question!</p>
                 </div>
               )}
             </div>
