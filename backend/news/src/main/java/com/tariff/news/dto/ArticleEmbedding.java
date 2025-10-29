@@ -1,12 +1,10 @@
 package com.tariff.news.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class ArticleEmbedding {
     private String title;
     private String url;
@@ -18,4 +16,14 @@ public class ArticleEmbedding {
     private String lastSeenQuery;
     // Source of this article: "db" for cached DB result, "api" for freshly fetched
     private String source;
+
+    public ArticleEmbedding(String title, String url, String cleanedText, String embedding, String queryContext, String lastSeenQuery, String source) {
+        this.title = title;
+        this.url = url;
+        this.cleanedText = cleanedText;
+        this.embedding = embedding;
+        this.queryContext = queryContext;
+        this.lastSeenQuery = lastSeenQuery;
+        this.source = source;
+    }
 }

@@ -62,6 +62,15 @@ pub fn init_user(cfg: &mut web::ServiceConfig) {
     );
 }
 
+pub fn init_news_history(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/news/history")
+            .wrap(JwtMiddleware)
+            .route("/{tail:.*}", web::to(router::news_history)),
+        
+    );
+}
+
 #[actix_web::main]
 async fn main() {
     env_logger::init();

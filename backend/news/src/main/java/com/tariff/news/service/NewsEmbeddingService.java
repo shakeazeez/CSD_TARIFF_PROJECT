@@ -1,27 +1,31 @@
 package com.tariff.news.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tariff.news.article.ArticleEmbedding;
-import com.tariff.news.article.ArticleEmbeddingRepo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tariff.news.article.ArticleEmbedding;
+import com.tariff.news.article.ArticleEmbeddingRepo;
+
+import lombok.RequiredArgsConstructor;
+
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class NewsEmbeddingService {
+
+    private static final Logger log = LoggerFactory.getLogger(NewsEmbeddingService.class);
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -118,7 +122,10 @@ public class NewsEmbeddingService {
             log.info("Stored embeddings count: {}", stored.size());
 
             List<Map.Entry<ArticleEmbedding, Double>> scored = stored.stream()
-                .map(e -> Map.entry(e, cosineSimilarity(queryEmbedding, floatArrayToList(e.getEmbedding()))))
+                .map(e -> {
+                    double sim = cosineSimilarity(queryEmbedding, floatArrayToList(e.getEmbedding()));
+                    return new java.util.AbstractMap.SimpleEntry<>(e, sim);
+                })
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .limit(dbCandidateLimit)
                 .collect(Collectors.toList());
@@ -142,7 +149,7 @@ public class NewsEmbeddingService {
                         log.info("DB-first hit: returning {} articles", dtos.size());
                         // Synthesize final answer using the stored queryContext snippets and return
                         String synthesized = synthesizeAnswer(query, dtos);
-                        return new com.tariff.news.dto.NewsResponse(synthesized, "db", dtos);
+                        return new com.tariff.news.dto.NewsResponse(synthesized, "db", dtos, null);
                 }
             }
 
@@ -185,7 +192,10 @@ public class NewsEmbeddingService {
             }
 
             if (results.isEmpty()) {
-                throw new RuntimeException("No valid articles could be processed for query: " + query);
+                // Fallback: if no articles could be processed, don't fail — ask GPT directly using the query
+                log.warn("No valid candidate articles were processed for query: {}. Falling back to direct GPT response.", query);
+                String synthesizedFallback = synthesizeAnswer(query, new ArrayList<>());
+                return new com.tariff.news.dto.NewsResponse(synthesizedFallback, "api-fallback", new ArrayList<>(), null);
             }
 
             List<CandidateResult> top = results.stream()
@@ -221,7 +231,7 @@ public class NewsEmbeddingService {
 
             // Synthesize final answer using the query and the article contexts
             String synthesized = synthesizeAnswer(query, embeddings);
-            return new com.tariff.news.dto.NewsResponse(synthesized, "api", embeddings);
+            return new com.tariff.news.dto.NewsResponse(synthesized, "api", embeddings, null);
         } catch (Exception e) {
             log.error("Error processing query: {}", e.toString(), e);
             throw new RuntimeException("Failed to process query", e);
@@ -569,7 +579,10 @@ public class NewsEmbeddingService {
         List<ArticleEmbedding> all = articleEmbeddingRepo.findAllByEmbeddingIsNotNull();
         List<Double> target = convertStringToEmbedding(embeddingStr);
         return all.stream()
-            .map(e -> Map.entry(e, cosineSimilarity(target, floatArrayToList(e.getEmbedding()))))
+            .map(e -> {
+                double sim = cosineSimilarity(target, floatArrayToList(e.getEmbedding()));
+                return new java.util.AbstractMap.SimpleEntry<>(e, sim);
+            })
             .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
             .limit(limit)
             .map(Map.Entry::getKey)
@@ -674,6 +687,10 @@ public class NewsEmbeddingService {
         }
         if (normA == 0.0 || normB == 0.0) return 0.0;
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
+    public List<ArticleEmbedding> getAllArticles() {
+        return articleEmbeddingRepo.findAll();
     }
 
     // Inner class for Article

@@ -12,7 +12,8 @@ import {
   LogOut,
   Sun,
   Moon,
-  BarChart3
+  BarChart3,
+  Bot
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,6 +40,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/calculator',
       description: 'Calculate international tariffs'
     },
+    ...(isAuthenticated ? [
+      {
+        icon: BarChart3,
+        label: 'My Dashboard',
+        path: '/dashboard',
+        description: 'View your tariff calculations and history'
+      }
+    ] : []),
+    {
+      icon: Bot,
+      label: 'Chatbot',
+      path: '/chatbot',
+      description: 'AI powered tariff Q&A'
+    },
     {
       icon: HelpCircle,
       label: 'FAQ',
@@ -46,12 +61,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       description: 'Frequently asked questions'
     },
     ...(isAuthenticated ? [
-      {
-        icon: BarChart3,
-        label: 'My Dashboard',
-        path: '/dashboard',
-        description: 'View your tariff calculations and history'
-      },
       {
         icon: User,
         label: 'Settings',
