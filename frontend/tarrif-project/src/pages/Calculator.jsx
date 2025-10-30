@@ -488,14 +488,15 @@ export function Calculator({ onMenuClick }) {
         setCurrent({}); // Clear any stale data
         setError("No current or historical data available for this combination.");
       }
+      setSuccess("Tariff calculation completed successfully!");
     } catch (error) {
       console.error("Error fetching historical tariff data:", error);
       setError(
         error.response?.data?.message ||
-          "Unable to retrieve data. Please verify your inputs and try again."
+          "This country combination for this item does not exists. Please check your inputs and try again."
       );
     } finally {
-      setSuccess("Tariff calculation completed successfully!");
+      // setSuccess("Tariff calculation completed successfully!");
       setLoadingPast(false);
       setLoadingCurrent(false);
     }

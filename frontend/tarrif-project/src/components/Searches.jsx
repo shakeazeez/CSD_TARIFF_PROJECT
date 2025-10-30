@@ -164,7 +164,6 @@ const Searches = ({ backendURL }) => {
 
   // expose the appropriate methods and data for Calculator and Dashboard pages to use (for guest user or general user)
   const addSearch = isAuthenticated ? addRelevantSearch : addRecentSearch; // backend for logged in, localStorage for guest
-  // const ids = isAuthenticated ? topSearchesIds : recentSearchesIds; // tariffIds
   const ids = Array.isArray(isAuthenticated ? topSearchesIds : recentSearchesIds) ? (isAuthenticated ? topSearchesIds : recentSearchesIds) : []; // tariffIds
   const data = isAuthenticated ? topSearchesData : recentSearchesData; // search details of each tariffId
 
