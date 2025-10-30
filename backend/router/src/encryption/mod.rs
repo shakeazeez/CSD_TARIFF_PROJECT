@@ -17,7 +17,7 @@ pub fn encrypt_password(password: String) -> String {
     pass_hash.to_string()
 }
 
-pub fn verify_password(hashed_pass: &String, raw_input: String) -> Result<(),Error> {
+pub fn verify_password(hashed_pass: &str, raw_input: String) -> Result<(),Error> {
     let hash = Argon2::new(
         argon2::Algorithm::Argon2id,
         argon2::Version::V0x13,
