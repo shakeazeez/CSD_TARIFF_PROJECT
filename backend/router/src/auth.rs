@@ -67,33 +67,28 @@ pub async fn login(
 
             // Write function to get info from user back here
             let user_url = env::var("USER_URL").unwrap();
-            let response;
-            match roles[0].user_roles {
+            let response = match roles[0].user_roles {
                 Role::MEMBER => {
-                    response =
                         reqwest::get(format!("{}/member/{}", user_url, acc[0].username).as_str())
                             .await
                             .unwrap()
                 }
                 Role::BUSINESS => {
-                    response =
                         reqwest::get(format!("{}/business/{}", user_url, acc[0].username).as_str())
                             .await
                             .unwrap()
                 }
                 Role::BANK => {
-                    response =
                         reqwest::get(format!("{}/bank/{}", user_url, acc[0].username).as_str())
                             .await
                             .unwrap()
                 }
                 Role::ADMIN => {
-                    response =
                         reqwest::get(format!("{}/user/{}", user_url, acc[0].username).as_str())
                             .await
                             .unwrap()
                 }
-            }
+            };
             let status = response.status();
             let body = response.text().await.unwrap();
             // println!("Failed due to some reason {}", status);

@@ -11,7 +11,7 @@ async fn establish_connection(
     body: web::Bytes,
 ) -> Result<reqwest::Response, reqwest::Error> {
     let client = Client::new();
-    let response = if req.method() == actix_web::http::Method::DELETE {
+    if req.method() == actix_web::http::Method::DELETE {
         client
             .delete(url)
             .body(body)
@@ -41,9 +41,8 @@ async fn establish_connection(
             .await
     } else {
         reqwest::get(url).await
-    };
+    }
 
-    response
 }
 
 pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
