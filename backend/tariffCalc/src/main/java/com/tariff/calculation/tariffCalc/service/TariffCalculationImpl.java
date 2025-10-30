@@ -56,9 +56,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
     private final List<Integer> customValid = List.of(96, 156, 918, 356, 360, 392, 410, 458, 104, 586, 608, 702, 158,
             764, 840, 704, 784);
     private final EmbeddingService embeddingService;
-    private int keyCounter = 1;
-    private String apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_1"); 
-    private final ObjectMapper objectMapper;
 
     public TariffCalculationImpl(
             CountryRepo countryRepo,
@@ -78,7 +75,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 .requestFactory(factory)
                 .build();
         this.embeddingService = embeddingService;
-        this.objectMapper = objectMapper;
+        // this.objectMapper = objectMapper;
     }
 
     /*
@@ -112,7 +109,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         // log.info("ItemNum: \n\n" + itemNum); // verify that the item code has 6 digits
         
          MoachDTO result = restClientMoach.get()
-                .uri("/tariff-data?product=" + itemNum + "&destination=" + countryNumber
+                .uri("/tariff-data?hscode=" + itemNum + "&country=" + countryNumber
                         + "&token=" + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
                 .retrieve()
                 .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
@@ -121,35 +118,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
                     throw new ApiFailureException(response.getStatusText());
                 })
                 .body(MoachDTO.class);
-
-         
-        // String copyKey = apiKey;
-        // String resultString = restClientMoach.get()
-        //         .uri("/tariff-data?product=" + itemNum + "&destination=" + countryNumber
-        //                 + "&token=" + apiKey)
-        //         .retrieve()
-        //         .onStatus((status) -> status.value() == 400 || status.value() == 404, (request, response) -> {
-        //             // This one occurs if that country doesnt trade that item......
-        //             log.info("Api not found");
-        //             throw new ApiFailureException(response.getStatusText());
-        //         })
-        //         .onStatus((status) -> status.value() == 401, (request, response) -> {
-        //             // This one occurs if that country doesnt trade that item......
-        //             log.info("Switching api keys....");
-        //             keyCounter = (keyCounter + 1) % 4;
-        //             apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
-        //         })
-        //         .body(String.class);
-        
-        // MoachDTO result;
-        // try {
-        //     result = objectMapper.readValue(resultString, MoachDTO.class);
-        // } catch (Exception e) {
-        //     throw new ApiFailureException("I give up");
-        // }
-        // if (!copyKey.equals(apiKey)) {
-        //     return loadTariffFromApi(countryCode, item);
-        // }
         
         log.info("The result: " + result);
         if (result == null || result.tariffData() == null) {
@@ -366,52 +334,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
 
         }
 
-        // String resultString;
-        // String copyKey = apiKey;
-        // if (!country.getCountryName().equals("world")) {
-        //     resultString = restClientMoach.get()
-        //             .uri("/hs-code-match?q=" + itemName + "&category=" + country.getCountryNumber() + "&token="
-        //                     + apiKey)
-        //             .retrieve()
-        //             .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-        //                 throw new ApiFailureException(response.getStatusText());
-        //             })
-        //             .onStatus((status) -> status.value() == 401 || status.value() == 403, (request, response) -> {
-        //                 // This one occurs if that country doesnt trade that item......
-        //                 log.info("Switching api keys....");
-        //                 keyCounter = (keyCounter + 1) % 4;
-        //                 apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
-        //             })
-        //             .body(String.class);
-        // } else {
-        //     resultString = restClientMoach.get()
-        //             .uri("/hs-code-match?q=" + itemName + "&category=wto&token="
-        //                     + LemmaUtils.getEnvOrDotenv("MOACH_API_KEY"))
-        //             .retrieve()
-        //             .onStatus((status) -> status.value() == 404 || status.value() == 400, (request, response) -> {
-        //                 throw new ApiFailureException(response.getStatusText());
-        //             })
-        //             .onStatus((status) -> status.value() == 401 || status.value() == 403, (request, response) -> {
-        //                 // This one occurs if that country doesnt trade that item......
-        //                 log.info("Switching api keys....");
-        //                 keyCounter = (keyCounter + 1) % 4;
-        //                 apiKey = LemmaUtils.getEnvOrDotenv("MOACH_API_KEY_" + (keyCounter + 1));
-        //             })
-        //             .body(String.class);
-
-        // }
-        
-        // log.info(resultString);
-        // ItemRetrievalDTO result;
-        // try {
-        //     result = objectMapper.readValue(resultString, ItemRetrievalDTO.class);
-        // } catch (Exception e) {
-        //     throw new ApiFailureException("I give up");
-        // }
-        
-        // if (!copyKey.equals(apiKey)) {
-        //     return loadItemFromApi(itemName, country);
-        // }
         
         log.info("Query results" + result.toString());
         if (result == null || result.data() == null) {
@@ -424,7 +346,15 @@ public class TariffCalculationImpl implements TariffCalculationService {
         try {
             Category category = embeddingService.getEmbeddings(new String[] {itemName, result.data().codes().get(0).description()});
             log.info("Embedding search returned category: {}", category != null ? category.getName() : "null");
-            industry = Industry.valueOf(category.getName().toUpperCase());
+            
+            // Convert category name to enum constant (handle spaces and special chars)
+            String enumName = category.getName()
+                .toUpperCase()
+                .replace(" ", "_")
+                .replace("-", "_")
+                .replaceAll("[^A-Z0-9_]", "_");
+            
+            industry = Industry.valueOf(enumName);
             log.info("Mapped to industry: {}", industry);
         } catch (Exception e) {
             log.warn("Failed to determine industry for item '{}' using embeddings, defaulting to OTHER. Error: {}", itemName, e.getMessage());

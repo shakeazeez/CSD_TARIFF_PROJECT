@@ -142,7 +142,7 @@ export function Calculator({ onMenuClick }) {
 
   useEffect(() => {
     window.scrollTo({top: 0, behavior: "smooth"});
-  })
+  }, [])
 
   // Pinning
   const [pinned, setPinned] = useState([]);
