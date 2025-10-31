@@ -75,7 +75,6 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 .requestFactory(factory)
                 .build();
         this.embeddingService = embeddingService;
-        // this.objectMapper = objectMapper;
     }
 
     /*
@@ -357,7 +356,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
             industry = Industry.valueOf(enumName);
             log.info("Mapped to industry: {}", industry);
         } catch (Exception e) {
-            log.warn("Failed to determine industry for item '{}' using embeddings, defaulting to OTHER. Error: {}", itemName, e.getMessage());
+            log.info("Failed to determine industry for item '{}' using embeddings, defaulting to OTHER. Error: {}", itemName, e.getMessage());
             industry = Industry.OTHER;
         }
 
