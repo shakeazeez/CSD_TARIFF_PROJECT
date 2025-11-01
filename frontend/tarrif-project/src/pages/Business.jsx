@@ -62,52 +62,11 @@ export function Business({onMenuClick}) {
     const [hs, setHS] = useState(""); // HS Code (Harmonized System code for product classification)
     const [cost, setCost] = useState(); // Item cost in USD
 
-    // useEffect hook: Runs once when component mounts to fetch country data
-    useEffect(() => {
-        // Async function to fetch all available countries from backend
-        const fetchCountry = async () => {
-            try {
-                // Make GET request to backend countries endpoint
-                const response = await axios.get(`${backendURL}/tariff/countries`);
-
-                // Update state with fetched country list
-                setList(response.data);
-            } catch (error) {
-                console.error("Error fetching countries:", error);
-
-                // FALLBACK DATA: Uncomment below for development/testing without backend
-                // const fallbackCountries = [
-                //     { countryName: "United States" },
-                //     { countryName: "China" },
-                //     { countryName: "Singapore" },
-                //     { countryName: "Malaysia" },
-                //     { countryName: "Japan" },
-                //     { countryName: "South Korea" },
-                //     { countryName: "Germany" },
-                //     { countryName: "United Kingdom" },
-                //     { countryName: "France" },
-                //     { countryName: "Canada" }
-                // ];
-                // setList(fallbackCountries);
-            }
-        };
-
-        // Execute the fetch function
-        fetchCountry();
-        const fallbackCountries = [
-            { countryName: "United States" },
-            { countryName: "China" },
-            { countryName: "Singapore" },
-            { countryName: "Malaysia" },
-            { countryName: "Japan" },
-            { countryName: "South Korea" },
-            { countryName: "Germany" },
-            { countryName: "United Kingdom" },
-            { countryName: "France" },
-            { countryName: "Canada" }
-        ];
-        setList(fallbackCountries);
-    }, []); // Empty dependency array = run only once on component mount
+    // preset list of stuff for testing
+    const presetList = [
+        { id: 1, report: "United States", partner: "Canada", hsCode: "Slipper", rate: "5%" },
+        { id: 2, report: "Mexico", partner: "Canada", hsCode: "Hat", rate: "10%" },
+    ];
 
     const handleAddItem = () => {
         if (report && partner && hs) {
@@ -139,6 +98,7 @@ export function Business({onMenuClick}) {
                 setTableData(response.data);
             } catch (error) {
                 console.error("Error fetching business items:", error);
+                setTableData(presetList); // Fallback to preset list on error
             }
         };
         fetchBusinessItems();
@@ -150,7 +110,7 @@ export function Business({onMenuClick}) {
             {/* TOP NAVIGATION */}
             <Header onMenuClick={onMenuClick} showUserInfo={true} />
             {/* Country Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label
                         htmlFor="reporting-country"
@@ -185,10 +145,10 @@ export function Business({onMenuClick}) {
                         className="w-full"
                     />
                 </div>
-            </div>
+            </div> */}
 
             {/* HS Code and Cost */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label
                         htmlFor="hs-code"
@@ -210,14 +170,14 @@ export function Business({onMenuClick}) {
                     />
                 </div>
             </div>
-            <Button onClick={handleAddItem}>Add</Button>
+            <Button onClick={handleAddItem}>Add</Button> */}
 
             {tableData.length > 0 && (
                 <Card className="mt-8">
                     <CardHeader>
                         <CardTitle>Items List</CardTitle>
                         <CardDescription>
-                            The items you have added for your business.
+                            List of items with tariff rates based on selected countries.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -240,6 +200,9 @@ export function Business({onMenuClick}) {
                                         <th scope="col" className="px-6 py-3">
                                             Item/Item Description
                                         </th>
+                                        <th scope="col" className="px-6 py-3">
+                                            Tariff Rate
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -247,10 +210,6 @@ export function Business({onMenuClick}) {
                                         <tr
                                             key={index}
                                             className="border-b"
-                                            style={{
-                                                backgroundColor: colors.card,
-                                                borderColor: colors.border,
-                                            }}
                                         >
                                             <td className="px-6 py-4">
                                                 {item.report}
@@ -259,7 +218,10 @@ export function Business({onMenuClick}) {
                                                 {item.partner}
                                             </td>
                                             <td className="px-6 py-4">
-                                                {item.hs}
+                                                {item.hsCode}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {item.rate}
                                             </td>
                                         </tr>
                                     ))}
