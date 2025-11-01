@@ -131,8 +131,14 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
 
                 List<Tariff> partnerCountryTariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry, country, item)
                     .stream()
+                    .filter(tariff -> tariff.getLocalDate() != null)
                     .filter(tariff -> tariff.getLocalDate().getYear() >= startYear && tariff.getLocalDate().getYear() <= endYear)
+                    .filter(tariff -> tariff.getPercentageRate() > 0.0) // prevent from showing tariffs with 0 percentage
                     .collect(Collectors.toList());
+
+                if (partnerCountryTariffList.isEmpty()) {
+                    continue;
+                }
 
                 map.putIfAbsent(item, new HashMap<>());
                 map.get(item).put(country, partnerCountryTariffList);

@@ -169,13 +169,16 @@ const IndustryChart = ({ labels, value, legend }) => {
             weight: "bold",
           },
         },
+        min: 0,
+        max: 100,
         ticks: {
+          stepSize: 20,
           color: colors.muted,
           font: {
             size: 11,
           },
           callback: function (value) {
-            return value * 100;
+            return value;
           },
         },
         grid: {

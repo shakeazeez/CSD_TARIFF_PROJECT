@@ -154,6 +154,18 @@ export function IndustrySearch({ onMenuClick }) {
 
   // used to keep track of items user selects to load
   const [selectedItems, setSelectedItems] = useState([]);
+  const prevSelectedItemsRef = useRef([]);
+
+  useEffect(() => {
+    const prevSelectedItems = prevSelectedItemsRef.current;
+    const newlyAdded = selectedItems.filter(item => !prevSelectedItems.includes(item));
+
+    if (newlyAdded.length > 0) {
+      queryTariffs(backupCountries, newlyAdded);
+    }
+
+    prevSelectedItemsRef.current = selectedItems;
+  }, [selectedItems]);
 
   // load and store tariff details for the selected items
   const [tariffDetails, setTariffDetails] = useState({});
@@ -190,7 +202,7 @@ export function IndustrySearch({ onMenuClick }) {
     };
   }, [selectedItems]);
 
-  const preloadedCountries = [
+  const backupCountries = [
     "Cambodia",
     "Chile",
     "Costa Rica", 
@@ -205,8 +217,55 @@ export function IndustrySearch({ onMenuClick }) {
     "Georgia"
   ]
 
-  
+  const queryTariffs = (backupCountries, selectedItems) => {
+    backupCountries.forEach((partnerCountry) => {
+      selectedItems.forEach((item) => {
+        const tariffCalculationQueryDTO = {
+          reportingCountry : homeCountry,
+          partnerCountry : partnerCountry,
+          item : item,
+          itemCost : 100,
+        };
 
+        fetchCurrent(tariffCalculationQueryDTO);
+      });
+    });
+  };
+
+  // Method to fetch current tariff information for items and backup partner countries 
+  const fetchCurrent = async (tariffCalculationQueryDTO) => {
+      try {
+        // POST request to get current tariff calculation
+        const response = await axios.post(
+          `${backendURL}/tariff/current`,
+          tariffCalculationQueryDTO
+        );
+
+        console.log("fetchCurrent response:", response.data);
+
+      } catch (error) {
+        console.error("Error fetching current tariff:", error);
+
+      } finally {
+
+        fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
+      }
+  }
+  
+  // Function to fetch historical tariff for items and backup partner countries
+  const fetchPast = async (tariffCalculationQueryDTO) => {
+
+    try {
+      // POST request to get historical tariff data
+      const response = await axios.post(
+        `${backendURL}/tariff/past`,
+        tariffCalculationQueryDTO
+      );
+
+    } catch (error) {
+      console.error("Error fetching historical tariff data:", error);
+    } 
+  };
 
   const fetchTariffDetails = async () => {
     if (selectedItems.length === 0) return;
@@ -278,18 +337,6 @@ export function IndustrySearch({ onMenuClick }) {
       (p) => !topCountryNames.includes(p.country.countryName)
     );
   }
-
-  // function generateYearRange(start, end) {
-  //   const startYear = parseInt(start.split("-")[0]);
-  //   const endYear = parseInt(end.split("-")[0]);
-  //   const years = [];
-
-  //   for (let year = startYear; year <= endYear; year++) {
-  //     years.push(year.toString());
-  //   }
-
-  //   return years;
-  // }
 
   function generateYearRange(start, end) {
     // Handle Date objects by converting to string format
@@ -677,7 +724,7 @@ export function IndustrySearch({ onMenuClick }) {
 
                     <div className="grid grid-cols-3 gap-6">
                       {topPartners.map((partner) => {
-                        const tariffs = partner.tariffs || [];
+                        const tariffs = partner.tariffList || [];
 
                         const labels =
                           tariffs.length > 0
@@ -689,11 +736,12 @@ export function IndustrySearch({ onMenuClick }) {
                             : generateYearRange(startDate, endDate);
 
                         // Fix chart data formatting
-                        const values =
+                        const value =
                           tariffs.length > 0
-                            ? tariffs.map((t) => t.percentageRate)
+                            ? tariffs.map((t) => t.percentageRate.toFixed(2))
                             : [0];
 
+                        console.log("Chart data for", partner.country.countryName, {value, labels})
                         const legend = [partner.country.countryName];
                         const avg = partner.averageRate;
 
@@ -712,7 +760,7 @@ export function IndustrySearch({ onMenuClick }) {
                             <div className="h-[300px] mb-6">
                               <IndustryChart
                                 labels={labels}
-                                value={values}
+                                value={value}
                                 legend={legend}
                               />
                             </div>

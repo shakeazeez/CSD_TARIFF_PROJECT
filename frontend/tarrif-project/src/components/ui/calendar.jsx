@@ -128,7 +128,10 @@ const Calendar = ({
   const generateYears = () => {
     const years = [];
     const currentYearNum = new Date().getFullYear();
-    for (let i = currentYearNum - 10; i <= currentYearNum + 10; i++) {
+    // Allow history back to minDate if provided, otherwise 1975
+    const startYear = minDate ? minDate.getFullYear() : 1975;
+    const endYear = currentYearNum + 10;
+    for (let i = startYear; i <= endYear; i++) {
       years.push(i);
     }
     return years;
@@ -327,7 +330,7 @@ const Calendar = ({
             {/* Year Selector Dropdown */}
             {showYearSelector && (
               <div
-                className="max-h-32 overflow-y-auto p-2 border-b transition-colors duration-300"
+                className="max-h-64 overflow-y-auto p-2 border-b transition-colors duration-300"
                 style={{ borderColor: colors.border }}
               >
                 <div className="grid grid-cols-4 gap-1">
