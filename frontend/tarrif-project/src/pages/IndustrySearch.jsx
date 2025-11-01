@@ -190,6 +190,24 @@ export function IndustrySearch({ onMenuClick }) {
     };
   }, [selectedItems]);
 
+  const preloadedCountries = [
+    "Cambodia",
+    "Chile",
+    "Costa Rica", 
+    "Hong Kong",
+    "India",
+    "Macao",
+    "Malaysia",
+    "Indonesia",
+    "Myanmar",
+    "Australia",
+    "Iceland",
+    "Georgia"
+  ]
+
+  
+
+
   const fetchTariffDetails = async () => {
     if (selectedItems.length === 0) return;
 
