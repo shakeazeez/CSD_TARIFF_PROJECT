@@ -129,6 +129,21 @@ export function Business({onMenuClick}) {
     // Put in get mapping 
     // Get mapping is business/{username}
 
+    useEffect(() => {
+        // Fetch existing business items for the user from backend
+        const fetchBusinessItems = async () => {
+            try {
+                const response = await axios.get(
+                    `${backendURL}/business/items`
+                );
+                setTableData(response.data);
+            } catch (error) {
+                console.error("Error fetching business items:", error);
+            }
+        };
+        fetchBusinessItems();
+    }, []);
+
 
     return (
         <>
