@@ -63,10 +63,40 @@ export function Business({onMenuClick}) {
     const [cost, setCost] = useState(); // Item cost in USD
 
     // preset list of stuff for testing
+    /**
+     * presetList consists of objects with the following structure:
+     * String report
+     * List<String> partner
+     * List<String> hsCode
+     * List<Integer> rate
+     */
+    // Preset list of business items for testing
     const presetList = [
-        { id: 1, report: "United States", partner: "Canada", hsCode: "Slipper", rate: "5%" },
-        { id: 2, report: "Mexico", partner: "Canada", hsCode: "Hat", rate: "10%" },
+        { report: "United States", partner: "Mexico", hsCode: "slipper", rate: 5 },
+        { report: "United States", partner: "Germany", hsCode: "slipper", rate: 7 },
+        { report: "Canada", partner: "Mexico", hsCode: "slipper", rate: 6 },
     ];
+
+    // json of how it maps
+    // report: String
+    // partnet: {String, String, String}
+    // hsCode: {String, String, String}
+    // rate: {Integer, Integer, Integer}
+    const presetListJSON = [
+        {
+            report: "United States",
+            partner: ["Germany", "Canada", "Mexico"],
+            hsCode: ["slipper", "boot", "sandal"],
+            rate: [7, 5, 6]
+        },
+        {
+            report: "Canada",
+            partner: ["Mexico", "United States", "Germany"],
+            hsCode: ["slipper", "boot", "sandal"],
+            rate: [6, 4, 8]
+        },
+    ];
+
 
     const handleAddItem = () => {
         if (report && partner && hs) {
@@ -224,6 +254,34 @@ export function Business({onMenuClick}) {
                                                 {item.rate}
                                             </td>
                                         </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </CardContent>
+                    {/* presetjson */}
+                    <CardContent> 
+                        <div className="text-sm text-gray-500">
+                            Note: Tariff rates are based on preset data for demonstration purposes.
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th className="px-4 py-2">Reporting Country</th>
+                                        <th className="px-4 py-2">Partner Countries</th>
+                                        <th className="px-4 py-2">HS Codes</th>
+                                        <th className="px-4 py-2">Rates (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {presetListJSON.map((entry, idx) => (
+                                        entry.partner.map((partnerCountry, pIdx) => (
+                                            <tr key={`${idx}-${pIdx}`}>
+                                                <td className="px-4 py-2">{entry.report}</td>
+                                                <td className="px-4 py-2">{partnerCountry}</td>
+                                                <td className="px-4 py-2">{entry.hsCode[pIdx]}</td>
+                                                <td className="px-4 py-2">{entry.rate[pIdx]}%</td>
+                                            </tr>
+                                        ))
                                     ))}
                                 </tbody>
                             </table>
