@@ -21,10 +21,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "News Controller", description = "News article processing and embedding endpoints")
+@Tag(name = "News & AI Chat", description = "News article processing and AI chatbot endpoints")
 @RequestMapping("/news")
 @RestController
 @RequiredArgsConstructor
@@ -34,9 +38,19 @@ public class NewsController {
     private final ChatHistoryService chatHistoryService;
     private final ObjectMapper objectMapper;
 
+    @Operation(
+        summary = "Process news query with AI chatbot",
+        description = "Process a user query using AI to find relevant news articles and generate a synthesised response"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Query processed successfully",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = com.tariff.news.dto.NewsResponse.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error during processing")
+    })
     @PostMapping("/process")
     public ResponseEntity<com.tariff.news.dto.NewsResponse> processQuery(
-            @Parameter(description = "User query string")
+            @Parameter(description = "User query string", required = true)
             @RequestParam String query,
             @Parameter(description = "Optional username to save history for")
             @RequestParam(required = false) String username,
@@ -76,11 +90,19 @@ public class NewsController {
         }
     }
 
+    @Operation(
+        summary = "Find similar articles by embedding vector",
+        description = "Search for articles semantically similar to the provided embedding vector"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Similar articles found successfully",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = com.tariff.news.article.ArticleEmbedding.class))),
+        @ApiResponse(responseCode = "500", description = "Error during similarity search")
+    })
     @GetMapping("/search/similar")
-    @Operation(summary = "Find similar articles based on embedding vector",
-               description = "Searches for articles similar to the provided embedding string")
     public ResponseEntity<List<com.tariff.news.article.ArticleEmbedding>> findSimilarArticles(
-            @Parameter(description = "Embedding string in format '[0.1,0.2,0.3,...]'")
+            @Parameter(description = "Embedding string in format '[0.1,0.2,0.3,...]'", required = true)
             @RequestParam String embedding,
             @Parameter(description = "Maximum number of results")
             @RequestParam(defaultValue = "5") int limit) {
@@ -92,11 +114,19 @@ public class NewsController {
         }
     }
 
+    @Operation(
+        summary = "Find articles similar to a natural language query",
+        description = "Embeds the query and finds semantically similar articles from the database"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Articles found successfully",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = com.tariff.news.article.ArticleEmbedding.class))),
+        @ApiResponse(responseCode = "500", description = "Error during query processing")
+    })
     @GetMapping("/search/query")
-    @Operation(summary = "Find articles similar to a natural language query",
-               description = "Embeds the query and finds semantically similar articles from the database")
     public ResponseEntity<List<com.tariff.news.article.ArticleEmbedding>> findArticlesByQuery(
-            @Parameter(description = "Natural language query to search for similar articles")
+            @Parameter(description = "Natural language query to search for similar articles", required = true)
             @RequestParam String query,
             @Parameter(description = "Maximum number of results")
             @RequestParam(defaultValue = "5") int limit) {
@@ -108,9 +138,17 @@ public class NewsController {
         }
     }
 
+    @Operation(
+        summary = "Find articles by topic",
+        description = "Retrieve all stored articles that were found using the specified search topic"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Articles retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = com.tariff.news.article.ArticleEmbedding.class))),
+        @ApiResponse(responseCode = "500", description = "Error retrieving articles")
+    })
     @GetMapping("/search/topic/{topic}")
-    @Operation(summary = "Find articles by topic",
-               description = "Retrieves all articles that were found using the specified search topic")
     public ResponseEntity<List<com.tariff.news.article.ArticleEmbedding>> findArticlesByTopic(
             @Parameter(description = "Search topic used to find articles")
             @PathVariable String topic) {
