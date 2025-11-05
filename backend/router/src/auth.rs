@@ -16,6 +16,14 @@ use crate::{
     tables::{AuthUser, Role, UserRole},
 };
 
+/*
+ * Requests the user_details table 
+ * 
+ * @Param database -> Pointer to database conenction 
+ * @Param username -> username of user
+ * 
+ * Return          -> ORM of the user table
+ */
 async fn get_user_details(
     database: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     name: &String,
@@ -31,6 +39,14 @@ async fn get_user_details(
     return result;
 }
 
+/*
+ * Requests the user_role table 
+ * 
+ * @Param database -> Pointer to database conenction 
+ * @Param id       -> Id of user 
+ * 
+ * Return          -> ORM of the role table
+ */
 async fn get_user_roles(
     database: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     id_num: i32,
@@ -46,6 +62,12 @@ async fn get_user_roles(
     return result;
 }
 
+/*
+ * Allows user to login to service
+ * 
+ * @Param database      -> The pointer of the database connection
+ * @Param login_details -> The details of the user (username and password)
+ */
 #[utoipa::path(
     post,
     path="/auth/login",
@@ -115,7 +137,12 @@ pub async fn login(
     };
 }
 
-
+/*
+ * Allows user to register to service
+ * 
+ * @Param database      -> The pointer of the database connection
+ * @Param login_details -> The details of the user 
+ */
 #[utoipa::path(
     post,
     path="/auth/register",
@@ -131,6 +158,7 @@ pub async fn create_user(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<CreateDTO>,
 ) -> impl Responder {
+    println!("{login_details:?}");
     let mut borrow = login_details.into_inner();
     borrow.password = encrypt_password(borrow.password.clone());
     println!("{:?}", borrow);

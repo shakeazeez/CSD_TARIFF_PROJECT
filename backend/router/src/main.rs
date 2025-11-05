@@ -26,6 +26,11 @@ mod docs;
 
 type DbPool = Pool<ConnectionManager<PgConnection>>;
 
+/*
+ * Initialises connection to database 
+ * 
+ * @Return -> Pointer to the connected database 
+ */
 fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
     let database_url = env::var("RUST_DATABASE_URL").expect("Database url not set");
 

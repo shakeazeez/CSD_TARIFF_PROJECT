@@ -6,6 +6,10 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 
+/*
+ * This is a middleware services running before sending particular request
+ * to authenticated endpoints. 
+ */
 pub struct JwtMiddleware;
 
 pub struct JwtMiddlewareService<S> {
@@ -24,6 +28,11 @@ where
 
     forward_ready!(service);
 
+    /*
+     * Check for the Authentication header. If it is off appropriate format 
+     * and is appropriately validated by the jwt methods it is put in the 
+     * request again as a direct jwt token  
+     */
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let auth = req
             .headers()

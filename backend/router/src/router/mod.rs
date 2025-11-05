@@ -3,8 +3,16 @@ use std::env;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, Responder, http::header, web};
 use reqwest::Client;
 
-use crate::{jwt::jwt_functions::Claims, tables::Role};
-
+use crate::{jwt::jwt_functions::Claims};
+/*
+ * Creates the connection between Gateway router and other microservices 
+ * 
+ * @Param req   -> HttpRequest datastructure containing metadata of the request
+ * @Param url   -> Backend endpoint to be called depending on service 
+ * @Param body  -> Bytes of request sent by frontend 
+ * 
+ * Return       -> response of the backend microservice 
+ */
 async fn establish_connection(
     req: &HttpRequest,
     url: &str,
@@ -44,6 +52,14 @@ async fn establish_connection(
     }
 }
 
+/*
+ * This method connects to the news microservice 
+ * 
+ * @Param req   -> HttpRequest datastructure containing metadata of the request
+ * @Param body  -> Bytes of request sent by frontend 
+ * 
+ * Return       -> HttpResponse and body recieved from news microservice
+ */
 pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     if req.method() == actix_web::http::Method::OPTIONS {
         return HttpResponse::Ok().finish();
@@ -71,6 +87,14 @@ pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     }
 }
 
+/*
+ * This method connects to the tariff microservice 
+ * 
+ * @Param req   -> HttpRequest datastructure containing metadata of the request
+ * @Param body  -> Bytes of request sent by frontend 
+ * 
+ * Return       -> HttpResponse and body recieved from tariff microservice
+ */
 pub async fn tariff_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     let base_url = env::var("TARIFF_URL").unwrap();
     let uri = req.uri().to_string();
@@ -94,6 +118,14 @@ pub async fn tariff_route(req: HttpRequest, body: web::Bytes) -> impl Responder 
     }
 }
 
+/*
+ * This method connects to the user microservice 
+ * 
+ * @Param req   -> HttpRequest datastructure containing metadata of the request
+ * @Param body  -> Bytes of request sent by frontend 
+ * 
+ * Return       -> HttpResponse and body recieved from user microservice
+ */
 pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     let extensions = req.extensions();
     let token = extensions.get::<jsonwebtoken::TokenData<Claims>>();
@@ -113,7 +145,7 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     let base_url = env::var("USER_URL").unwrap();
     let uri = req.uri().to_string();
 
-    if !uri.contains("user") && !uri.contains(&format!("{access}")) {
+    if !uri.contains("user") && !uri.contains(&format!("{}", access.to_string().to_lowercase())) {
         return HttpResponse::Forbidden().finish();
     }
 
@@ -137,6 +169,14 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     }
 }
 
+/*
+ * This method connects to the news microservice 
+ * 
+ * @Param req   -> HttpRequest datastructure containing metadata of the request
+ * @Param body  -> Bytes of request sent by frontend 
+ * 
+ * Return       -> HttpResponse and body recieved from news_history microservice
+ */
 pub async fn news_history(req: HttpRequest, body: web::Bytes) -> impl Responder {
     println!("This request requires token");
     let extensions = req.extensions();
