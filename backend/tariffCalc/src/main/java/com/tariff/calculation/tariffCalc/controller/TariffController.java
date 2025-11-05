@@ -123,9 +123,9 @@ public class TariffController {
      * Get the top 10 countries and their tariff rates for the period specified for a certain item
      */
     @PostMapping("/items/tariffDetails")
-    public ResponseEntity<List<TariffDetailsforItemDTO>> getTariffDetailsForListOfItems(@RequestBody SelectedItemsDTO selectedItemsDTO) {
+    public ResponseEntity<TariffDetailsforItemDTO> getTariffDetailsForListOfItems(@RequestBody SelectedItemsDTO selectedItemsDTO) {
 
-        List<TariffDetailsforItemDTO> result = null;
+        TariffDetailsforItemDTO result = null;
 
         try {
             result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);

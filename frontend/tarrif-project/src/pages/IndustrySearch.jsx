@@ -267,6 +267,98 @@ export function IndustrySearch({ onMenuClick }) {
     } 
   };
 
+  // Map to store all the tariff details for existing items that have been queried 
+  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState[{}];
+
+  // Map to store all the tariff details for valid items 
+  const [validItemDetailsMap, setValidItemDetailsMap] = useState[{}];
+
+  // Array to store invalid items for displaying error messages 
+  const [invalidItems,setInvalidItems] = useState([]);
+
+  // Method to fetch tariff details for each item
+  const fetchTariffDetailsEntrypoint = async () => {
+    if (selectedItems.length === 0) return;
+
+    console.log("Before filtering: ", selectedItems);
+
+    // Remove known invalid items from the selected list
+    selectedItems = selectedItems.filter(item => !invalidItems.includes(item));
+
+    console.log("After filtering ", selectedItems);
+
+    for (let i = 0; i < selectedItems.length; i++) {
+
+      const currentItem = selectedItems[i];
+
+      // If the item has been queried before, add it to the valid map to display later
+      if (existingItemDetailsMap.hasOwnProperty(currentItem)) {
+        setValidItemDetailsMap(prev => ({
+          ...prev,
+          [currentItem] : existingItemDetailsMap[currentItem]
+        }));
+        continue;
+      }
+
+      try {
+        console.log("Attempting to get tariff details for item ", selectedItems[i]);
+        const response = await axios.post (
+        `${backendURL}/tariff/items/tariffDetails`,
+        {
+          selectedItems: selectedItems[i],
+          homeCountry: homeCountry,
+          industry: industry,
+          startDate: startDate ? startDate.toISOString().split("T")[0] : "",
+          endDate: endDate ? endDate.toISOString().split("T")[0] : "",
+        }
+        );
+        console.log("Successfully retrieved tariff details for item ", selectedItems[i]);
+
+        // Store the item and it's tariff data
+        setValidItemDetailsMap(prev => ({
+          ...prev,
+          [currentItem]: response.data
+        }));
+        console.log("Item is stored in valid map ", validItemDetailsMap);
+      
+        setExistingItemDetailsMap(prev => ({
+            ...prev,
+            [currentItem]: response.data
+          }));
+        console.log("Item is stored in exisitng map ", existingItemDetailsMap);
+
+
+      } catch (error) {
+      setInvalidItems(prev => [...prev, currentItem]);  // add the invalid item into the list 
+        console.log("Failed to load tariff for item ", selectedItems[i], error);
+
+      }
+    }
+    
+  }
+  /* 
+
+  Maps: 1 to store all queried items, 1 to store newly queried items 
+  Array: invalid items
+  
+  User selects reporting country, industry, start date, end date => display list of items 
+  - clear all queried items and newly queried items
+
+  User selects individual items:
+    - add all items into newly queried items 
+    - check if the items is in all queried items -> if yes, remove from newly queried items 
+
+    - for each queried items -> post to backend using the SelectedItemDTO => Change DTO to only be for one item
+    - catch any error for that item if any -> add the item to invalid items to display error messages 
+    - continue querying for the next item 
+
+    Results: TariffDetailsforItemDTO for details of tariffs of that item 
+    store it into a details Map 
+
+  - display content for valid items in the map
+  - for invalid items in the array, display the error message
+  */
+
   const fetchTariffDetails = async () => {
     if (selectedItems.length === 0) return;
 

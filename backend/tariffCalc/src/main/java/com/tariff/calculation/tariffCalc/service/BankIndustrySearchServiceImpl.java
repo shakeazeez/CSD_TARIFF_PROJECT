@@ -96,63 +96,75 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
      *        - industry: the industry of the items
      *        - startDate: the start date of the filter range (format "yyyy-MM-dd")
      *        - endDate: the end date of the filter range (format "yyyy-MM-dd")
-     * @return List of TariffDetailsforItemDTO, each containing tariff details for the top 10 lowest-tariff partner countries per item.
+     * @return TariffDetailsforItemDTO, each containing tariff details for the top 10 lowest-tariff partner countries of the selected item.
      */
 
-    public List<TariffDetailsforItemDTO> getTariffDetailsForItems (SelectedItemsDTO selectedItemsDTO) {
+    public TariffDetailsforItemDTO getTariffDetailsForItems (SelectedItemsDTO selectedItemsDTO) {
 
-        List<TariffDetailsforItemDTO> result = new ArrayList<>();
+        List<TariffDetails> topTenCountriesTariffDetails = new ArrayList<>();
 
-        // List of selected items that we have to find tariff details about 
-        List<Item> selectedItemList = Arrays.stream(selectedItemsDTO.selectedItems())
-                .map(itemName -> itemRepo.findByItemName(itemName)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found.")))
-                .collect(Collectors.toList());
+        String itemName = selectedItemsDTO.selectedItem();
+        
+        // Find the item object to get its hscode
+        Item item = itemRepo.findByItemName(itemName)
+            .orElseThrow(() -> new IllegalArgumentException("Item not found."));
 
-        // Use to retrieve all tariffs using its reporting country and item 
+        int hscode = item.getItemCode();
+
+        // Find the reporting country as a country object 
         Country reportingCountry =  countryRepo.findByCountryName(selectedItemsDTO.homeCountry())
             .orElseThrow(() -> new IllegalArgumentException("Country not found."));
 
-        // Use to check that the tariff falls within the range 
+        // Set the start and end year to check tariffs against
         int startYear = LocalDate.parse(selectedItemsDTO.startDate()).getYear();
         int endYear = LocalDate.parse(selectedItemsDTO.endDate()).getYear();    
-            
-        Map<Item, Map<Country, List<Tariff>>> map = new HashMap<>();
+        
+        // Map to store the list of tariffs that a partner country has for this item
+        Map<Country, List<Tariff>> map = new HashMap<>();
 
-        // for each item -> for all partner countries -> get valid tariff details
-        for (Item item: selectedItemList) {
+        // List of partner countries to filter through 
+        List<Country> partnerCountryList = tariffRepo.findByReportingCountryAndItem(reportingCountry, item).stream()
+            .map(tariff -> tariff.getPartnerCountry())
+            .distinct()
+            .collect(Collectors.toList());
 
-            List<Country> partnerCountryList = tariffRepo.findByReportingCountryAndItem(reportingCountry, item).stream()
-                .map(tariff -> tariff.getPartnerCountry())
-                .distinct()
+        // Find all tariff entries for the partner countries
+        for (Country country: partnerCountryList) {
+            List<Tariff> partnerCountryTariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry, country, item)
+                .stream()
+                .filter(tariff -> tariff.getLocalDate() != null)
+                .filter(tariff -> tariff.getLocalDate().getYear() >= startYear && tariff.getLocalDate().getYear() <= endYear)
+                .filter(tariff -> tariff.getPercentageRate() > 0.0) // prevent from showing tariffs with 0 percentage
                 .collect(Collectors.toList());
 
-            for (Country country : partnerCountryList) {
-
-                List<Tariff> partnerCountryTariffList = tariffRepo.findByReportingCountryAndPartnerCountryAndItem(reportingCountry, country, item)
-                    .stream()
-                    .filter(tariff -> tariff.getLocalDate() != null)
-                    .filter(tariff -> tariff.getLocalDate().getYear() >= startYear && tariff.getLocalDate().getYear() <= endYear)
-                    .filter(tariff -> tariff.getPercentageRate() > 0.0) // prevent from showing tariffs with 0 percentage
-                    .collect(Collectors.toList());
-
-                if (partnerCountryTariffList.isEmpty()) {
-                    continue;
-                }
-
-                map.putIfAbsent(item, new HashMap<>());
-                map.get(item).put(country, partnerCountryTariffList);
+            if (partnerCountryTariffList.isEmpty()) {
+                continue;
             }
+
+            map.putIfAbsent(country, partnerCountryTariffList);
         }
 
-        // create tariffDetailsDTO for each item 
-        for (Item item: map.keySet()) {
+        // Filter and store the top ten countries with top ten lowest tariff rates
+        List<Map.Entry<Country, List<Tariff>>> topTenList = filterForTopTenBestCountries(map);
 
-            List<TariffDetails> tariffDetailsList = new ArrayList<>();
+        // Sort the top ten best partner countries by tariff date
+        for (Map.Entry<Country, List<Tariff>> entry: topTenList) {
+            List<Tariff> sortedTariffs = entry.getValue().stream()
+                    .filter(t -> t.getLocalDate() != null)
+                    .sorted(Comparator.comparing(Tariff::getLocalDate))
+                    .toList();
 
-            // from all the partnerCountries, filter out the top ten lowest tariff countries
-            Map<Country, List<Tariff>> countryTariffs = map.get(item);
-            List<Map.Entry<Country, List<Tariff>>> topTenCountries = countryTariffs.entrySet().stream()
+            double averageTariffRate = getAverageTariffRate(sortedTariffs);
+
+            TariffDetails tariff = new TariffDetails(entry.getKey(), sortedTariffs, averageTariffRate);
+            topTenCountriesTariffDetails.add(tariff);
+        }
+
+        return new TariffDetailsforItemDTO(hscode, itemName, topTenCountriesTariffDetails);
+    }
+
+    private static List<Map.Entry<Country, List<Tariff>>> filterForTopTenBestCountries (Map<Country, List<Tariff>> map) {
+        List<Map.Entry<Country, List<Tariff>>> topTenCountries = map.entrySet().stream()
                 .sorted((e1, e2) -> {
                     Optional<Tariff> latest1 = e1.getValue().stream()
                         .max(Comparator.comparing(Tariff::getLocalDate));
@@ -170,39 +182,17 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
                     return e1.getKey().getCountryName().compareTo(e2.getKey().getCountryName());
                 })
             .limit(10)
-            .collect(Collectors.toList());   
+            .collect(Collectors.toList());
 
-            // for each partner country in the top ten, calculate current and average rates
-            for (Map.Entry<Country, List<Tariff>> entry : topTenCountries) {
-                Country partnerCountry = entry.getKey();
-                List<Tariff> tariffs = entry.getValue().stream()
-                    .filter(t -> t.getLocalDate() != null)
-                    .sorted(Comparator.comparing(Tariff::getLocalDate))
-                    .toList();
+        return topTenCountries;
+    }
 
-                // get the current tariff rate
-                // double currentRate = tariffs.stream()
-                //         .max(Comparator.comparing(Tariff::getLocalDate))
-                //         .map(Tariff::getPercentageRate)
-                //         .orElse(0.0);
-
-                double averageRate = tariffs.stream()
-                        .mapToDouble(Tariff::getPercentageRate)
-                        .average()
-                        .orElse(0.0);
-
-                // full tariff details needed for the partner country
-                TariffDetails details = new TariffDetails(partnerCountry, tariffs, averageRate);
-                tariffDetailsList.add(details);
-        }
-
-        // full tariff details needed for each item 
-        TariffDetailsforItemDTO tariffDetailsDTO = new TariffDetailsforItemDTO(item.getItemCode(), item.getItemName(), tariffDetailsList);
-
-        // add it to the list of tariffDetailsForItemDTO 
-        result.add(tariffDetailsDTO);
-        }
-
-        return result;
+    private static double getAverageTariffRate (List<Tariff> tariffs) {
+        double averageRate = tariffs.stream()
+                    .mapToDouble(Tariff::getPercentageRate)
+                    .average()
+                    .orElse(0.0);
+        
+        return averageRate;
     }
 }

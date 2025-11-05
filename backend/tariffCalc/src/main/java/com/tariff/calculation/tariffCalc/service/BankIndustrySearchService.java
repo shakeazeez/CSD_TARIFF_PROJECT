@@ -15,6 +15,6 @@ import com.tariff.calculation.tariffCalc.category.Industry;
 public interface BankIndustrySearchService {
     
     List<String> getAllItemsAvailableInTheIndustry(TariffItemFilterDTO itemFilterDTO);
-    List<TariffDetailsforItemDTO> getTariffDetailsForItems (SelectedItemsDTO selectedItemsDTO);
+    TariffDetailsforItemDTO getTariffDetailsForItems (SelectedItemsDTO selectedItemsDTO);
 
 }

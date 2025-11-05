@@ -6,7 +6,6 @@ import com.tariff.calculation.tariffCalc.country.Country;
 public class TariffDetails {
     private Country country;
     private List<Tariff> tariffList;
-    private double currentRate;
     private double averageRate;
 
     public TariffDetails(Country country, List<Tariff> tariffList, double averageRate) {
