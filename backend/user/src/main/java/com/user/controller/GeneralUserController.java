@@ -1,6 +1,8 @@
 package com.user.controller;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +19,11 @@ import com.user.service.UserService;
 import com.user.user.User;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RequestMapping("/user")
@@ -35,21 +39,51 @@ public class GeneralUserController {
         this.memberUserService = memberUserService;
     }
 
+    @Operation(
+        summary = "Add tariff to user history", 
+        description = "Add a tariff calculation to the user's query history"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Tariff added to history successfully", 
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", description = "Invalid username or tariff ID", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Access denied - user mismatch", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+    })
     @PostMapping("/{username}/history/{tariffId}")
-    public ResponseEntity<List<Integer>> addHistory(@PathVariable String username,
+    public ResponseEntity<Map<Integer, LocalDate>> addHistory(
+            @Parameter(description = "Username to add history for", required = true)
+            @PathVariable String username,
+            @Parameter(description = "Tariff Id to add to history", required = true)
             @PathVariable Integer tariffId) {
         try {
-            List<Integer> history = userService.addHistory(username, tariffId);
+            Map<Integer, LocalDate> history = userService.addHistory(username, tariffId);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
 
+    @Operation(
+        summary = "Get user query history", 
+        description = "Retrieve all tariff calculations in the user's query history with timestamps"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User history retrieved successfully", 
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", description = "Invalid username provided", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Access denied - user mismatch", content = @Content),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+    })
     @GetMapping("/{username}/history")
-    public ResponseEntity<List<Integer>> getHistory(@PathVariable String username) {
+    public ResponseEntity<Map<Integer, LocalDate>> getHistory(
+            @Parameter(description = "Username to retrieve history for", required = true)
+            @PathVariable String username) {
         try {
-            List<Integer> history = userService.retrieveHistory(username);
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);

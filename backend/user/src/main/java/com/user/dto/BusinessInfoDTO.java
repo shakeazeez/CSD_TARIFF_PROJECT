@@ -1,11 +1,13 @@
 package com.user.dto;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public record BusinessInfoDTO (
     String originCountry,
     List<String> itemSold,
     List<String> destinationCountries,
-    List<Integer> historyTariffIds
+    Map<Integer, LocalDate> historyTariffIds
 )
 {}

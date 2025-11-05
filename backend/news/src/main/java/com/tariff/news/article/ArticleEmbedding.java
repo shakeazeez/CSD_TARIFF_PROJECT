@@ -11,11 +11,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
 
 @Entity
 @Table(name = "article_embedding")
-@Data
 public class ArticleEmbedding {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,4 +42,26 @@ public class ArticleEmbedding {
 
     @Column(columnDefinition = "TEXT")
     private String queryEmbedding; // optional: embedding of query+article (string)
+
+    // Getters
+    public Long getId() { return id; }
+    public String getTitle() { return title; }
+    public String getUrl() { return url; }
+    public String getCleanedText() { return cleanedText; }
+    public float[] getEmbedding() { return embedding; }
+    public String getTopic() { return topic; }
+    public String getQueryContext() { return queryContext; }
+    public String getLastSeenQuery() { return lastSeenQuery; }
+    public String getQueryEmbedding() { return queryEmbedding; }
+
+    // Setters
+    public void setId(Long id) { this.id = id; }
+    public void setTitle(String title) { this.title = title; }
+    public void setUrl(String url) { this.url = url; }
+    public void setCleanedText(String cleanedText) { this.cleanedText = cleanedText; }
+    public void setEmbedding(float[] embedding) { this.embedding = embedding; }
+    public void setTopic(String topic) { this.topic = topic; }
+    public void setQueryContext(String queryContext) { this.queryContext = queryContext; }
+    public void setLastSeenQuery(String lastSeenQuery) { this.lastSeenQuery = lastSeenQuery; }
+    public void setQueryEmbedding(String queryEmbedding) { this.queryEmbedding = queryEmbedding; }
 }

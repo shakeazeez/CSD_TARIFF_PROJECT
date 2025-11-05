@@ -184,8 +184,10 @@ public class TariffController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved historical tariff data", content = {
                     @Content(mediaType = "application/json", schema = @Schema(implementation = TariffOverviewResponseDTO.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Historical tariff data not found", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters - missing or invalid data", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Historical tariff data not available for specified parameters", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error during data retrieval", content = @Content)
     })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Tariff calculation query parameters", 
         required = true, content = @Content(mediaType = "application/json", 

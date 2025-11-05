@@ -1,10 +1,11 @@
 package com.user.dto;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.Map;
 
 public record BankInfoDTO (
     String industry,
     String originCountry,
-    List<Integer> historyTariffIds
+    Map<Integer, LocalDate> historyTariffIds
 )
 {}

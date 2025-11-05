@@ -24,29 +24,29 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BusinessUser extends User {
-    
+
     @ElementCollection
     @CollectionTable(name = "items_sold", joinColumns = @JoinColumn(name = "user_id"))
     @MapKeyColumn(name = "item_sold")
     @Column(name = "item_sold")
     private List<String> itemsSold;
-    
+
     @ElementCollection
     @CollectionTable(name = "destination_country", joinColumns = @JoinColumn(name = "user_id"))
     @MapKeyColumn(name = "destination_country")
     @Column(name = "destination_country")
     private List<String> destinationCountries;
-    
+
     @Column(name = "origin_country")
     private String originCountry;
 
-    public BusinessUser(String username, String hashedPassword, Map<Integer, Integer> history,
+    public BusinessUser(String username, String hashedPassword,
             List<Role> role,
             List<String> itemsSold,
             List<String> destinationCountries,
             String originCountry) {
-        super(username, hashedPassword, history, role);
-        
+        super(username, hashedPassword, role);
+
         this.itemsSold = itemsSold;
         this.destinationCountries = destinationCountries;
         this.originCountry = originCountry;

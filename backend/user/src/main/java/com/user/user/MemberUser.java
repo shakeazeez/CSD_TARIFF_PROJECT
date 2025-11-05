@@ -30,10 +30,10 @@ public class MemberUser extends User {
     @Column(name = "pinned_tariffs")
     private List<Integer> pinnedTariffId;
 
-    public MemberUser(String username, String hashedPassword, Map<Integer, Integer> history,
+    public MemberUser(String username, String hashedPassword,
             List<Integer> pinnedTariffId,
             List<Role> role) {
-        super(username, hashedPassword, history, role);
+        super(username, hashedPassword, role);
         this.pinnedTariffId = pinnedTariffId;
     }
 

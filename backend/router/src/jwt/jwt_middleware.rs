@@ -42,8 +42,8 @@ where
                     return Box::pin(async move { Ok(req.into_response(res))});
                 }
 
-                let token = &header[7..];
-
+                let token = &header[7..]; 
+                
                 match verify_jwt(token.to_string()) {
                     Ok(token) => {
                         req.extensions_mut().insert(token.clone());
@@ -62,9 +62,9 @@ where
                         let res = HttpResponse::Unauthorized()
                             .json("Invalid token")
                             .map_into_right_body();
-                        return Box::pin(
+                        Box::pin(
                             async move { Ok(req.into_response(res)) },
-                        );
+                        )
                     }
                 }
             }
@@ -72,7 +72,7 @@ where
                 let res = HttpResponse::Unauthorized()
                     .json("Token Not Found in format Authorisation: Bearer <Token>")
                     .map_into_right_body();
-                return Box::pin(async move { Ok(req.into_response(res))});
+                Box::pin(async move { Ok(req.into_response(res))})
             }
         }
     }

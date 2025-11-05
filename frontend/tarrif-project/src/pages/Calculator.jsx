@@ -27,6 +27,7 @@ import { useTheme } from "../contexts/ThemeContext.jsx"; // Custom theme context
 import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
 import {
   Calculator as CalculatorIcon,
+  History,
   Menu,
   Sun,
   Moon,
@@ -77,18 +78,18 @@ const itemVariants = {
 // ====================================
 
 export function Calculator({ onMenuClick }) {
+  // To receive the data that was passed during navigation
+  const location = useLocation();
+
+  // Get authentication context for user management
+  const { isAuthenticated } = useAuth()
+
   // ====================================
   // THEME INTEGRATION
   // ====================================
 
   // Get theme context for component-level color management
   const { colors, theme, toggleTheme, isDark } = useTheme();
-
-  // To receive the data that was passed during navigation
-  const location = useLocation();
-
-  // Get authentication context for user management
-  const { isAuthenticated } = useAuth()
 
   // Toast hook
   // ====================================
@@ -123,8 +124,8 @@ export function Calculator({ onMenuClick }) {
   const [success, setSuccess] = useState("");
 
   const [autoFetch, setAutoFetch] = useState(false);
+  const [hasCurrent, setHasCurrent] = useState(false);
 
-  // for search history
   // auto fetch when form fields are populated from search history
   useEffect(() => {
     if (autoFetch && report && partner && hs && cost) {
@@ -138,6 +139,10 @@ export function Calculator({ onMenuClick }) {
       }, 200);
     }
   }, [autoFetch]);
+
+  useEffect(() => {
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }, [])
 
   // Pinning
   const [pinned, setPinned] = useState([]);
@@ -347,8 +352,12 @@ export function Calculator({ onMenuClick }) {
     setLoadingCurrent(true);
     setError("");
     setSuccess("");
-    setCurrent({});
+    // Clear previous results when starting new calculation
+    setCurrent({}); // Clear old current results when loading new data
     setPast({}); // clear old results first when loading the new search data
+    setHasCurrent(false); // Reset current data availability flag
+
+    let currentDataSuccess = false; // Track if current data was successfully retrieved
 
     try {
       // POST request to get current tariff calculation
@@ -358,32 +367,61 @@ export function Calculator({ onMenuClick }) {
       );
 
       console.log("fetchCurrent response:", response.data);
+      console.log("hasCurrent before processing:", hasCurrent);
 
-      // Update state with current tariff results
-      setCurrent(response.data);
-      // console.log("current:", current.item);
+      if (response.data) {
+        setHasCurrent(true);
+        currentDataSuccess = true; // Mark as successful
+        console.log("Setting hasCurrent to true - valid response data");
 
-      // Add the query to search history
-      if (response.data && response.data.tariffId) {
-        searchMethods.addSearch(response.data.tariffId);
+        // Update state with current tariff results
+        setCurrent(response.data);
+
+        // Add the query to search history
+        if (response.data && response.data.tariffId) {
+          searchMethods.addSearch(response.data.tariffId);
+        }
+
+        setLoadingCurrent(false);
+
+        setSuccess("Tariff calculation completed successfully!");
+      } else {
+        // Current data is null, will handle fallback in finally block
+        console.log("Response data is null - will use fallback data");
+        currentDataSuccess = false;
+        // Don't update hasCurrent here - let fetchPast handle the final state
       }
-
-      setSuccess("Tariff calculation completed successfully!");
     } catch (error) {
       console.error("Error fetching current tariff:", error);
-      setError(
-        error.response?.data?.message ||
-        "This country combination for this item does not exists. Please check your inputs and try again."
-      );
-      console.log("Error state: {}\n", error)
+      console.log("API call failed - will use fallback data");
+      currentDataSuccess = false;
+      // Don't update hasCurrent here - let fetchPast handle the final state
+      // setError(
+      //   error.response?.data?.message ||
+      //   "This country combination for this item does not exists. Please check your inputs and try again."
+      // );
+
     } finally {
-      setLoadingCurrent(false);
-      fetchPast(); // Automatically fetch historical data after current calculation
+      // Always fetch past data, and use it for fallback if current is null
+      // Pass the actual success state to fetchPast
+      await fetchPast(currentDataSuccess);
+      
+      // Only set loading to false if we have current data OR fallback failed
+      if (!loadingCurrent) {
+        // fetchPast already handled the loading state
+      } else {
+        setLoadingCurrent(false);
+      }
     }
   };
 
   // Function to fetch historical tariff data for chart visualization
-  const fetchPast = async () => {
+  const fetchPast = async (currentDataAvailable = null) => {
+    // Use the passed parameter if available, otherwise fall back to state
+    const hasCurrentData = currentDataAvailable !== null ? currentDataAvailable : hasCurrent;
+    
+    console.log("fetchPast started", { report, partner, hs, hasCurrent, currentDataAvailable, hasCurrentData });
+    
     if (!report || !partner || !hs) {
       setError(
         "Please fill in reporting country, partner country, and Item/Item Description before viewing historical data."
@@ -392,8 +430,6 @@ export function Calculator({ onMenuClick }) {
     }
 
     setLoadingPast(true);
-    setError("");
-    setSuccess("");
     setPast({});
 
     try {
@@ -405,17 +441,64 @@ export function Calculator({ onMenuClick }) {
 
       // Update state with historical tariff data
       setPast(response.data);
-      //console.log(past);
+      console.log("fetchPast response received:", response.data);
 
-      setSuccess("Historical data loaded successfully!");
+      // If current data is not available, use the last entry from historical data as current
+      console.log("Checking fallback conditions:", { 
+        hasCurrentData, 
+        hasResponseData: !!response.data, 
+        hasTariffData: !!(response.data && response.data.tariffData), 
+        tariffDataLength: response.data?.tariffData?.length || 0 
+      });
+      
+      if (!hasCurrentData && response.data && response.data.tariffData && response.data.tariffData.length > 0) {
+        console.log("Executing fallback: Using latest historical data as current");
+        const lastEntry = response.data.tariffData[response.data.tariffData.length - 1];
+        
+        // Create a current-like object from the last historical entry
+        const fallbackCurrent = {
+          reportingCountry: response.data.reportingCountry,
+          partnerCountry: response.data.partnerCountry,
+          item: response.data.item,
+          tariffRate: lastEntry.tariffRate,
+          tariffAmount: (lastEntry.tariffRate / 100) * cost, // Calculate tariff amount
+          itemCostWithTariff: parseFloat(cost) + ((lastEntry.tariffRate / 100) * cost), // Calculate total cost
+          tariffId: lastEntry.tariffId || 0,
+          tariffDescription: "No trade agreement found"
+        };
+        
+        console.log("Setting fallback current data:", fallbackCurrent);
+        setCurrent(fallbackCurrent);
+        setHasCurrent(true);
+        setLoadingCurrent(false);
+        
+        // Add the fallback tariff to search history
+        if (fallbackCurrent.tariffId) {
+          searchMethods.addSearch(fallbackCurrent.tariffId);
+        }
+        
+        // setSuccess("Current tariff data not available. Showing latest historical data instead.");
+      } else if (hasCurrentData) {
+        console.log("Current data already available, not using fallback");
+        setHasCurrent(true); // Ensure state is consistent
+        setSuccess("Historical data loaded successfully!");
+      } else {
+        console.log("No fallback possible - no historical data available");
+        setHasCurrent(false); // No current data and no fallback
+        setCurrent({}); // Clear any stale data
+        setError("No current or historical data available for this combination.");
+      }
+      setSuccess("Tariff calculation completed successfully!");
     } catch (error) {
       console.error("Error fetching historical tariff data:", error);
       setError(
         error.response?.data?.message ||
-          "Unable to retrieve historical data. Please verify your inputs and try again."
+          "This country combination for this item does not exists. Please check your inputs and try again."
       );
     } finally {
+      // setSuccess("Tariff calculation completed successfully!");
       setLoadingPast(false);
+      setLoadingCurrent(false);
     }
   };
 
@@ -512,6 +595,7 @@ export function Calculator({ onMenuClick }) {
       <AnimatePresence>
         {success && (
           <motion.div
+            key="success-notification"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -538,6 +622,7 @@ export function Calculator({ onMenuClick }) {
 
         {error && (
           <motion.div
+            key="error-notification"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -931,6 +1016,7 @@ export function Calculator({ onMenuClick }) {
             >
               <CardHeader>
                 <CardTitle style={{ color: colors.foreground }}>
+                  <History className="h-6 w-6 inline mr-2" />
                   {isAuthenticated ? "Your Top Searches" : "Search History"}
                 </CardTitle>
                 <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>

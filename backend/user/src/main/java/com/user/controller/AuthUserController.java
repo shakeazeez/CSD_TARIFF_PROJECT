@@ -40,9 +40,8 @@ public class AuthUserController {
     })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User registration details", 
         required = true, content = @Content(mediaType = "application/json", 
-            schema = @Schema(implementation = CreateUserDTO.class), 
-            examples = @ExampleObject(value = "{ \"username\": \"demo_user\", \"password\": \"DemoPass123!\", \"role\": \"member\" }")
-    ))
+            schema = @Schema(implementation = CreateUserDTO.class))
+    )
     @PostMapping("/register")
     public ResponseEntity<TokenDTO> registerUser(@RequestBody CreateUserDTO createUserDTO) {
         try {

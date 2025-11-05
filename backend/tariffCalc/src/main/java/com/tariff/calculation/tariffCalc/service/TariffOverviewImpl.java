@@ -204,6 +204,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
                 .map(tariff -> new HistoricalTariffData(
                         tariff.getLocalDate(), // start period
+                        tariff.getId(),
                         tariff.getPercentageRate(),
                         tariff.getPercentageRate() * queryDTO.itemCost() / 100.0,
                         queryDTO.itemCost() + tariff.getPercentageRate() * queryDTO.itemCost() / 100.0))

@@ -17,6 +17,8 @@ import { Toaster } from './components/Toaster.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 import { Business } from './pages/Business.jsx'
 import { IndustrySearch } from './pages/IndustrySearch.jsx'
+import { ChatBot } from './pages/ChatBot.jsx'
+import { News } from './pages/News.jsx'
 
 /**
  * Protected Route component that redirects to login if not authenticated
@@ -98,6 +100,12 @@ function App() {
               }/>
               <Route path="/faq" element={
                 <FAQ onMenuClick={() => setSidebarOpen(true)} />
+              }/>
+              <Route path="/chatbot" element={
+                <ChatBot onMenuClick={() => setSidebarOpen(true)} />
+              }/>
+              <Route path="/news" element={
+                <News onMenuClick={() => setSidebarOpen(true)} />
               }/>
               <Route path="/settings" element={
                 <ComingSoon feature="Settings" />

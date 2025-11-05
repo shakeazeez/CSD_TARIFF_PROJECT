@@ -1,13 +1,15 @@
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct LoginDTO {
     pub username: Option<String>,
     pub password: Option<String>
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct CreateDTO {
     pub username: String, 
     pub password: String,
@@ -35,5 +37,5 @@ pub struct TokenDTO {
     #[serde(rename = "itemsSold")]
     items_sold: Option<String>,
     #[serde(rename = "historicalTariffId")]
-    historical_tariff_id: Option<Vec<i32>>
+    historical_tariff_id: Option<IndexMap<i32, String>>
 }
