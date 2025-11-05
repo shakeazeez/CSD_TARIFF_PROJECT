@@ -1,10 +1,8 @@
+version: '3.8'
+
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      args:
-        MAVEN_OPTS: -Dmaven.repo.local=/root/.m2/repository
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tariff-backend:${TAG:-latest}
     ports:
       - "8082:8082"
       - "8081:8081"
@@ -23,8 +21,6 @@ services:
       TARIFF_URL: http://backend:8081
       NEWS_URL: http://backend:8083
       JAVA_OPTS: -Xmx768m -Xms256m
-    volumes:
-      - maven_cache:/root/.m2
     deploy:
       resources:
         limits:
@@ -34,12 +30,9 @@ services:
     restart: unless-stopped
 
   rust-router:
-    build:
-      context: ./backend/router
-      dockerfile: Dockerfile
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tariff-router:${TAG:-latest}
     ports:
       - "8080:8080"
-    # Ignore first
     environment:
         DATABASE_URL_CONNECTION: ${RUST_DATABASE_URL}
         FRONTEND_URL: ${FRONTEND_URL}
@@ -47,18 +40,6 @@ services:
         USER_URL: http://backend:8082
         NEWS_URL: http://backend:8083
         RUST_LOG: info
-    volumes:
-      # ✅ Mount source code for development (hot reload)
-        - ./backend/router/src:/app/src:ro
-           
-        # ✅ Mount migrations directory
-        - ./backend/router/migrations:/app/migrations:ro
-           
-        # ✅ Mount config files
-        - ./backend/router/diesel.toml:/app/diesel.toml:ro
-        - ./backend/router/.env.rust:/app/.env
-        # ✅ Mount target directory for faster rebuilds (optional)
-        - rust_target_cache:/app/target
     deploy:
       resources:
         limits:
@@ -68,15 +49,10 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend/tarrif-project
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tariff-frontend:${TAG:-latest}
     ports:
       - "80:80"
     depends_on:
       - backend
     environment:
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
-
-
-volumes:
-  maven_cache:
-  rust_target_cache:

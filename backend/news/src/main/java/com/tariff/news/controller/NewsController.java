@@ -66,6 +66,10 @@ public class NewsController {
             }
 
             com.tariff.news.dto.NewsResponse results = newsEmbeddingService.processQuery(query);
+                        // Check if chatbot is offline
+            if ("CHATBOT_OFFLINE".equals(results.getSynthesizedAnswer())) {
+                results.setSynthesizedAnswer("The chat bot is currently offline. Please try again later.");
+            }
             // If no articles found, provide a fallback response
             if (results.getArticles() == null || results.getArticles().isEmpty()) {
                 results.setSynthesizedAnswer("I couldn't find specific articles on that topic. " + results.getSynthesizedAnswer() + " Please provide more details for better assistance.");
