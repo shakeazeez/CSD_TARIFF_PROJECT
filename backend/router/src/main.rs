@@ -76,14 +76,23 @@ async fn main() {
     let connection = establish_connection();
 
     println!("Hello new Server application");
-    let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
+    let mut host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
     let openapi = docs::ApiDoc::openapi();
+    
+    // For local testing purposes
+    if host == "127.0.0.1:8080" {
+        host = "0.0.0.0:8080".to_string();
+    }
+    
     
     println!("Host : {host}");
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin(
-                &env::var("FRONTEND_URL").unwrap_or_else(|_| "127.0.0.1:80".to_string()),
+                &env::var("FRONTEND_URL").unwrap_or_else(|_| {
+                    println!("Defaulting");
+                    "0.0.0.1:80".to_string()
+                }),
             )
             .allow_any_header()
             .allow_any_method();
