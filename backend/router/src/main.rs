@@ -79,6 +79,7 @@ async fn main() {
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
     let openapi = docs::ApiDoc::openapi();
     
+    println!("Host : {host}");
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin(
@@ -102,4 +103,5 @@ async fn main() {
     .run()
     .await
     .unwrap();
+    println!("Ended process");
 }
