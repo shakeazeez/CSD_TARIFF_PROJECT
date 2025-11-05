@@ -35,7 +35,6 @@ ChartJS.register(
  * @param {Object} props
  * @param {Array<string>} props.labels - Array of labels for the x-axis.
  * @param {Array<Array<number>>} props.value - Array of numeric values for the y-axis. Must match labels length.
- * @param {Array<string>} props.legend - Label shown in the chart legend.
  *
  * @example
  * const value = [
@@ -44,18 +43,27 @@ ChartJS.register(
  *              [500, 400, 500, 900],
  * ];
  * const labels = ["Jan", "Feb", "Mar", "Apr"];
- * const legend = ["Shop 1", "Shop 2", "Shop 3"];
  *
  * <IndustryChart
  *   labels={labels}
  *   value={value}
- *   legend={legend}
  * />
  */
 
-const IndustryChart = ({ labels, value, legend }) => {
+const IndustryChart = ({ labels, value }) => {
   // Get theme colors for chart styling
   const { colors, isDark } = useTheme();
+
+  // Calculate dynamic max value based on data
+  const calculateMaxValue = () => {
+    if (!value || value.length === 0) return 100;
+
+    const allValues = value.flat().filter((val) => val != null && !isNaN(val));
+    if (allValues.length === 0) return 100;
+
+    const maxDataValue = Math.max(...allValues);
+    return maxDataValue + 5;
+  };
 
   // Theme-aware color palette for chart lines
   function getThemeColors(index) {
@@ -82,11 +90,11 @@ const IndustryChart = ({ labels, value, legend }) => {
     };
   }
 
-  const datasets = legend.map((name, i) => {
+  const datasets = value.map((dataArray, i) => {
     const themeColors = getThemeColors(i);
     return {
-      label: name,
-      data: value[i],
+      label: `Tariff Rate`,
+      data: dataArray,
       ...themeColors,
       tension: 0.1, // Slight curve for smoother lines
       borderWidth: 2,
@@ -96,6 +104,7 @@ const IndustryChart = ({ labels, value, legend }) => {
   });
 
   const data = { labels, datasets };
+  console.log("chart data: {}", data);
 
   const options = {
     responsive: true,
@@ -105,18 +114,6 @@ const IndustryChart = ({ labels, value, legend }) => {
       intersect: false,
     },
     plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        labels: {
-          color: colors.foreground,
-          usePointStyle: true,
-          padding: 30,
-          font: {
-            size: 12,
-          },
-        },
-      },
       tooltip: {
         backgroundColor: colors.surface,
         titleColor: colors.foreground,
@@ -132,6 +129,12 @@ const IndustryChart = ({ labels, value, legend }) => {
         bodyFont: {
           size: 13,
         },
+        callbacks: {
+          label: function(context) {
+            const value = context.parsed.y;
+            return `${value.toFixed(2)}%`;
+          }
+        }
       },
     },
     scales: {
@@ -170,15 +173,15 @@ const IndustryChart = ({ labels, value, legend }) => {
           },
         },
         min: 0,
-        max: 100,
+        max: calculateMaxValue(),
         ticks: {
-          stepSize: 20,
+          stepSize: 5,
           color: colors.muted,
           font: {
             size: 11,
           },
           callback: function (value) {
-            return value;
+            return value.toFixed(2) +`%`;
           },
         },
         grid: {

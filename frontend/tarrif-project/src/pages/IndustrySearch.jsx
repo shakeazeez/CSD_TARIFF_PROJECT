@@ -276,13 +276,13 @@ export function IndustrySearch({ onMenuClick }) {
 
     // BACKEND returns => hscode, item name, current tariff, list of partner countries (rates and corresponding dates)
     try {
-      // Update the endpoint to match the backend controller mapping
+
+      // Post request to get tariff details for an item for a period of time
       const response = await axios.post(
         `${backendURL}/tariff/items/tariffDetails`,
         {
           selectedItems: selectedItems,
           homeCountry: homeCountry,
-          // destCountry,
           industry: industry,
           startDate: startDate ? startDate.toISOString().split("T")[0] : "",
           endDate: endDate ? endDate.toISOString().split("T")[0] : "",
@@ -291,6 +291,7 @@ export function IndustrySearch({ onMenuClick }) {
 
       const detailsMap = {};
       response.data.forEach((item) => {
+        console.log("Item stored: ", item);
         detailsMap[item.hscode] = item;
       });
 
@@ -741,8 +742,8 @@ export function IndustrySearch({ onMenuClick }) {
                             ? tariffs.map((t) => t.percentageRate.toFixed(2))
                             : [0];
 
+                      
                         console.log("Chart data for", partner.country.countryName, {value, labels})
-                        const legend = [partner.country.countryName];
                         const avg = partner.averageRate;
 
                         return (
@@ -760,8 +761,7 @@ export function IndustrySearch({ onMenuClick }) {
                             <div className="h-[300px] mb-6">
                               <IndustryChart
                                 labels={labels}
-                                value={value}
-                                legend={legend}
+                                value={[value]}
                               />
                             </div>
                             <div className="text-center">
