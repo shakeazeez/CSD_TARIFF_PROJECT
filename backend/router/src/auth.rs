@@ -46,6 +46,17 @@ async fn get_user_roles(
     return result;
 }
 
+#[utoipa::path(
+    post,
+    path="/auth/login",
+    request_body=LoginDTO,
+    responses(
+        (status = 200, description = "Login successful"),
+        (status = 403, description = "Unauthorized accesss attempted"),
+        (status = 404, description = "Resource not found for particular user type"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 pub async fn login(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<LoginDTO>,
@@ -104,7 +115,18 @@ pub async fn login(
     };
 }
 
-            
+
+#[utoipa::path(
+    post,
+    path="/auth/register",
+    request_body=CreateDTO,
+    responses(
+        (status = 200, description = "Created user successfully"),
+        (status = 400, description = "Request failed due to bad password or bad username"),
+        (status = 409, description = "Username already exits"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 pub async fn create_user(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<CreateDTO>,
@@ -137,11 +159,11 @@ pub async fn create_user(
             token_dto.token = Some(jwt_functions::generate_token(&acc[0], &roles[0]));
             // println!("{:?}", token_dto);
             println!("Status: {}", status);
-            return HttpResponse::build(status).json(token_dto);
+            HttpResponse::build(status).json(token_dto)
         }
         Err(e) => {
             println!("Error: {e}");
-            return HttpResponse::InternalServerError().finish();
+            HttpResponse::InternalServerError().finish()
         }
     }
 }

@@ -24,9 +24,7 @@ pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
 
     let secret = DecodingKey::from_secret(env::var("SIGNING_SECRET").unwrap().as_bytes());
 
-    let res = jsonwebtoken::decode::<Claims>(&token, &secret, &validation);
-    
-    res
+    jsonwebtoken::decode::<Claims>(&token, &secret, &validation)
 }
 
 pub fn generate_token(user: &AuthUser, roles: &UserRole) -> String {

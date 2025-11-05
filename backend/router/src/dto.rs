@@ -1,14 +1,15 @@
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct LoginDTO {
     pub username: Option<String>,
     pub password: Option<String>
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct CreateDTO {
     pub username: String, 
     pub password: String,

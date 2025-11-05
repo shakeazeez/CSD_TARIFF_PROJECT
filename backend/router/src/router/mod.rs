@@ -42,7 +42,6 @@ async fn establish_connection(
     } else {
         reqwest::get(url).await
     }
-
 }
 
 pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
@@ -67,7 +66,7 @@ pub async fn news_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
         }
         Err(e) => {
             println!("{}", e);
-            return HttpResponse::InternalServerError().finish();
+            HttpResponse::InternalServerError().finish()
         }
     }
 }
@@ -97,30 +96,28 @@ pub async fn tariff_route(req: HttpRequest, body: web::Bytes) -> impl Responder 
 
 pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     let extensions = req.extensions();
-    if extensions
-        .get::<jsonwebtoken::TokenData<Claims>>()
-        .is_none()
-    {
+    let token = extensions.get::<jsonwebtoken::TokenData<Claims>>();
+    if token.is_none() {
         return HttpResponse::Unauthorized().finish();
     }
 
-    let access = extensions.get::<Role>();
+    let token = token.unwrap();
 
-    if access.is_none() {
-        println!("ROLE is not present. FIX THIS");
-        return HttpResponse::InternalServerError().finish();
-    }
+    let access = token.claims.groups;
 
-    let access = access.unwrap();
+    // if access.is_none() {
+    //     println!("ROLE is not present. FIX THIS");
+    //     return HttpResponse::InternalServerError().finish();
+    // };
 
     let base_url = env::var("USER_URL").unwrap();
     let uri = req.uri().to_string();
 
-    if !uri.contains("user") && !uri.contains(&format!("{}", access)) {
+    if !uri.contains("user") && !uri.contains(&format!("{access}")) {
         return HttpResponse::Forbidden().finish();
     }
 
-    let url = format!("{}{}", base_url, uri);
+    let url = format!("{base_url}{uri}");
 
     let response = establish_connection(&req, &url, body).await;
 
@@ -151,13 +148,13 @@ pub async fn news_history(req: HttpRequest, body: web::Bytes) -> impl Responder 
     }
 
     let base_url = env::var("NEWS_URL").unwrap();
-    
+
     let uri = req.uri().to_string();
-    
+
     let url = format!("{}{}", base_url, uri);
-    
+
     let response = establish_connection(&req, &url, body).await;
-    
+
     match response {
         Ok(res) => {
             println!("Successful request");
@@ -166,10 +163,10 @@ pub async fn news_history(req: HttpRequest, body: web::Bytes) -> impl Responder 
             HttpResponse::build(status)
                 .insert_header((header::CONTENT_TYPE, "application/json"))
                 .body(bytes)
-        }, 
+        }
         Err(e) => {
             println!("Error: {}", e);
             return HttpResponse::InternalServerError().finish();
-        } 
+        }
     }
 }

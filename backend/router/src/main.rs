@@ -10,6 +10,8 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
 };
 use dotenv::dotenv;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::jwt::jwt_middleware::JwtMiddleware;
 
@@ -20,10 +22,11 @@ mod jwt;
 mod router;
 mod schema;
 mod tables;
+mod docs;
 
 type DbPool = Pool<ConnectionManager<PgConnection>>;
 
-pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
+fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
     let database_url = env::var("RUST_DATABASE_URL").expect("Database url not set");
 
     let manager = ConnectionManager::<PgConnection>::new(&database_url);
@@ -36,10 +39,7 @@ pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
 }
 
 fn init_news(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/news")
-            .route("/{tail:.*}", web::to(router::news_route))
-    );
+    cfg.service(web::scope("/news").route("/{tail:.*}", web::to(router::news_route)));
 }
 
 fn init_login(cfg: &mut web::ServiceConfig) {
@@ -67,19 +67,18 @@ fn init_news_history(cfg: &mut web::ServiceConfig) {
         web::scope("/news/history")
             .wrap(JwtMiddleware)
             .route("/{tail:.*}", web::to(router::news_history)),
-        
     );
 }
 
 #[actix_web::main]
 async fn main() {
-    env_logger::init();
     dotenv().ok();
     let connection = establish_connection();
 
     println!("Hello new Server application");
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
-
+    let openapi = docs::ApiDoc::openapi();
+    
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin(
@@ -91,6 +90,7 @@ async fn main() {
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(connection.clone()))
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             .configure(init_news_history)
             .configure(init_news)
             .configure(init_login)
