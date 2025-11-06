@@ -9,6 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TariffRepo extends JpaRepository<Tariff, Integer> {
     // Getters 
-    public List<Tariff> findByReportingCountryAndItem(Country  reportingCountry, Item item);
+    public List<Tariff> findByReportingCountryAndItem(Country reportingCountry, Item item);
     public List<Tariff> findByReportingCountryAndPartnerCountryAndItem(Country reportingCountry, Country partnerCountry, Item item);
 } 
