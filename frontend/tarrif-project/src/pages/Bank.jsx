@@ -360,7 +360,7 @@ export function Bank({ onMenuClick }) {
         console.log("Successfully retrieved tariff details for item ", filteredItems[i], "Number of countries: ", response.data.tariffDetailsList.length);
         console.log("Tariff Details ", response.data);
 
-        if (response.data.tariffDetailsList.length == 0) {
+        if (!response.data || !response.data.tariffDetailsList || response.data.tariffDetailsList.length == 0) {
           throw new Error(`No tariff data available for item: ${filteredItems[i]}`);
         }
 
