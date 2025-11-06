@@ -26,7 +26,7 @@ class LemmaUtilsTest {
         @DisplayName("Should return system environment variable when it exists")
         void shouldReturnSystemEnvironmentVariable() {
             // Arrange
-            String key = "PATH"; // PATH should exist on most systems
+            String key = "PATH";
             
             // Act
             String result = LemmaUtils.getEnvOrDotenv(key);
