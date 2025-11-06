@@ -83,7 +83,7 @@ async fn main() {
     if host == "127.0.0.1:8080" {
         host = "0.0.0.0:8080".to_string();
     }
-    
+    // println!("Host: {host}");
     
     println!("Host : {host}");
     HttpServer::new(move || {
