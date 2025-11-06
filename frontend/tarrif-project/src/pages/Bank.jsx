@@ -14,10 +14,8 @@ export function Bank({ onMenuClick }) {
   const { colors } = useTheme();
 
   /*
-   * Drop down for countries and industry selection
+   * Store information for drop down for countries and industry selection
    */
-
-  // load the list of countries and industries for dropdown and store in list
   const [countryList, setCountryList] = useState([]);
   const [industryList, setIndustryList] = useState([]);
 
@@ -59,21 +57,23 @@ export function Bank({ onMenuClick }) {
         }))
       : [];
 
-  // states to hold input that user enters
+  /* 
+   * Take in and store user input for endpoint
+   */
+
+  // States to store homecountry and industry selection
   const [homeCountry, setHomeCountry] = useState("");
   const [industry, setIndustry] = useState("");
 
-  /*
-   * Start and End date, input or calendar select
-   */
-
+  // States to store period that user wishes to query 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
+  // States to check for valid period selected
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
 
-  // set default start and end date range (in case users don't enter date range)
+  // Dates are set to a default range from ten years ago to today 
   useEffect(() => {
     const today = new Date();
     const tenYearsAgo = new Date();
@@ -83,7 +83,7 @@ export function Bank({ onMenuClick }) {
     setEndDate(today);
   }, []);
 
-  // check the start and end dates
+  // Perform validation on the period selected
   const validateStartDateChanges = (newStartDate) => {
     if (endDate && newStartDate > endDate) {
       setStartDateError(true);
@@ -106,18 +106,13 @@ export function Bank({ onMenuClick }) {
     }
   };
 
-  /*
-   * Send query to backend, get items list
-   */
-
   const [itemList, setItemList] = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [errorItems, setErrorItems] = useState(null);
 
-  // BACKEND returns => items of the selected industry
+  // Construct DTO to query backend for the list of all items in the industry
   const userInput = {
     homeCountry: homeCountry,
-    // destCountry,
     industry: industry,
     startDate: startDate ? startDate.toISOString().split("T")[0] : "",
     endDate: endDate ? endDate.toISOString().split("T")[0] : "",
@@ -149,12 +144,14 @@ export function Bank({ onMenuClick }) {
         `${backendURL}/tariff/items`,
         userInput
       );
-      console.log("Retrieving items of homeCountry: industry.");
-      // The response contains a list of strings (item names)
+
+      console.log("Successfully retrieved items of country: ", homeCountry, ", and industry: ", industry);
       setItemList(response.data);
+
     } catch {
-      console.error("Failed to retrieve items.");
+      console.error("Failed to retrieve items for input DTO ", userInput);
       setErrorItems("Unable to retrieve items.");
+
     } finally {
       setLoadingItems(false);
     }
@@ -174,7 +171,23 @@ export function Bank({ onMenuClick }) {
     const newlyAdded = filteredItems.filter(item => !prevSelectedItems.includes(item));
 
     if (newlyAdded.length > 0) {
-      queryTariffs(backupCountries, newlyAdded);
+      newlyAdded.forEach(item => {
+        if (existingItemDetailsMap.hasOwnProperty(item)) {
+          setValidItemDetailsMap(prev => ({
+            ...prev,
+            [item]: existingItemDetailsMap[item]
+            }));
+
+          setTariffDetails(prev => ({
+            ...prev,
+            [item]: existingItemDetailsMap[item]
+          }));
+
+        } else {
+          queryTariffs(backupCountries, newlyAdded);
+        }
+      });
+
     }
 
     prevSelectedItemsRef.current = selectedItems;
@@ -231,8 +244,9 @@ export function Bank({ onMenuClick }) {
   ]
 
   const queryTariffs = (backupCountries, selectedItems) => {
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
     backupCountries.forEach((partnerCountry) => {
-      selectedItems.forEach((item) => {
+      filteredItems.forEach((item) => {
         const tariffCalculationQueryDTO = {
           reportingCountry : homeCountry,
           partnerCountry : partnerCountry,
@@ -346,9 +360,9 @@ export function Bank({ onMenuClick }) {
         console.log("Successfully retrieved tariff details for item ", filteredItems[i], "Number of countries: ", response.data.tariffDetailsList.length);
         console.log("Tariff Details ", response.data);
 
-      if (response.data.tariffDetailsList.length == 0) {
-        throw new Error(`No tariff data available for item: ${filteredItems[i]}`);
-      }
+        if (response.data.tariffDetailsList.length == 0) {
+          throw new Error(`No tariff data available for item: ${filteredItems[i]}`);
+        }
 
         // Store the item and it's tariff data
         setValidItemDetailsMap(prev => ({
@@ -372,33 +386,12 @@ export function Bank({ onMenuClick }) {
         console.log("Failed to load tariff for item ", filteredItems[i], error);
 
       } finally {
-        setLoadingDetails(false);
       }
     }
+
+    setLoadingDetails(false);
     
   }
-  /* 
-
-  Maps: 1 to store all queried items, 1 to store newly queried items 
-  Array: invalid items
-  
-  User selects reporting country, industry, start date, end date => display list of items 
-  - clear all queried items and newly queried items
-
-  User selects individual items:
-    - add all items into newly queried items 
-    - check if the items is in all queried items -> if yes, remove from newly queried items 
-
-    - for each queried items -> post to backend using the SelectedItemDTO => Change DTO to only be for one item
-    - catch any error for that item if any -> add the item to invalid items to display error messages 
-    - continue querying for the next item 
-
-    Results: TariffDetailsforItemDTO for details of tariffs of that item 
-    store it into a details Map 
-
-  - display content for valid items in the map
-  - for invalid items in the array, display the error message
-  */
 
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]
@@ -601,7 +594,18 @@ export function Bank({ onMenuClick }) {
 
             <div className="flex items-center mb-3 text-sm">
               <button
-                onClick={() => setSelectedItems([...itemList])}
+                onClick={() => {
+                  setSelectedItems([...itemList]);
+
+                  const validItems = Object.keys(validItemDetailsMap);
+                  const newItems = itemList.filter(item => !validItems.includes(item));
+
+                  setTariffDetails(validItemDetailsMap)
+
+                  if (newItems.length > 0) {
+                    console.log("New items to fetch: ", newItems);
+                  }
+                }}
                 className="hover:underline"
                 style={{ color: colors.accent }}
               >
@@ -611,7 +615,10 @@ export function Bank({ onMenuClick }) {
                 |
               </span>
               <button
-                onClick={() => setSelectedItems([])}
+                onClick={() => {
+                  setSelectedItems([]);
+                  setTariffDetails({});
+                }}
                 className="hover:underline"
                 style={{ color: colors.accent }}
               >
@@ -733,7 +740,7 @@ export function Bank({ onMenuClick }) {
           )}
 
           {/* Item-specific errors */}
-          {itemErrors.length > 0 && selectedItems.length > 0 && (
+          {invalidItems.filter(item => selectedItems.includes(item)).length > 0 && (
             <div
               className="p-6 rounded-md shadow-sm mb-6 border-l-4"
               style={{
@@ -749,15 +756,13 @@ export function Bank({ onMenuClick }) {
                 Some items could not be loaded:
               </h3>
               <ul className="list-disc list-inside space-y-1">
-                {itemErrors.map((error, index) => (
-                  <li
-                    key={index}
-                    className="text-sm"
-                    style={{ color: colors.foreground }}
-                  >
-                    {error}
-                  </li>
-                ))}
+                {invalidItems
+                  .filter(item => selectedItems.includes(item))
+                  .map((error, index) => (
+                    <li key={index} className="test-sm" style={{color: colors.foreground}}>
+                      {error}
+                    </li>
+                  ))}
               </ul>
             </div>
           )}
