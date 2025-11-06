@@ -124,14 +124,26 @@ export function IndustrySearch({ onMenuClick }) {
   };
 
   const fetchItems = async () => {
+
+    // Set the state to loading of new items for new search criteria
     setLoadingItems(true);
-    setErrorItems(null); // Clear any previous errors
-    // Clear all previous results for a fresh search
+
+// REMOVE LATER !!
+    setErrorItems(null); 
+     
     setItemList([]);
     setSelectedItems([]);
+
+    // Clear all previous results for a fresh search 
     setTariffDetails({});
+    setValidItemDetailsMap({});
+
     setItemErrors([]);
     setErrorDetails(null);
+
+    // Reset the invalid items from the previous search
+    setInvalidItems([]);
+
     try {
       const response = await axios.post(
         `${backendURL}/tariff/items`,
@@ -158,7 +170,8 @@ export function IndustrySearch({ onMenuClick }) {
 
   useEffect(() => {
     const prevSelectedItems = prevSelectedItemsRef.current;
-    const newlyAdded = selectedItems.filter(item => !prevSelectedItems.includes(item));
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
+    const newlyAdded = filteredItems.filter(item => !prevSelectedItems.includes(item));
 
     if (newlyAdded.length > 0) {
       queryTariffs(backupCountries, newlyAdded);
@@ -268,28 +281,45 @@ export function IndustrySearch({ onMenuClick }) {
   };
 
   // Map to store all the tariff details for existing items that have been queried 
-  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState[{}];
+  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
+
+  useEffect(() => {
+    console.log("Item is stored in existing map ", existingItemDetailsMap);
+  }, [existingItemDetailsMap]);
 
   // Map to store all the tariff details for valid items 
-  const [validItemDetailsMap, setValidItemDetailsMap] = useState[{}];
+  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
+
+  useEffect(() => {
+    console.log("Item is stored in valid map ", validItemDetailsMap);
+  }, [validItemDetailsMap]);
 
   // Array to store invalid items for displaying error messages 
   const [invalidItems,setInvalidItems] = useState([]);
 
-  // Method to fetch tariff details for each item
-  const fetchTariffDetailsEntrypoint = async () => {
+  useEffect(() => {
+    console.log("INVALID ITEMS ", invalidItems);
+  }, [invalidItems]);
+
+  /* 
+   * Method to fetch tariff details for each item 1 second after selection change
+   */
+  const fetchTariffDetails = async () => {
     if (selectedItems.length === 0) return;
+
+    setLoadingDetails(true);
+    setErrorDetails(null);
+    setItemErrors([]);
 
     console.log("Before filtering: ", selectedItems);
 
     // Remove known invalid items from the selected list
-    selectedItems = selectedItems.filter(item => !invalidItems.includes(item));
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
+    console.log("After filtering ", filteredItems);
 
-    console.log("After filtering ", selectedItems);
+    for (let i = 0; i < filteredItems.length; i++) {
 
-    for (let i = 0; i < selectedItems.length; i++) {
-
-      const currentItem = selectedItems[i];
+      const currentItem = filteredItems[i];
 
       // If the item has been queried before, add it to the valid map to display later
       if (existingItemDetailsMap.hasOwnProperty(currentItem)) {
@@ -301,37 +331,48 @@ export function IndustrySearch({ onMenuClick }) {
       }
 
       try {
-        console.log("Attempting to get tariff details for item ", selectedItems[i]);
+        console.log("Attempting to get tariff details for item ", filteredItems[i]);
         const response = await axios.post (
         `${backendURL}/tariff/items/tariffDetails`,
         {
-          selectedItems: selectedItems[i],
+          selectedItem: filteredItems[i],
           homeCountry: homeCountry,
           industry: industry,
           startDate: startDate ? startDate.toISOString().split("T")[0] : "",
           endDate: endDate ? endDate.toISOString().split("T")[0] : "",
         }
         );
-        console.log("Successfully retrieved tariff details for item ", selectedItems[i]);
+
+        console.log("Successfully retrieved tariff details for item ", filteredItems[i], "Number of countries: ", response.data.tariffDetailsList.length);
+        console.log("Tariff Details ", response.data);
+
+      if (response.data.tariffDetailsList.length == 0) {
+        throw new Error(`No tariff data available for item: ${filteredItems[i]}`);
+      }
 
         // Store the item and it's tariff data
         setValidItemDetailsMap(prev => ({
           ...prev,
           [currentItem]: response.data
         }));
-        console.log("Item is stored in valid map ", validItemDetailsMap);
-      
+
         setExistingItemDetailsMap(prev => ({
             ...prev,
             [currentItem]: response.data
           }));
         console.log("Item is stored in exisitng map ", existingItemDetailsMap);
 
+        setTariffDetails(prev => ({
+          ...prev,
+          [currentItem]: response.data
+        }));
 
       } catch (error) {
       setInvalidItems(prev => [...prev, currentItem]);  // add the invalid item into the list 
-        console.log("Failed to load tariff for item ", selectedItems[i], error);
+        console.log("Failed to load tariff for item ", filteredItems[i], error);
 
+      } finally {
+        setLoadingDetails(false);
       }
     }
     
@@ -358,60 +399,6 @@ export function IndustrySearch({ onMenuClick }) {
   - display content for valid items in the map
   - for invalid items in the array, display the error message
   */
-
-  const fetchTariffDetails = async () => {
-    if (selectedItems.length === 0) return;
-
-    setLoadingDetails(true);
-    setErrorDetails(null);
-    setItemErrors([]); // Clear previous item errors
-
-    // BACKEND returns => hscode, item name, current tariff, list of partner countries (rates and corresponding dates)
-    try {
-
-      // Post request to get tariff details for an item for a period of time
-      const response = await axios.post(
-        `${backendURL}/tariff/items/tariffDetails`,
-        {
-          selectedItems: selectedItems,
-          homeCountry: homeCountry,
-          industry: industry,
-          startDate: startDate ? startDate.toISOString().split("T")[0] : "",
-          endDate: endDate ? endDate.toISOString().split("T")[0] : "",
-        }
-      );
-
-      const detailsMap = {};
-      response.data.forEach((item) => {
-        console.log("Item stored: ", item);
-        detailsMap[item.hscode] = item;
-      });
-
-      setTariffDetails(detailsMap);
-
-      // Check for missing items and create error messages
-      const returnedItemNames = response.data.map((item) => item.itemName);
-      const missingItems = selectedItems.filter(
-        (item) => !returnedItemNames.includes(item)
-      );
-
-      if (missingItems.length > 0) {
-        const errorMessages = missingItems.map(
-          (item) => `Unable to load tariff details for "${item}".`
-        );
-        setItemErrors(errorMessages);
-      }
-    } catch (error) {
-      console.error("Failed to fetch tariff details:", error);
-      // Set errors for all selected items since the request failed
-      const errorMessages = selectedItems.map(
-        (item) => `Unable to load tariff details for "${item}".`
-      );
-      setItemErrors(errorMessages);
-    } finally {
-      setLoadingDetails(false);
-    }
-  };
 
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]
@@ -800,11 +787,6 @@ export function IndustrySearch({ onMenuClick }) {
                       <div className="text-gray-500 text-sm">{item.hscode}</div>
                       <h2 className="text-lg font-medium">{item.itemName}</h2>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600"
-                      //onClick={() => togglePin(item.itemName)} -- for later on pinning for banks
-                    >
-                      <span>📌</span>
-                    </button>
                   </div>
 
                   {/* Top 3 section */}
