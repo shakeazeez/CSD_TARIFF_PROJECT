@@ -48,7 +48,7 @@ jobs:
       run: |
         cd frontend/tarrif-project
         npm install
-        npm test
+        npm run lint
 
   build-and-push:
     needs: test

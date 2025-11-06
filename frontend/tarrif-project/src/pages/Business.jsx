@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState } from "react"; // React hooks for state management and side effects
+import { useEffect, useState, useCallback, useMemo } from "react"; // React hooks for state management and side effects
 import axios from "axios"; // HTTP client for API requests
 
 // Animation library for smooth transitions
@@ -22,8 +22,8 @@ import {
 } from "../components/ui/card"; // Card components
 
 // Theme and icon components
-import { useTheme } from "../contexts/ThemeContext.jsx"; // Custom theme context for component-level theming
-import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
+import { useTheme } from "../contexts/use-theme.js"; // Custom theme context for component-level theming
+// import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
 import {
     Calculator as CalculatorIcon,
     Menu,
@@ -41,7 +41,7 @@ import {
 import Dropdown from "../components/Dropdown.jsx"; // Custom dropdown component
 import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
-import { useToast } from "../hooks/use-toast";
+// import { useToast } from "../hooks/use-toast";
 
 
 export function Business({onMenuClick}) {
@@ -50,17 +50,16 @@ export function Business({onMenuClick}) {
     // ====================================
 
     // Get theme context for component-level color management
-    const { colors, theme, toggleTheme, isDark } = useTheme();
+    const { colors } = useTheme();
     const backendURL = import.meta.env.VITE_BACKEND_URL;
     // Country data and user selections
-    const [list, setList] = useState([]); // Array of all available countries from backend
-    const [report, setReport] = useState(""); // Selected reporting country (importer)
-    const [partner, setPartner] = useState(""); // Selected partner country (exporter)
+    // const [report, setReport] = useState(""); // Selected reporting country (importer) - form commented out
+    // const [partner, setPartner] = useState(""); // Selected partner country (exporter) - form commented out
     const [tableData, setTableData] = useState([]); // State for the table data
 
     // Tariff calculation inputs
-    const [hs, setHS] = useState(""); // HS Code (Harmonized System code for product classification)
-    const [cost, setCost] = useState(); // Item cost in USD
+    // const [hs, setHS] = useState(""); // HS Code - form commented out
+    // const [cost, setCost] = useState(); // Item cost in USD - not currently used
 
     // preset list of stuff for testing
     /**
@@ -71,11 +70,11 @@ export function Business({onMenuClick}) {
      * List<Integer> rate
      */
     // Preset list of business items for testing
-    const presetList = [
+    const presetList = useMemo(() => [
         { report: "United States", partner: "Mexico", hsCode: "slipper", rate: 5 },
         { report: "United States", partner: "Germany", hsCode: "slipper", rate: 7 },
         { report: "Canada", partner: "Mexico", hsCode: "slipper", rate: 6 },
-    ];
+    ], []);
 
     // json of how it maps
     // report: String
@@ -98,41 +97,26 @@ export function Business({onMenuClick}) {
     ];
 
 
-    const handleAddItem = () => {
-        if (report && partner && hs) {
-            const newItem = { report, partner, hs };
-            setTableData((prevData) => [...prevData, newItem]);
-            // Optionally clear inputs after adding
-            setHS("");
-        }
-    };
-
-    const modList =
-        list && Array.isArray(list)
-            ? list.map((item) => ({
-                id: item.countryName, // Display name for dropdown
-                code: item.countryName, // Value sent to backend
-            }))
-            : [];
+    // modList commented out as form is commented out
     // login -> certain values not null -> itemList returns business page 
     // Put in get mapping 
     // Get mapping is business/{username}
 
+    const fetchBusinessItems = useCallback(async () => {
+        try {
+            const response = await axios.get(
+                `${backendURL}/business/items`
+            );
+            setTableData(response.data);
+        } catch (error) {
+            console.error("Error fetching business items:", error);
+            setTableData(presetList); // Fallback to preset list on error
+        }
+    }, [backendURL, presetList]);
+
     useEffect(() => {
-        // Fetch existing business items for the user from backend
-        const fetchBusinessItems = async () => {
-            try {
-                const response = await axios.get(
-                    `${backendURL}/business/items`
-                );
-                setTableData(response.data);
-            } catch (error) {
-                console.error("Error fetching business items:", error);
-                setTableData(presetList); // Fallback to preset list on error
-            }
-        };
         fetchBusinessItems();
-    }, []);
+    }, [fetchBusinessItems]);
 
 
     return (

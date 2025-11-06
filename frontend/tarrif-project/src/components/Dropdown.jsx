@@ -23,7 +23,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 import { Check, ChevronDown, Search } from "lucide-react"
 import { cn } from "../lib/utils"
 import { Input } from "./ui/input"
-import { useTheme } from "../contexts/ThemeContext.jsx"
+import { useTheme } from "../contexts/use-theme.js"
 
 const Dropdown = ({ title, options = [], onChange, value }) => {
   // Get theme colors for custom styling

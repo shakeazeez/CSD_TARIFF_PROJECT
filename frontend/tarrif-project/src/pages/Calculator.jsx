@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState } from "react"; // React hooks for state management and side effects
+import { useEffect, useState, useMemo, useCallback } from "react"; // React hooks for state management and side effects
 import { useLocation } from "react-router-dom"; // Navigation hook to access location state
 import axios from "axios"; // HTTP client for API requests
 
@@ -23,8 +23,8 @@ import {
 } from "../components/ui/card"; // Card components
 
 // Theme and icon components
-import { useTheme } from "../contexts/ThemeContext.jsx"; // Custom theme context for component-level theming
-import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
+import { useTheme } from "../contexts/use-theme.js"; // Custom theme context for component-level theming
+import { useAuth } from "../contexts/use-auth.js"; // Authentication context for user management
 import {
   Calculator as CalculatorIcon,
   History,
@@ -43,7 +43,7 @@ import {
 import Dropdown from "../components/Dropdown.jsx"; // Custom dropdown component
 import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
-import { useToast } from "../hooks/use-toast";
+// import { useToast } from "../hooks/use-toast"; // Not currently used
 import Searches from "../components/Searches.jsx"; // Search history component
 
 // ====================================
@@ -89,7 +89,7 @@ export function Calculator({ onMenuClick }) {
   // ====================================
 
   // Get theme context for component-level color management
-  const { colors, theme, toggleTheme, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Toast hook
   // ====================================
@@ -126,6 +126,180 @@ export function Calculator({ onMenuClick }) {
   const [autoFetch, setAutoFetch] = useState(false);
   const [hasCurrent, setHasCurrent] = useState(false);
 
+  // ====================================
+  // USER ACTION HANDLERS
+  // ====================================
+
+  // DTO for current tariff calculation API call
+  const tariffCalculationQueryDTO = useMemo(() => ({
+    reportingCountry: report, // Country doing the importing
+    partnerCountry: partner, // Country exporting the goods
+    item: hs, // HS Code for product classification
+    itemCost: cost, // Cost of the item in USD
+  }), [report, partner, hs, cost]);
+
+  // Function to fetch historical tariff data for chart visualization
+  const fetchPast = useCallback(async (currentDataAvailable = null) => {
+    // Use the passed parameter if available, otherwise fall back to state
+    const hasCurrentData = currentDataAvailable !== null ? currentDataAvailable : hasCurrent;
+    
+    console.log("fetchPast started", { report, partner, hs, hasCurrent, currentDataAvailable, hasCurrentData });
+    
+    if (!report || !partner || !hs) {
+      setError(
+        "Please fill in reporting country, partner country, and Item/Item Description before viewing historical data."
+      );
+      return;
+    }
+
+    setLoadingPast(true);
+    setPast({});
+
+    try {
+      // POST request to get historical tariff data
+      const response = await axios.post(
+        `${backendURL}/tariff/past`,
+        tariffCalculationQueryDTO
+      );
+
+      // Update state with historical tariff data
+      setPast(response.data);
+      console.log("fetchPast response received:", response.data);
+
+      // If current data is not available, use the last entry from historical data as current
+      console.log("Checking fallback conditions:", { 
+        hasCurrentData, 
+        hasResponseData: !!response.data, 
+        hasTariffData: !!(response.data && response.data.tariffData), 
+        tariffDataLength: response.data?.tariffData?.length || 0 
+      });
+      
+      if (!hasCurrentData && response.data && response.data.tariffData && response.data.tariffData.length > 0) {
+        console.log("Executing fallback: Using latest historical data as current");
+        const lastEntry = response.data.tariffData[response.data.tariffData.length - 1];
+        
+        // Create a current-like object from the last historical entry
+        const fallbackCurrent = {
+          reportingCountry: response.data.reportingCountry,
+          partnerCountry: response.data.partnerCountry,
+          item: response.data.item,
+          tariffRate: lastEntry.tariffRate,
+          tariffAmount: (lastEntry.tariffRate / 100) * cost, // Calculate tariff amount
+          itemCostWithTariff: parseFloat(cost) + ((lastEntry.tariffRate / 100) * cost), // Calculate total cost
+          tariffId: lastEntry.tariffId || 0,
+          tariffDescription: "No trade agreement found"
+        };
+        
+        console.log("Setting fallback current data:", fallbackCurrent);
+        setCurrent(fallbackCurrent);
+        setHasCurrent(true);
+        setLoadingCurrent(false);
+        
+        // Add the fallback tariff to search history
+        if (fallbackCurrent.tariffId) {
+          searchMethods.addSearch(fallbackCurrent.tariffId);
+        }
+        
+        // setSuccess("Current tariff data not available. Showing latest historical data instead.");
+      } else if (hasCurrentData) {
+        console.log("Current data already available, not using fallback");
+        setHasCurrent(true); // Ensure state is consistent
+        setSuccess("Historical data loaded successfully!");
+      } else {
+        console.log("No fallback possible - no historical data available");
+        setHasCurrent(false); // No current data and no fallback
+        setCurrent({}); // Clear any stale data
+        setError("No current or historical data available for this combination.");
+      }
+      setSuccess("Tariff calculation completed successfully!");
+    } catch (error) {
+      console.error("Error fetching historical tariff data:", error);
+      setError(
+        error.response?.data?.message ||
+          "This country combination for this item does not exists. Please check your inputs and try again."
+      );
+    } finally {
+      // setSuccess("Tariff calculation completed successfully!");
+      setLoadingPast(false);
+      setLoadingCurrent(false);
+    }
+  }, [backendURL, hasCurrent, report, partner, hs, cost, tariffCalculationQueryDTO, searchMethods]);
+
+  // Function to fetch current tariff calculation from backend
+  const fetchCurrent = useCallback(async () => {
+    console.log("fetchCurrent started, current state:", current);
+
+    if (!report || !partner || !hs || !cost) {
+      setError("Please fill in all fields before calculating.");
+      return;
+    }
+
+    setLoadingCurrent(true);
+    setError("");
+    setSuccess("");
+    // Clear previous results when starting new calculation
+    setCurrent({}); // Clear old current results when loading new data
+    setPast({}); // clear old results first when loading the new search data
+    setHasCurrent(false); // Reset current data availability flag
+
+    let currentDataSuccess = false; // Track if current data was successfully retrieved
+
+    try {
+      // POST request to get current tariff calculation
+      const response = await axios.post(
+        `${backendURL}/tariff/current`,
+        tariffCalculationQueryDTO
+      );
+
+      console.log("fetchCurrent response:", response.data);
+      console.log("hasCurrent before processing:", hasCurrent);
+
+      if (response.data) {
+        setHasCurrent(true);
+        currentDataSuccess = true; // Mark as successful
+        console.log("Setting hasCurrent to true - valid response data");
+
+        // Update state with current tariff results
+        setCurrent(response.data);
+
+        // Add the query to search history
+        if (response.data && response.data.tariffId) {
+          searchMethods.addSearch(response.data.tariffId);
+        }
+
+        setLoadingCurrent(false);
+
+        setSuccess("Tariff calculation completed successfully!");
+      } else {
+        // Current data is null, will handle fallback in finally block
+        console.log("Response data is null - will use fallback data");
+        currentDataSuccess = false;
+        // Don't update hasCurrent here - let fetchPast handle the final state
+      }
+    } catch (error) {
+      console.error("Error fetching current tariff:", error);
+      console.log("API call failed - will use fallback data");
+      currentDataSuccess = false;
+      // Don't update hasCurrent here - let fetchPast handle the final state
+      // setError(
+      //   error.response?.data?.message ||
+      //   "This country combination for this item does not exists. Please check your inputs and try again."
+      // );
+
+    } finally {
+      // Always fetch past data, and use it for fallback if current is null
+      // Pass the actual success state to fetchPast
+      await fetchPast(currentDataSuccess);
+      
+      // Only set loading to false if we have current data OR fallback failed
+      if (!loadingCurrent) {
+        // fetchPast already handled the loading state
+      } else {
+        setLoadingCurrent(false);
+      }
+    }
+  }, [report, partner, hs, cost, backendURL, current, hasCurrent, tariffCalculationQueryDTO, searchMethods, fetchPast, loadingCurrent]);
+
   // auto fetch when form fields are populated from search history
   useEffect(() => {
     if (autoFetch && report && partner && hs && cost) {
@@ -138,7 +312,7 @@ export function Calculator({ onMenuClick }) {
         window.scrollTo({ top: 800, behavior: 'smooth' });
       }, 200);
     }
-  }, [autoFetch]);
+  }, [autoFetch, backendURL, cost, fetchCurrent, fetchPast, hs, partner, report]);
 
   useEffect(() => {
     window.scrollTo({top: 0, behavior: "smooth"});
@@ -159,7 +333,7 @@ export function Calculator({ onMenuClick }) {
             // Fallback to comma-separated string format
             setPinned(storedPins.split(",").map((p) => Number(p.trim())));
           }
-        } catch (e) {
+        } catch {
           // If JSON parsing fails, try comma-separated format
           setPinned(storedPins.split(",").map((p) => Number(p.trim())));
         }
@@ -167,7 +341,7 @@ export function Calculator({ onMenuClick }) {
     }
   }, []);
 
-  const [fieldLabels, setFieldLabels] = useState({
+  const fieldLabels = useMemo(() => ({
     reportingCountry: "Reporting Country",
     partnerCountry: "Partner Country",
     item: "Item",
@@ -176,7 +350,7 @@ export function Calculator({ onMenuClick }) {
     itemCostWithTariff: "Cost of Item including Tariff (USD)",
     tariffId: "IGNORE",
     tariffDescription: "Tariff Description"
-  });
+  }), []);
 
   const [fieldValues, setFieldValues] = useState({
     reportingCountry: "",
@@ -283,21 +457,6 @@ export function Calculator({ onMenuClick }) {
   // API REQUEST DATA TRANSFER OBJECTS (DTOs)
   // ====================================
 
-  // DTO for current tariff calculation API call
-  const tariffCalculationQueryDTO = {
-    reportingCountry: report, // Country doing the importing
-    partnerCountry: partner, // Country exporting the goods
-    item: hs, // HS Code for product classification
-    itemCost: cost, // Cost of the item in USD
-  };
-
-  // DTO for historical tariff data (overview) API call
-  const tariffOverviewQueryDTO = {
-    reportingCountry: report, // Country doing the importing
-    partnerCountry: partner, // Country exporting the goods
-    item: hs, // HS Code for product classification
-  };
-
   // ====================================
   // UTILITY FUNCTIONS
   // ====================================
@@ -334,173 +493,11 @@ export function Calculator({ onMenuClick }) {
 
     // Execute the fetch function
     fetchCountry();
-  }, []); // Empty dependency array = run only once on component mount
+  }, [backendURL]); // Empty dependency array = run only once on component mount
 
   // ====================================
   // USER ACTION HANDLERS
   // ====================================
-
-  // Function to fetch current tariff calculation from backend
-  const fetchCurrent = async () => {
-    console.log("fetchCurrent started, current state:", current);
-
-    if (!report || !partner || !hs || !cost) {
-      setError("Please fill in all fields before calculating.");
-      return;
-    }
-
-    setLoadingCurrent(true);
-    setError("");
-    setSuccess("");
-    // Clear previous results when starting new calculation
-    setCurrent({}); // Clear old current results when loading new data
-    setPast({}); // clear old results first when loading the new search data
-    setHasCurrent(false); // Reset current data availability flag
-
-    let currentDataSuccess = false; // Track if current data was successfully retrieved
-
-    try {
-      // POST request to get current tariff calculation
-      const response = await axios.post(
-        `${backendURL}/tariff/current`,
-        tariffCalculationQueryDTO
-      );
-
-      console.log("fetchCurrent response:", response.data);
-      console.log("hasCurrent before processing:", hasCurrent);
-
-      if (response.data) {
-        setHasCurrent(true);
-        currentDataSuccess = true; // Mark as successful
-        console.log("Setting hasCurrent to true - valid response data");
-
-        // Update state with current tariff results
-        setCurrent(response.data);
-
-        // Add the query to search history
-        if (response.data && response.data.tariffId) {
-          searchMethods.addSearch(response.data.tariffId);
-        }
-
-        setLoadingCurrent(false);
-
-        setSuccess("Tariff calculation completed successfully!");
-      } else {
-        // Current data is null, will handle fallback in finally block
-        console.log("Response data is null - will use fallback data");
-        currentDataSuccess = false;
-        // Don't update hasCurrent here - let fetchPast handle the final state
-      }
-    } catch (error) {
-      console.error("Error fetching current tariff:", error);
-      console.log("API call failed - will use fallback data");
-      currentDataSuccess = false;
-      // Don't update hasCurrent here - let fetchPast handle the final state
-      // setError(
-      //   error.response?.data?.message ||
-      //   "This country combination for this item does not exists. Please check your inputs and try again."
-      // );
-
-    } finally {
-      // Always fetch past data, and use it for fallback if current is null
-      // Pass the actual success state to fetchPast
-      await fetchPast(currentDataSuccess);
-      
-      // Only set loading to false if we have current data OR fallback failed
-      if (!loadingCurrent) {
-        // fetchPast already handled the loading state
-      } else {
-        setLoadingCurrent(false);
-      }
-    }
-  };
-
-  // Function to fetch historical tariff data for chart visualization
-  const fetchPast = async (currentDataAvailable = null) => {
-    // Use the passed parameter if available, otherwise fall back to state
-    const hasCurrentData = currentDataAvailable !== null ? currentDataAvailable : hasCurrent;
-    
-    console.log("fetchPast started", { report, partner, hs, hasCurrent, currentDataAvailable, hasCurrentData });
-    
-    if (!report || !partner || !hs) {
-      setError(
-        "Please fill in reporting country, partner country, and Item/Item Description before viewing historical data."
-      );
-      return;
-    }
-
-    setLoadingPast(true);
-    setPast({});
-
-    try {
-      // POST request to get historical tariff data
-      const response = await axios.post(
-        `${backendURL}/tariff/past`,
-        tariffCalculationQueryDTO
-      );
-
-      // Update state with historical tariff data
-      setPast(response.data);
-      console.log("fetchPast response received:", response.data);
-
-      // If current data is not available, use the last entry from historical data as current
-      console.log("Checking fallback conditions:", { 
-        hasCurrentData, 
-        hasResponseData: !!response.data, 
-        hasTariffData: !!(response.data && response.data.tariffData), 
-        tariffDataLength: response.data?.tariffData?.length || 0 
-      });
-      
-      if (!hasCurrentData && response.data && response.data.tariffData && response.data.tariffData.length > 0) {
-        console.log("Executing fallback: Using latest historical data as current");
-        const lastEntry = response.data.tariffData[response.data.tariffData.length - 1];
-        
-        // Create a current-like object from the last historical entry
-        const fallbackCurrent = {
-          reportingCountry: response.data.reportingCountry,
-          partnerCountry: response.data.partnerCountry,
-          item: response.data.item,
-          tariffRate: lastEntry.tariffRate,
-          tariffAmount: (lastEntry.tariffRate / 100) * cost, // Calculate tariff amount
-          itemCostWithTariff: parseFloat(cost) + ((lastEntry.tariffRate / 100) * cost), // Calculate total cost
-          tariffId: lastEntry.tariffId || 0,
-          tariffDescription: "No trade agreement found"
-        };
-        
-        console.log("Setting fallback current data:", fallbackCurrent);
-        setCurrent(fallbackCurrent);
-        setHasCurrent(true);
-        setLoadingCurrent(false);
-        
-        // Add the fallback tariff to search history
-        if (fallbackCurrent.tariffId) {
-          searchMethods.addSearch(fallbackCurrent.tariffId);
-        }
-        
-        // setSuccess("Current tariff data not available. Showing latest historical data instead.");
-      } else if (hasCurrentData) {
-        console.log("Current data already available, not using fallback");
-        setHasCurrent(true); // Ensure state is consistent
-        setSuccess("Historical data loaded successfully!");
-      } else {
-        console.log("No fallback possible - no historical data available");
-        setHasCurrent(false); // No current data and no fallback
-        setCurrent({}); // Clear any stale data
-        setError("No current or historical data available for this combination.");
-      }
-      setSuccess("Tariff calculation completed successfully!");
-    } catch (error) {
-      console.error("Error fetching historical tariff data:", error);
-      setError(
-        error.response?.data?.message ||
-          "This country combination for this item does not exists. Please check your inputs and try again."
-      );
-    } finally {
-      // setSuccess("Tariff calculation completed successfully!");
-      setLoadingPast(false);
-      setLoadingCurrent(false);
-    }
-  };
 
   // Function to add to pin
   const togglePin = (item) => {

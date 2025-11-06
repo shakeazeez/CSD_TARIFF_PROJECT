@@ -1,24 +1,25 @@
 /**
  * Theme Provider Context - Dark/Light Mode Management
- * 
+ *
  * Provides application-wide theme management with support for:
  * - Light mode: Explicit light theme
- * - Dark mode: Explicit dark theme  
+ * - Dark mode: Explicit dark theme
  * - System mode: Follows user's OS preference
- * 
+ *
  * Features:
  * - Persistent theme storage in localStorage
  * - Automatic system preference detection
  * - Dynamic CSS class management on document root
  * - React Context for global theme state
- * 
+ *
  * Usage:
  * 1. Wrap app with <ThemeProvider>
  * 2. Use useTheme() hook to access/change theme
  * 3. Theme automatically applies to Tailwind's dark: prefix classes
  */
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useEffect, useState } from "react"
+import { customColors } from "./theme-utils.js"
 
 // Create context with default values and type safety
 const ThemeProviderContext = createContext({
@@ -28,7 +29,7 @@ const ThemeProviderContext = createContext({
 
 /**
  * ThemeProvider Component
- * 
+ *
  * Manages application theme state and DOM class application.
  * Handles theme persistence and system preference detection.
  */
@@ -66,12 +67,24 @@ export function ThemeProvider({
   }, [theme])
 
   // Context value with theme state and setter
+  const currentTheme = theme === "system" 
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : theme
+
   const value = {
     theme,
     setTheme: (theme) => {
       localStorage.setItem(storageKey, theme)  // Persist to localStorage
       setTheme(theme)                          // Update state
     },
+    colors: customColors[currentTheme],
+    toggleTheme: () => {
+      const newTheme = currentTheme === "light" ? "dark" : "light"
+      localStorage.setItem(storageKey, newTheme)
+      setTheme(newTheme)
+    },
+    isDark: currentTheme === "dark",
+    isLight: currentTheme === "light"
   }
 
   return (
@@ -81,19 +94,5 @@ export function ThemeProvider({
   )
 }
 
-/**
- * useTheme Hook
- * 
- * Provides access to current theme and theme setter function.
- * Must be used within a ThemeProvider component.
- * 
- * @returns {object} - { theme, setTheme }
- */
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
-
-  return context
-}
+// Export the context for use in the useTheme hook
+export { ThemeProviderContext }

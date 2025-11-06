@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState } from 'react' // React hooks for state management and side effects
+import { useEffect, useState, useCallback } from 'react' // React hooks for state management and side effects
 import { useNavigate } from 'react-router-dom' // Navigation hook
 import axios from 'axios' // HTTP client for API requests
 
@@ -16,8 +16,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Progress } from '../components/ui/progress' // Progress bar component
 
 // Theme and icon components
-import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
-import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
+import { useTheme } from '../contexts/use-theme.js' // Custom theme context for component-level theming
+import { useAuth } from '../contexts/use-auth.js' // Authentication context for user management
 import {
     Menu,
     Sun,
@@ -86,10 +86,10 @@ export function Dashboard({ onMenuClick }){
     // ====================================
 
     // Get theme context for component-level color management
-    const { colors, theme, toggleTheme, isDark } = useTheme();
+    const { colors } = useTheme();
 
     // Get authentication context for user management
-    const { user, logout, isAuthenticated } = useAuth();
+    const { user, isAuthenticated } = useAuth();
 
     // Toast hook
     const { toast } = useToast();
@@ -210,16 +210,30 @@ export function Dashboard({ onMenuClick }){
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
                 setError("Failed to load dashboard data. Please try again.");
-                clearMessages();
                 setLoading(false);
             }
         };
 
         fetchDashboardData();
-    }, []);
+    }, [toast]);
 
     const [pinned, setPinned] = useState([]);
     const [showPin, setShowPin] = useState({}); // object: { id: response.data }
+
+    const pinnedTariffRate = useCallback(async (pinnedId) => {
+        try {
+            const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
+
+            // Map pinnedId -> response.data
+            setShowPin(prev => ({
+            ...prev,
+            [pinnedId]: response.data,
+            }));
+
+        } catch (error) {
+            console.error("Error fetching pinned tariff data:", error);
+        }
+    }, [backendURL]);
 
     useEffect(() => {
         const storedPins = localStorage.getItem("pin");
@@ -238,7 +252,7 @@ export function Dashboard({ onMenuClick }){
                     // Fetch for each pinnedId
                     pinsArray.forEach(id => pinnedTariffRate(id));
                 }
-            } catch (e) {
+            } catch {
                 // If JSON parsing fails, try comma-separated format
                 const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
                 setPinned(pinsArray);
@@ -246,22 +260,7 @@ export function Dashboard({ onMenuClick }){
                 pinsArray.forEach(id => pinnedTariffRate(id));
             }
         }
-    }, []);
-
-    const pinnedTariffRate = async (pinnedId) => {
-        try {
-            const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
-
-            // Map pinnedId -> response.data
-            setShowPin(prev => ({
-            ...prev,
-            [pinnedId]: response.data,
-            }));
-
-        } catch (error) {
-            console.error("Error fetching pinned tariff data:", error);
-        }
-    };
+    }, [pinnedTariffRate]);
 
     const togglePin = (item) => {
         let updatedPins;
@@ -304,11 +303,6 @@ export function Dashboard({ onMenuClick }){
     // ====================================
     // EVENT HANDLERS
     // ====================================
-
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
 
     const quickActions = [
         {
@@ -661,7 +655,7 @@ export function Dashboard({ onMenuClick }){
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {quickActions.map((action, index) => (
+                    {quickActions.map((action) => (
                       <motion.div
                         key={action.title}
                         whileHover={{ scale: 1.02 }}

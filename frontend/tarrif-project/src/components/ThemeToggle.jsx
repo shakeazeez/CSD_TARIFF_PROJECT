@@ -20,7 +20,7 @@
 import * as React from "react"
 import { Moon, Sun, Monitor } from "lucide-react"
 import { Button } from "./ui/button"
-import { useTheme } from "../contexts/theme-provider"
+import { useTheme } from "../contexts/use-theme"
 
 export function ThemeToggle() {
   // Access theme state from context
