@@ -32,8 +32,11 @@ async fn main() {
     let connection = config::establish_connection();
 
     println!("Hello new Server application");
-    let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
+    let mut host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
 
+    if host == "127.0.0.1:8080" {
+        host = "0.0.0.0:8080".to_string();
+    }
     let governor_conf = GovernorConfigBuilder::default()
         .const_burst_size(20)
         .const_milliseconds_per_request(10)

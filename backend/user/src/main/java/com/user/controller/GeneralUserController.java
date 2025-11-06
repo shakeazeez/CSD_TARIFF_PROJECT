@@ -103,13 +103,13 @@ public class GeneralUserController {
         @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
-    @GetMapping("/{username}/csv/{limiter}")
+    @GetMapping("/{username}/csv/")
     public ResponseEntity<Map<Integer, LocalDate>> getHistoryDownload(
             @Parameter(description = "Username to retrieve history for", required = true)
-            @PathVariable String username,
-            @PathVariable int limiter) {
+            @PathVariable String username
+    ) {
         try {
-            Map<Integer, LocalDate> history = userService.retrieveHistory(username, limiter);
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username, Integer.MAX_VALUE);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
@@ -128,11 +128,5 @@ public class GeneralUserController {
     @GetMapping("/testauth/multilevel")
     public String testAuth() {
         return "Hello from authenticated";
-    }
-
-    // REMOVE THs
-    @GetMapping("/all")
-    public List<User> returnAllUsers() {
-        return userService.getAllUsers();
     }
 }

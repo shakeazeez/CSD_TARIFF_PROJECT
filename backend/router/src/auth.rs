@@ -6,7 +6,7 @@ use diesel::{
     prelude::*,
     r2d2::{ConnectionManager, Pool},
 };
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 
 use crate::{
     dto::{CreateDTO, LoginDTO, TokenDTO},
@@ -163,8 +163,15 @@ pub async fn create_user(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<CreateDTO>,
 ) -> impl Responder {
+    
+    
     println!("{login_details:?}");
     let mut borrow = login_details.into_inner();
+    let checker = get_user_details(&database, &borrow.username).await;
+    
+    if checker.len() != 0 {
+        return HttpResponse::build(StatusCode::CONFLICT).finish()
+    }
     borrow.password = encrypt_password(borrow.password.clone());
     println!("{:?}", borrow);
     let client = Client::new();
