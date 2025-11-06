@@ -64,8 +64,9 @@ public class NewsEmbeddingServiceUtilityTest {
         // Act
         List<Double> result = newsEmbeddingService.convertStringToEmbedding(invalidEmbedding);
 
-        // Assert
-        assertTrue(result.isEmpty());
+        // Assert - method replaces invalid values with 0.0, so result contains [0.0]
+        assertEquals(1, result.size());
+        assertEquals(0.0, result.get(0));
     }
 
     @Test
