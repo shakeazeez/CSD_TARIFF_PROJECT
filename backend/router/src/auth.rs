@@ -86,9 +86,14 @@ pub async fn login(
     let name = login_details.username.as_deref().unwrap();
     let acc: Vec<AuthUser> = get_user_details(&database, &name.to_string()).await;
     
-    if acc.len() != 1 {
+    if acc.len() >= 1 {
         return HttpResponse::InternalServerError()
             .json("There is more than one user with the same username");
+    }
+    
+    if acc.len() == 0 {
+        return HttpResponse::InternalServerError()
+            .json("User does not exist");
     }
 
     let roles = get_user_roles(&database, acc[0].id).await;

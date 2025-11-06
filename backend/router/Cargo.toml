@@ -20,3 +20,4 @@ actix-cors = "0.7.1"
 indexmap = {version = "2.12.0", features = ["serde"]}
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 utoipa = { version = "5.4", features = ["actix_extras"] }
+actix-governor = "0.10.0"

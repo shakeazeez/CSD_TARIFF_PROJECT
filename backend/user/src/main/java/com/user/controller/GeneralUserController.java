@@ -67,7 +67,7 @@ public class GeneralUserController {
 
     @Operation(
         summary = "Get user query history", 
-        description = "Retrieve all tariff calculations in the user's query history with timestamps"
+        description = "Retrieve top 5 tariff calculations in the user's query history with timestamps"
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User history retrieved successfully", 
@@ -83,7 +83,33 @@ public class GeneralUserController {
             @Parameter(description = "Username to retrieve history for", required = true)
             @PathVariable String username) {
         try {
-            Map<Integer, LocalDate> history = userService.retrieveHistory(username);
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username, 5);
+            return ResponseEntity.ok(history);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+    
+    @Operation(
+        summary = "Get information for csv", 
+        description = "Retrieve all tariff calculations in the user's query history with timestamps"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User history retrieved successfully", 
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", description = "Invalid username provided", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Access denied - user mismatch", content = @Content),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+    })
+    @GetMapping("/{username}/csv/{limiter}")
+    public ResponseEntity<Map<Integer, LocalDate>> getHistoryDownload(
+            @Parameter(description = "Username to retrieve history for", required = true)
+            @PathVariable String username,
+            @PathVariable int limiter) {
+        try {
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username, limiter);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);

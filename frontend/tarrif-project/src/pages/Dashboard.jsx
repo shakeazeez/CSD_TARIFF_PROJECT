@@ -341,6 +341,44 @@ export function Dashboard({ onMenuClick }){
         }
     ];
 
+    const downloadCSV = async () => {
+        var response;
+        try {
+            response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/csv/${limiter}`, "", {
+            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
+            
+        } catch {
+            console.error("Error calling backend:", error);
+            return;
+        }
+
+        const tariffData = [];
+        for (const item of response.data) {
+            try {
+                const tariffResponse = await axios.post(`${backendURL}/tariff/past/${item.id}`, "", {
+                    headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}
+                });
+
+                for (const record of tariffResponse.data) {
+                     const enhancedDTO = {
+                         searchDate: item.date, 
+                            ...record.data, // Keep all existing DTO properties
+                        };
+                    tariffData.push(enhancedDTO);
+                }
+               
+            } catch (error) {
+                console.error("Error requesting for tariff data", error);
+            }
+        }
+
+        const csvHeaders = [
+            "Search Date",
+
+        ]
+
+    };
+
     // ====================================
     // COMPONENT RENDER (JSX)
     // ====================================

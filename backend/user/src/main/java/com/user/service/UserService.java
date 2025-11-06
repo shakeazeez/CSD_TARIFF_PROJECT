@@ -10,7 +10,7 @@ public interface UserService {
 
     public Map<Integer, LocalDate> addHistory(String username, Integer tariffId);
 
-    public Map<Integer, LocalDate> retrieveHistory(String username);
+    public Map<Integer, LocalDate> retrieveHistory(String username, int limiter);
     
     public List<User> getAllUsers();
 }
