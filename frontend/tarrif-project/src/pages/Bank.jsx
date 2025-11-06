@@ -753,7 +753,7 @@ export function Bank({ onMenuClick }) {
                 className="font-semibold mb-2"
                 style={{ color: colors.warning }}
               >
-                Some items could not be loaded:
+                No tariff information found:
               </h3>
               <ul className="list-disc list-inside space-y-1">
                 {invalidItems
