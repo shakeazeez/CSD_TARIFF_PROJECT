@@ -46,7 +46,10 @@ async fn main() {
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin(
-                &env::var("FRONTEND_URL").unwrap_or_else(|_| "127.0.0.1:80".to_string()),
+                &env::var("FRONTEND_URL").unwrap_or_else(|_| {
+                    println!("Defaulting");
+                    "0.0.0.1:80".to_string()
+                }),
             )
             .allow_any_header()
             .allow_any_method();
@@ -67,4 +70,5 @@ async fn main() {
     .run()
     .await
     .unwrap();
+    println!("Ended process");
 }

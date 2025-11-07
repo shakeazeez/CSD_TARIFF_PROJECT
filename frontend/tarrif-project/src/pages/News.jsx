@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Header } from "../components/Header.jsx";
 import axios from "axios";
 
@@ -8,10 +8,10 @@ export function News({ onMenuClick }) {
     const [loading, setLoading] = useState(true);
     const [selectedNews, setSelectedNews] = useState(null); // <-- modal state
 
-    let testingData = [
+    const testingData = useMemo(() => [
         { id: 1, title: "News 1", content: "This is content for news 1.", date: "2025-10-01" },
         { id: 2, title: "News 2", content: "This is content for news 2.", date: "2025-10-02" }
-    ];
+    ], []);
 
     useEffect(() => {
         const fetchNews = async () => {
@@ -29,7 +29,7 @@ export function News({ onMenuClick }) {
             }
         };
         fetchNews();
-    }, []);
+    }, [backendURL, testingData]);
 
     const list = Array.isArray(newsData) ? newsData : testingData;
 

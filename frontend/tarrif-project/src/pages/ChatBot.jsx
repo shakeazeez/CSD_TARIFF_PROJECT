@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState, useRef } from "react"; // React hooks for state management and side effects
+import { useEffect, useState, useRef, useCallback } from "react"; // React hooks for state management and side effects
 import axios from "axios"; // HTTP client for API requests
 
 // Animation library for smooth transitions
@@ -22,8 +22,8 @@ import {
 } from "../components/ui/card.jsx"; // Card components
 
 // Theme and icon components
-import { useTheme } from "../contexts/ThemeContext.jsx"; // Custom theme context for component-level theming
-import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
+import { useTheme } from "../contexts/use-theme.js"; // Custom theme context for component-level theming
+import { useAuth } from "../contexts/use-auth.js"; // Authentication context for user management
 import {
   Calculator as CalculatorIcon,
   Menu,
@@ -64,18 +64,6 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: "easeOut",
-    },
-  },
-};
-
 // ====================================
 // CALCULATOR COMPONENT
 // ====================================
@@ -92,7 +80,7 @@ export function ChatBot({ onMenuClick }) {
   // ====================================
 
   // Get theme context for component-level color management
-  const { colors, theme, toggleTheme, isDark } = useTheme();
+  const { colors, isDark } = useTheme();
 
   // ====================================
   // STATE VARIABLES
@@ -105,9 +93,9 @@ export function ChatBot({ onMenuClick }) {
   const [activeConversationIndex, setActiveConversationIndex] = useState(0);
   const activeConversationRef = useRef(0);
   const currentQueryConversationIndexRef = useRef(null); // to track which conversation the current query belongs to
-  const [UserQueryHistory, setUserQueryHistory] = useState([]); // for logged in user
+  // const [UserQueryHistory, setUserQueryHistory] = useState([]); // for logged in user
 
-  const [responseData, setResponseData] = useState({}); // for updating the response to backend (logged in user)
+  // const [responseData, setResponseData] = useState({}); // for updating the response to backend (logged in user)
 
   const [currentQueryAndAnswer, setCurrentQueryAndAnswer] = useState(null); // currently displayed question and response
 
@@ -151,57 +139,29 @@ export function ChatBot({ onMenuClick }) {
     }
   }, [success]);
 
-  // load query history
-  // check if browser supports speech recognition
-  useEffect(() => {
-    if (isAuthenticated) { // fetch from backend, endpoint not implemented yet
-      fetchChatHistory();
-    } else {
-      loadGuestQueryHistory();
-    }
-    // check for speech recognition support
-    setIsVoiceSupported('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-  }, [isAuthenticated]);
-
-  // Auto-scroll whenever history updates (new message or updated response)
-  useEffect(() => {
-    try {
-      if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-      }
-    } catch (e) {}
-  }, [guestConversations]);
-
   // Helper to persist guest conversations to localStorage only for unauthenticated users
-  const persistGuestConversations = (convs) => {
+  const persistGuestConversations = useCallback((convs) => {
     try {
       if (!isAuthenticated) {
         localStorage.setItem("guestConversations", JSON.stringify(convs));
       }
-    } catch (e) { /* ignore storage errors */ }
-  }
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      // update backend endpoint
-      // updateQueryToBackend();
-    }
-  }, [guestConversations]);
+    } catch { /* ignore storage errors */ }
+  }, [isAuthenticated]);
 
   /*
    * Laods the guest user's query history from local storage and updates the queryHistory state
-   * Called from the useEffect on component mount
+   * This helper is placed before the useEffect that references it to avoid temporal-dead-zone errors
    */
-  const loadGuestQueryHistory = () => {
+  const loadGuestQueryHistory = useCallback(() => {
     // Try new format first
     const stored = localStorage.getItem("guestConversations");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-  setGuestConversations(parsed);
-  const idx = parsed.length - 1 >= 0 ? parsed.length - 1 : 0;
-  setActiveConversationIndex(idx);
-  activeConversationRef.current = idx;
+        setGuestConversations(parsed);
+        const idx = parsed.length - 1 >= 0 ? parsed.length - 1 : 0;
+        setActiveConversationIndex(idx);
+        activeConversationRef.current = idx;
         return;
       } catch (e) {
         console.warn("Failed to parse guestConversations", e);
@@ -219,10 +179,10 @@ export function ChatBot({ onMenuClick }) {
           messages: msgs,
           createdAt: new Date().toISOString()
         };
-  setGuestConversations([conv]);
-  setActiveConversationIndex(0);
-  activeConversationRef.current = 0;
-  persistGuestConversations([conv]);
+        setGuestConversations([conv]);
+        setActiveConversationIndex(0);
+        activeConversationRef.current = 0;
+        try { persistGuestConversations([conv]); } catch { /* ignore */ }
         return;
       } catch (e) {
         console.warn("Failed to migrate old guestQueryHistory", e);
@@ -234,13 +194,11 @@ export function ChatBot({ onMenuClick }) {
     setGuestConversations(initial);
     setActiveConversationIndex(0);
     activeConversationRef.current = 0;
-  try { persistGuestConversations(initial); } catch (e) {}
-  }
+    try { persistGuestConversations(initial); } catch { /* ignore */ }
+  }, [persistGuestConversations]);
 
-  // // fetch chat history
-  // 1. call the backend endpoint to fetch the historical query data
-  // 2. save the response data in queryhistorystate and local storage
-  const fetchChatHistory = async () => {
+  // fetch chat history from backend (for authenticated users)
+  const fetchChatHistory = useCallback(async () => {
     try {
       const username = localStorage.getItem("username");
       if (!username) return;
@@ -267,7 +225,39 @@ export function ChatBot({ onMenuClick }) {
     } catch (e) {
       console.error("Error fetching chat history:", e);
     }
-  }
+  }, [backendURL]);
+
+  // load query history
+  // check if browser supports speech recognition
+  useEffect(() => {
+    if (isAuthenticated) { // fetch from backend, endpoint not implemented yet
+      fetchChatHistory();
+    } else {
+      loadGuestQueryHistory();
+    }
+    // check for speech recognition support
+    setIsVoiceSupported('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+  }, [isAuthenticated, fetchChatHistory, loadGuestQueryHistory]);
+
+  // Auto-scroll whenever history updates (new message or updated response)
+  useEffect(() => {
+    try {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    } catch {
+      // Ignore scroll errors
+    }
+  }, [guestConversations]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // update backend endpoint
+      // updateQueryToBackend();
+    }
+  }, [guestConversations, isAuthenticated]);
+
+
 
   // add query history to backend
   // const updateQueryToBackend = async () => {
@@ -307,23 +297,23 @@ export function ChatBot({ onMenuClick }) {
 
     // Capture the previous completed entry (so we can send it as context)
     // Prefer the currently selected displayed conversation if it has a response
-    let previousEntry = null;
-    try {
-      if (currentQueryAndAnswer && currentQueryAndAnswer.response) {
-        previousEntry = currentQueryAndAnswer;
-      } else {
-        // Use the ref for the active conversation index here to avoid a stale state race
-        const useIdx = (typeof activeConversationRef.current === 'number') ? activeConversationRef.current : (guestConversations.length - 1);
-        const conv = (Array.isArray(guestConversations) && guestConversations.length > 0)
-          ? guestConversations[(useIdx >= 0 && useIdx < guestConversations.length) ? useIdx : (guestConversations.length - 1)]
-          : null;
-        if (conv && conv.messages && conv.messages.length > 0) {
-          for (let i = conv.messages.length - 1; i >= 0; i--) {
-            if (conv.messages[i].response) { previousEntry = conv.messages[i]; break; }
-          }
-        }
-      }
-    } catch (e) { previousEntry = currentQueryAndAnswer; }
+    // let previousEntry = null;
+    // try {
+    //   if (currentQueryAndAnswer && currentQueryAndAnswer.response) {
+    //     previousEntry = currentQueryAndAnswer;
+    //   } else {
+    //     // Use the ref for the active conversation index here to avoid a stale state race
+    //     const useIdx = (typeof activeConversationRef.current === 'number') ? activeConversationRef.current : (guestConversations.length - 1);
+    //     const conv = (Array.isArray(guestConversations) && guestConversations.length > 0)
+    //       ? guestConversations[(useIdx >= 0 && useIdx < guestConversations.length) ? useIdx : (guestConversations.length - 1)]
+    //       : null;
+    //     if (conv && conv.messages && conv.messages.length > 0) {
+    //       for (let i = conv.messages.length - 1; i >= 0; i--) {
+    //         if (conv.messages[i].response) { previousEntry = conv.messages[i]; break; }
+    //       }
+    //     }
+    //   }
+    // } catch (_) { previousEntry = currentQueryAndAnswer; }
 
     // Immediately create a pending message entry in the active conversation so the UI shows the user's message
     const displayedQuery = input;
@@ -338,7 +328,9 @@ export function ChatBot({ onMenuClick }) {
         updated[idx] = { id: Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
       }
       updated[idx] = { ...updated[idx], messages: [...updated[idx].messages, pendingEntry] };
-                        try { persistGuestConversations(updated); } catch (e) {}
+                        try { persistGuestConversations(updated); } catch {
+                          // Ignore storage errors
+                        }
       return updated;
     });
 
@@ -416,7 +408,9 @@ export function ChatBot({ onMenuClick }) {
           msgs[msgs.length - 1] = { query: displayedQuery, response: response.data.synthesizedAnswer, sources };
         }
         updated[idx] = { ...updated[idx], messages: msgs, title: updated[idx].title && updated[idx].title !== 'New Chat' ? updated[idx].title : (displayedQuery || updated[idx].title) };
-  try { persistGuestConversations(updated); } catch (e) {}
+  try { persistGuestConversations(updated); } catch {
+    // Ignore storage errors
+  }
         return updated;
       });
 
@@ -446,7 +440,9 @@ export function ChatBot({ onMenuClick }) {
           if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
           }
-        } catch (e) {}
+        } catch {
+          // Ignore scroll errors
+        }
       }, 50);
     }
   };
@@ -485,7 +481,9 @@ export function ChatBot({ onMenuClick }) {
 
         if (updated.length === 0) {
           const initial = [{ id: Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() }];
-    try { persistGuestConversations(initial); } catch (e) {}
+    try { persistGuestConversations(initial); } catch {
+      // Ignore storage errors
+    }
           activeConversationRef.current = 0;
           setActiveConversationIndex(0);
           setCurrentQueryAndAnswer(null);
@@ -502,7 +500,9 @@ export function ChatBot({ onMenuClick }) {
 
         activeConversationRef.current = newActive;
         setActiveConversationIndex(newActive);
-  try { persistGuestConversations(updated); } catch (e) {}
+  try { persistGuestConversations(updated); } catch {
+    // Ignore storage errors
+  }
 
         const conv = updated[newActive];
         const lastMsg = conv && conv.messages && conv.messages.length ? conv.messages[conv.messages.length - 1] : null;
@@ -599,8 +599,8 @@ export function ChatBot({ onMenuClick }) {
     };
 
     // triggered when there's an error with speech recognition
-    speechRecognition.onerror = (event) => {
-      // console.error('Speech recognition error:', event.error);
+    speechRecognition.onerror = () => {
+      // console.error('Speech recognition error');
       setIsListening(false);
       // setError('Voice recognition failed. Please try again.');
     };
@@ -1008,7 +1008,9 @@ export function ChatBot({ onMenuClick }) {
                       const newConv = { id: isAuthenticated ? null : Date.now(), title: 'New Chat', messages: [], createdAt: new Date().toISOString() };
                       setGuestConversations(prev => {
                         const updated = Array.isArray(prev) ? [...prev, newConv] : [newConv];
-                  try { persistGuestConversations(updated); } catch (e) {}
+                  try { persistGuestConversations(updated); } catch {
+                    // Ignore storage errors
+                  }
                         // set active index to the new conversation (last)
                         const newIdx = updated.length - 1;
                         setActiveConversationIndex(newIdx);
@@ -1023,7 +1025,9 @@ export function ChatBot({ onMenuClick }) {
                       setExpandedQueryIndex(null);
                       setExpandedSources(false);
                       // scroll container to top
-                      try { if (chatContainerRef.current) chatContainerRef.current.scrollTop = 0; } catch (e) {}
+                      try { if (chatContainerRef.current) chatContainerRef.current.scrollTop = 0; } catch {
+                        // Ignore scroll errors
+                      }
 
                       // small delay to avoid rapid re-clicks, then re-enable
                       setTimeout(() => setCreatingNewConversation(false), NEW_CONV_COOLDOWN_MS);

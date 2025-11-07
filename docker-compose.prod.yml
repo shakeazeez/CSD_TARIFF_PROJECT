@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tariff-backend:${TAG:-latest}
+    ports:
+      - "8082:8082"
+      - "8081:8081"
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: ${DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      MOACH_API_KEY: ${MOACH_API_KEY}
+      SIGNING_SECRET: ${SIGNING_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPEN_AI_KEY: ${OPEN_AI_KEY}
+      TARIFF_URL: http://backend:8081
+      NEWS_URL: http://backend:8083
+      JAVA_OPTS: -Xmx768m -Xms256m
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+        reservations:
+          memory: 512MB
+    restart: unless-stopped
+
+  rust-router:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tariff-router:${TAG:-latest}
+    ports:
+      - "8080:8080"
+    environment:
+        DATABASE_URL_CONNECTION: ${RUST_DATABASE_URL}
+        FRONTEND_URL: ${FRONTEND_URL}
+        TARIFF_URL: http://backend:8081
+        USER_URL: http://backend:8082
+        NEWS_URL: http://backend:8083
+        RUST_LOG: info
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
+        reservations:
+          memory: 256MB
+    restart: unless-stopped
+
+  frontend:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tariff-frontend:${TAG:-latest}
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}

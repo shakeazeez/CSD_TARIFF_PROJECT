@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
 import IndustryChart from "../components/IndustryChart";
 import { Header } from "../components/Header.jsx";
 import Dropdown from "../components/Dropdown";
 import { Label } from "../components/ui/label";
-import { useTheme } from "../contexts/ThemeContext.jsx";
+import { useTheme } from "../hooks/useTheme.js";
 import { Input } from "../components/ui/input"; // input component
 import Calendar from "../components/ui/calendar";
 import { AlignCenter } from "lucide-react";
@@ -38,7 +38,7 @@ export function IndustrySearch({ onMenuClick }) {
       }
     };
     fetchData();
-  }, []);
+  }, [backendURL]);
 
   // Transform country list for dropdown component compatibility
   // Converts backend format to {id, code} format expected by Dropdown component
@@ -139,7 +139,6 @@ export function IndustrySearch({ onMenuClick }) {
     setValidItemDetailsMap({});
 
     setItemErrors([]);
-    setErrorDetails(null);
 
     // Reset the invalid items from the previous search
     setInvalidItems([]);
@@ -178,12 +177,11 @@ export function IndustrySearch({ onMenuClick }) {
     }
 
     prevSelectedItemsRef.current = selectedItems;
-  }, [selectedItems]);
+  }, [selectedItems, queryTariffs, backupCountries, invalidItems]);
 
   // load and store tariff details for the selected items
   const [tariffDetails, setTariffDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [errorDetails, setErrorDetails] = useState(null);
   const [itemErrors, setItemErrors] = useState([]);
 
   // Add a debounce timer ref
@@ -213,9 +211,9 @@ export function IndustrySearch({ onMenuClick }) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [selectedItems]);
+  }, [selectedItems, fetchTariffDetails]);
 
-  const backupCountries = [
+  const backupCountries = useMemo(() => [
     "Cambodia",
     "Chile",
     "Costa Rica", 
@@ -228,9 +226,9 @@ export function IndustrySearch({ onMenuClick }) {
     "Australia",
     "Iceland",
     "Georgia"
-  ]
+  ], []);
 
-  const queryTariffs = (backupCountries, selectedItems) => {
+  const queryTariffs = useCallback((backupCountries, selectedItems) => {
     backupCountries.forEach((partnerCountry) => {
       selectedItems.forEach((item) => {
         const tariffCalculationQueryDTO = {
@@ -243,10 +241,10 @@ export function IndustrySearch({ onMenuClick }) {
         fetchCurrent(tariffCalculationQueryDTO);
       });
     });
-  };
+  }, [homeCountry, fetchCurrent]);
 
   // Method to fetch current tariff information for items and backup partner countries 
-  const fetchCurrent = async (tariffCalculationQueryDTO) => {
+  const fetchCurrent = useCallback(async (tariffCalculationQueryDTO) => {
       try {
         // POST request to get current tariff calculation
         const response = await axios.post(
@@ -263,14 +261,14 @@ export function IndustrySearch({ onMenuClick }) {
 
         fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
       }
-  }
+  }, [backendURL, fetchPast]);
   
   // Function to fetch historical tariff for items and backup partner countries
-  const fetchPast = async (tariffCalculationQueryDTO) => {
+  const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
 
     try {
       // POST request to get historical tariff data
-      const response = await axios.post(
+      await axios.post(
         `${backendURL}/tariff/past`,
         tariffCalculationQueryDTO
       );
@@ -278,7 +276,7 @@ export function IndustrySearch({ onMenuClick }) {
     } catch (error) {
       console.error("Error fetching historical tariff data:", error);
     } 
-  };
+  }, [backendURL]);
 
   // Map to store all the tariff details for existing items that have been queried 
   const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
@@ -304,11 +302,10 @@ export function IndustrySearch({ onMenuClick }) {
   /* 
    * Method to fetch tariff details for each item 1 second after selection change
    */
-  const fetchTariffDetails = async () => {
+  const fetchTariffDetails = useCallback(async () => {
     if (selectedItems.length === 0) return;
 
     setLoadingDetails(true);
-    setErrorDetails(null);
     setItemErrors([]);
 
     console.log("Before filtering: ", selectedItems);
@@ -322,7 +319,7 @@ export function IndustrySearch({ onMenuClick }) {
       const currentItem = filteredItems[i];
 
       // If the item has been queried before, add it to the valid map to display later
-      if (existingItemDetailsMap.hasOwnProperty(currentItem)) {
+      if (currentItem in existingItemDetailsMap) {
         setValidItemDetailsMap(prev => ({
           ...prev,
           [currentItem] : existingItemDetailsMap[currentItem]
@@ -376,7 +373,7 @@ export function IndustrySearch({ onMenuClick }) {
       }
     }
     
-  }
+  }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate, backendURL]);
   /* 
 
   Maps: 1 to store all queried items, 1 to store newly queried items 

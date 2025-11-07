@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -15,8 +15,8 @@ import {
   BarChart3,
   Bot
 } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/use-theme';
+import { useAuth } from '../contexts/use-auth';
 import { Button } from './ui/button';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {

@@ -1,6 +1,7 @@
 package com.tariff.news.service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,7 @@ public class NewsEmbeddingService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(30)) // Add 30 second timeout
                 .block();
 
             JsonNode jsonNode = objectMapper.readTree(response);
@@ -269,13 +271,14 @@ public class NewsEmbeddingService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(30)) // Add 30 second timeout
                 .block();
 
             JsonNode jsonNode = objectMapper.readTree(response);
             return jsonNode.path("choices").get(0).path("message").path("content").asText().trim();
         } catch (Exception e) {
             log.warn("Failed to synthesize final answer: {}", e.getMessage());
-            return "";
+            return "CHATBOT_OFFLINE";
         }
     }
 
@@ -307,6 +310,7 @@ public class NewsEmbeddingService {
             .bodyValue(requestBody)
             .retrieve()
             .bodyToMono(String.class)
+            .timeout(Duration.ofSeconds(30)) // Add 30 second timeout
             .block();
 
         try {
@@ -315,9 +319,33 @@ public class NewsEmbeddingService {
             log.info("Extracted topic for query '{}': '{}'", query, topic);
             return topic;
         } catch (Exception e) {
-            log.error("Error parsing GPT response: {}", e.getMessage());
-            throw new RuntimeException("Failed to extract topic", e);
+            log.error("Error parsing GPT response for topic extraction: {}", e.getMessage());
+            // Fallback: extract topic using simple string manipulation
+            return extractTopicFallback(query);
         }
+    }
+
+    /**
+     * Fallback method to extract topic when GPT is unavailable.
+     * Uses simple keyword extraction.
+     */
+    private String extractTopicFallback(String query) {
+        // Simple fallback: take first 3-4 meaningful words
+        String[] words = query.toLowerCase().split("\\s+");
+        List<String> meaningfulWords = new ArrayList<>();
+        for (String word : words) {
+            if (word.length() > 2 && !isStopWord(word)) {
+                meaningfulWords.add(word);
+                if (meaningfulWords.size() >= 4) break;
+            }
+        }
+        String topic = String.join(" ", meaningfulWords);
+        log.info("Fallback topic extraction for query '{}': '{}'", query, topic);
+        return topic.isEmpty() ? "general news" : topic;
+    }
+
+    private boolean isStopWord(String word) {
+        return List.of("the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by", "an", "a").contains(word);
     }
 
     /**

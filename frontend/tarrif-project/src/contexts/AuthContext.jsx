@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 
 /**
  * Authentication context for managing user authentication state
@@ -18,19 +18,6 @@ const AuthContext = createContext({
     logout: () => {},
     loading: true
 });
-
-/**
- * Custom hook to access authentication context
- *
- * @returns {Object} Auth context with authentication state and functions
- */
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
-};
 
 /**
  * Authentication provider component that wraps the application
@@ -147,3 +134,6 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
+export { AuthContext };
+export default AuthContext;

@@ -1,7 +1,7 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-import { useAuth } from '../contexts/AuthContext.jsx'
+import { useAuth } from '../contexts/use-auth.js'
 
 const Searches = ({ backendURL }) => {
   const { isAuthenticated } = useAuth()
@@ -14,18 +14,24 @@ const Searches = ({ backendURL }) => {
   const [topSearchesData, setTopSearchesData] = useState({}); // search details for logged in users, [tariffId] -> GeneralTariffDTO
 
   /*
-   * On component mount:
-   * If user is logged in, load top searches from backend
-   * If user is guest, load recent searches from local storage
+   * For both guest and logged in users,
+   * fetch the full search details for a specific tariffId from the backend,
+   * and update the recentSearchesData or topSearchesData state accordingly
+   * to show the search details on the card on Dashboard & Calculator pages
    */
-  useEffect(() => {
-    // console.log("Searches useEffect triggered, isAuthenticated:", isAuthenticated);
-    if (isAuthenticated) {
-      fetchTopSearchesIds();
-    } else {
-      loadRecentSearches();
+  const fetchSearches = useCallback(async (tariffId, setDataFunction) => {
+    try {
+      const response = await axios.post(`${backendURL}/tariff/current/${tariffId}`);
+
+      // map tariffId -> response.data
+      setDataFunction(prev => ({
+        ...prev,
+        [tariffId]: response.data,
+      }));
+    } catch (error) {
+      console.error("Error fetching relevant tariff data:", error);
     }
-  }, [isAuthenticated]);
+  }, [backendURL]);
 
   /* 
    * Fetch top searches ids for logged in users from backend
@@ -33,7 +39,7 @@ const Searches = ({ backendURL }) => {
    * TariffIds are then stored in local storage and in topSearchesIds state
    * 
    */
-  const fetchTopSearchesIds = async () => {
+  const fetchTopSearchesIds = useCallback(async () => {
     // console.log("Starting fetchTopSearchesIds for logged in user");
     try { // calls backend to get the top searches for logged in users
       const response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/history`, // returns Map<Integer, LocalDate> of tariffIds
@@ -50,25 +56,14 @@ const Searches = ({ backendURL }) => {
     } catch (e) {
       console.error("Error fetching relevant searches:", e);
     }
-  }
-
-  /*
-   * For logged in users:
-   * Fetch search details when topSearchesIds changes (after fetchTopSearchesIds completes)
-   * Search details are stored in topSearchesData 
-   */
-  useEffect(() => {
-    if (isAuthenticated && topSearchesIds.length > 0) {
-      topSearchesIds.forEach(tariffId => fetchSearches(tariffId, setTopSearchesData));
-    }
-  }, [topSearchesIds, isAuthenticated]);
+  }, [backendURL]);
 
   /*
    * Loads guest user's recent search history from localStorage.
    * Updates recentSearchesIds state.
    * For every stored tariffId, triggers a fetch to backend to get the full search details. (using fetchSearches function)
    */
-  const loadRecentSearches = () => {
+  const loadRecentSearches = useCallback(() => {
     // console.log("Loading recent searches for guest user");
     const storedSearchesIds = localStorage.getItem("guestRecentSearches");
     // console.log("Stored guest searches:", storedSearchesIds);
@@ -91,27 +86,32 @@ const Searches = ({ backendURL }) => {
       setRecentSearchesIds(idsArray);  // store the tariffIds in state
       idsArray.forEach(tariffId => fetchSearches(tariffId, setRecentSearchesData)); // fetch the search details for each tariffId and store in state
     }
-  };
+  }, [fetchSearches]);
 
-  /* 
-   * For both guest and logged in users,
-   * fetch the full search details for a specific tariffId from the backend,
-   * and update the recentSearchesData or topSearchesData state accordingly
-   * to show the search details on the card on Dashboard & Calculator pages
+  /*
+   * On component mount:
+   * If user is logged in, load top searches from backend
+   * If user is guest, load recent searches from local storage
    */
-  const fetchSearches = async (tariffId, setDataFunction) => {
-    try {
-      const response = await axios.post(`${backendURL}/tariff/current/${tariffId}`); 
-
-      // map tariffId -> response.data
-      setDataFunction(prev => ({
-        ...prev,
-        [tariffId]: response.data,
-      }));
-    } catch (error) {
-      console.error("Error fetching relevant tariff data:", error);
+  useEffect(() => {
+    // console.log("Searches useEffect triggered, isAuthenticated:", isAuthenticated);
+    if (isAuthenticated) {
+      fetchTopSearchesIds();
+    } else {
+      loadRecentSearches();
     }
-  };
+  }, [isAuthenticated, fetchTopSearchesIds, loadRecentSearches]);
+
+  /*
+   * For logged in users:
+   * Fetch search details when topSearchesIds changes (after fetchTopSearchesIds completes)
+   * Search details are stored in topSearchesData 
+   */
+  useEffect(() => {
+    if (isAuthenticated && topSearchesIds.length > 0) {
+      topSearchesIds.forEach(tariffId => fetchSearches(tariffId, setTopSearchesData));
+    }
+  }, [topSearchesIds, isAuthenticated, fetchSearches]);
 
   /*
    * After a search is made by guest user,

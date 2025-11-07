@@ -13,7 +13,9 @@ RUN mvn clean package -DskipTests -Dmaven.repo.local=/root/.m2/repository
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
+RUN apk add --no-cache dumb-init
 WORKDIR /app
 COPY --from=build /app/target/news-0.0.1-SNAPSHOT.jar news.jar
 EXPOSE 8083
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["java", "-jar", "news.jar"]
