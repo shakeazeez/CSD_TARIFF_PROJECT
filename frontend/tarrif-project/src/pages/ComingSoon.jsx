@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/use-theme';
 import underConstruction from '../assets/UnderConstruction.png'
 
 const ComingSoon = ({ feature = "This feature" }) => {

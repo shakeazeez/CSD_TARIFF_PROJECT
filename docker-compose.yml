@@ -1,26 +1,4 @@
 services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: tariffdb
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
-      POSTGRES_SHARED_BUFFERS: 128MB
-      POSTGRES_EFFECTIVE_CACHE_SIZE: 256MB
-      POSTGRES_WORK_MEM: 4MB
-      POSTGRES_MAINTENANCE_WORK_MEM: 32MB
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    deploy:
-      resources:
-        limits:
-          memory: 512MB
-        reservations:
-          memory: 256MB
-    restart: unless-stopped
-
   backend:
     build:
       context: ./backend
@@ -28,20 +6,21 @@ services:
       args:
         MAVEN_OPTS: -Dmaven.repo.local=/root/.m2/repository
     ports:
-      - "8080:8080"
+      - "8082:8082"
       - "8081:8081"
-    depends_on:
-      - postgres
+      - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tariffdb
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD:  ${POSTGRES_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      THE_NEWS_API_KEY: ${THE_NEWS_API_KEY}
+      DB_PASSWORD: ${DB_PASSWORD}
       MOACH_API_KEY: ${MOACH_API_KEY}
       SIGNING_SECRET: ${SIGNING_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
-      DATABASE_URL: jdbc:postgresql://postgres:5432/tariffdb?password=
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      OPEN_AI_KEY: ${OPEN_AI_KEY}
       TARIFF_URL: http://backend:8081
+      NEWS_URL: http://backend:8083
       JAVA_OPTS: -Xmx768m -Xms256m
     volumes:
       - maven_cache:/root/.m2
@@ -53,6 +32,43 @@ services:
           memory: 512MB
     restart: unless-stopped
 
+  rust-router:
+    build:
+      context: ./backend/router
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+
+    environment:
+        RUST_DATABASE_URL: ${RUST_DATABASE_URL}
+        FRONTEND_URL: ${FRONTEND_URL}
+        SIGNING_SECRET: ${SIGNING_SECRET}
+        TARIFF_URL: http://backend:8081
+        USER_URL: http://backend:8082
+        NEWS_URL: http://backend:8083
+        RUST_LOG: info
+        RUST_BACKTRACE: full
+    volumes:
+      # ✅ Mount source code for development (hot reload)
+        - ./backend/router/src:/app/src:ro
+
+        # ✅ Mount migrations directory
+        - ./backend/router/migrations:/app/migrations:ro
+
+        # ✅ Mount config files
+        - ./backend/router/diesel.toml:/app/diesel.toml:ro
+        - ./backend/router/.env.rust:/app/.env
+        # ✅ Mount target directory for faster rebuilds (optional)
+        - rust_target_cache:/app/target
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
+        reservations:
+          memory: 256MB
+    restart: unless-stopped
+    # restart: no
+
   frontend:
     build: ./frontend/tarrif-project
     ports:
@@ -61,8 +77,8 @@ services:
       - backend
     environment:
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
-      
+
 
 volumes:
-  postgres_data:
   maven_cache:
+  rust_target_cache:

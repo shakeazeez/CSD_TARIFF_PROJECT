@@ -3,7 +3,8 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState } from "react"; // React hooks for state management and side effects
+import { useEffect, useState, useMemo, useCallback } from "react"; // React hooks for state management and side effects
+import { useLocation } from "react-router-dom"; // Navigation hook to access location state
 import axios from "axios"; // HTTP client for API requests
 
 // Animation library for smooth transitions
@@ -22,10 +23,11 @@ import {
 } from "../components/ui/card"; // Card components
 
 // Theme and icon components
-import { useTheme } from "../contexts/ThemeContext.jsx"; // Custom theme context for component-level theming
-import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
+import { useTheme } from "../contexts/use-theme.js"; // Custom theme context for component-level theming
+import { useAuth } from "../contexts/use-auth.js"; // Authentication context for user management
 import {
   Calculator as CalculatorIcon,
+  History,
   Menu,
   Sun,
   Moon,
@@ -41,7 +43,8 @@ import {
 import Dropdown from "../components/Dropdown.jsx"; // Custom dropdown component
 import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
-import { useToast } from "../hooks/use-toast";
+// import { useToast } from "../hooks/use-toast"; // Not currently used
+import Searches from "../components/Searches.jsx"; // Search history component
 
 // ====================================
 // ANIMATION VARIANTS
@@ -75,12 +78,18 @@ const itemVariants = {
 // ====================================
 
 export function Calculator({ onMenuClick }) {
+  // To receive the data that was passed during navigation
+  const location = useLocation();
+
+  // Get authentication context for user management
+  const { isAuthenticated } = useAuth()
+
   // ====================================
   // THEME INTEGRATION
   // ====================================
 
   // Get theme context for component-level color management
-  const { colors, theme, toggleTheme, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Toast hook
   // ====================================
@@ -89,6 +98,9 @@ export function Calculator({ onMenuClick }) {
 
   // Get backend URLs from environment variables (.env file)
   const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+  // Initialize search functionality
+  const searchMethods = Searches({ backendURL });
 
   // Country data and user selections
   const [list, setList] = useState([]); // Array of all available countries from backend
@@ -111,6 +123,201 @@ export function Calculator({ onMenuClick }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [autoFetch, setAutoFetch] = useState(false);
+  const [hasCurrent, setHasCurrent] = useState(false);
+
+  // ====================================
+  // USER ACTION HANDLERS
+  // ====================================
+
+  // DTO for current tariff calculation API call
+  const tariffCalculationQueryDTO = useMemo(() => ({
+    reportingCountry: report, // Country doing the importing
+    partnerCountry: partner, // Country exporting the goods
+    item: hs, // HS Code for product classification
+    itemCost: cost, // Cost of the item in USD
+  }), [report, partner, hs, cost]);
+
+  // Function to fetch historical tariff data for chart visualization
+  const fetchPast = useCallback(async (currentDataAvailable = null) => {
+    // Use the passed parameter if available, otherwise fall back to state
+    const hasCurrentData = currentDataAvailable !== null ? currentDataAvailable : hasCurrent;
+    
+    console.log("fetchPast started", { report, partner, hs, hasCurrent, currentDataAvailable, hasCurrentData });
+    
+    if (!report || !partner || !hs) {
+      setError(
+        "Please fill in reporting country, partner country, and Item/Item Description before viewing historical data."
+      );
+      return;
+    }
+
+    setLoadingPast(true);
+    setPast({});
+
+    try {
+      // POST request to get historical tariff data
+      const response = await axios.post(
+        `${backendURL}/tariff/past`,
+        tariffCalculationQueryDTO
+      );
+
+      // Update state with historical tariff data
+      setPast(response.data);
+      console.log("fetchPast response received:", response.data);
+
+      // If current data is not available, use the last entry from historical data as current
+      console.log("Checking fallback conditions:", { 
+        hasCurrentData, 
+        hasResponseData: !!response.data, 
+        hasTariffData: !!(response.data && response.data.tariffData), 
+        tariffDataLength: response.data?.tariffData?.length || 0 
+      });
+      
+      if (!hasCurrentData && response.data && response.data.tariffData && response.data.tariffData.length > 0) {
+        console.log("Executing fallback: Using latest historical data as current");
+        const lastEntry = response.data.tariffData[response.data.tariffData.length - 1];
+        
+        // Create a current-like object from the last historical entry
+        const fallbackCurrent = {
+          reportingCountry: response.data.reportingCountry,
+          partnerCountry: response.data.partnerCountry,
+          item: response.data.item,
+          tariffRate: lastEntry.tariffRate,
+          tariffAmount: (lastEntry.tariffRate / 100) * cost, // Calculate tariff amount
+          itemCostWithTariff: parseFloat(cost) + ((lastEntry.tariffRate / 100) * cost), // Calculate total cost
+          tariffId: lastEntry.tariffId || 0,
+          tariffDescription: "No trade agreement found"
+        };
+        
+        console.log("Setting fallback current data:", fallbackCurrent);
+        setCurrent(fallbackCurrent);
+        setHasCurrent(true);
+        setLoadingCurrent(false);
+        
+        // Add the fallback tariff to search history
+        if (fallbackCurrent.tariffId) {
+          searchMethods.addSearch(fallbackCurrent.tariffId);
+        }
+        
+        // setSuccess("Current tariff data not available. Showing latest historical data instead.");
+      } else if (hasCurrentData) {
+        console.log("Current data already available, not using fallback");
+        setHasCurrent(true); // Ensure state is consistent
+        setSuccess("Historical data loaded successfully!");
+      } else {
+        console.log("No fallback possible - no historical data available");
+        setHasCurrent(false); // No current data and no fallback
+        setCurrent({}); // Clear any stale data
+        setError("No current or historical data available for this combination.");
+      }
+      setSuccess("Tariff calculation completed successfully!");
+    } catch (error) {
+      console.error("Error fetching historical tariff data:", error);
+      setError(
+        error.response?.data?.message ||
+          "This country combination for this item does not exists. Please check your inputs and try again."
+      );
+    } finally {
+      // setSuccess("Tariff calculation completed successfully!");
+      setLoadingPast(false);
+      setLoadingCurrent(false);
+    }
+  }, [backendURL, hasCurrent, report, partner, hs, cost, tariffCalculationQueryDTO, searchMethods]);
+
+  // Function to fetch current tariff calculation from backend
+  const fetchCurrent = useCallback(async () => {
+    console.log("fetchCurrent started, current state:", current);
+
+    if (!report || !partner || !hs || !cost) {
+      setError("Please fill in all fields before calculating.");
+      return;
+    }
+
+    setLoadingCurrent(true);
+    setError("");
+    setSuccess("");
+    // Clear previous results when starting new calculation
+    setCurrent({}); // Clear old current results when loading new data
+    setPast({}); // clear old results first when loading the new search data
+    setHasCurrent(false); // Reset current data availability flag
+
+    let currentDataSuccess = false; // Track if current data was successfully retrieved
+
+    try {
+      // POST request to get current tariff calculation
+      const response = await axios.post(
+        `${backendURL}/tariff/current`,
+        tariffCalculationQueryDTO
+      );
+
+      console.log("fetchCurrent response:", response.data);
+      console.log("hasCurrent before processing:", hasCurrent);
+
+      if (response.data) {
+        setHasCurrent(true);
+        currentDataSuccess = true; // Mark as successful
+        console.log("Setting hasCurrent to true - valid response data");
+
+        // Update state with current tariff results
+        setCurrent(response.data);
+
+        // Add the query to search history
+        if (response.data && response.data.tariffId) {
+          searchMethods.addSearch(response.data.tariffId);
+        }
+
+        setLoadingCurrent(false);
+
+        setSuccess("Tariff calculation completed successfully!");
+      } else {
+        // Current data is null, will handle fallback in finally block
+        console.log("Response data is null - will use fallback data");
+        currentDataSuccess = false;
+        // Don't update hasCurrent here - let fetchPast handle the final state
+      }
+    } catch (error) {
+      console.error("Error fetching current tariff:", error);
+      console.log("API call failed - will use fallback data");
+      currentDataSuccess = false;
+      // Don't update hasCurrent here - let fetchPast handle the final state
+      // setError(
+      //   error.response?.data?.message ||
+      //   "This country combination for this item does not exists. Please check your inputs and try again."
+      // );
+
+    } finally {
+      // Always fetch past data, and use it for fallback if current is null
+      // Pass the actual success state to fetchPast
+      await fetchPast(currentDataSuccess);
+      
+      // Only set loading to false if we have current data OR fallback failed
+      if (!loadingCurrent) {
+        // fetchPast already handled the loading state
+      } else {
+        setLoadingCurrent(false);
+      }
+    }
+  }, [report, partner, hs, cost, backendURL, current, hasCurrent, tariffCalculationQueryDTO, searchMethods, fetchPast, loadingCurrent]);
+
+  // auto fetch when form fields are populated from search history
+  useEffect(() => {
+    if (autoFetch && report && partner && hs && cost) {
+      setAutoFetch(false); // reset flag
+      fetchCurrent();
+      fetchPast();
+
+      // scroll to the current part after got redirected
+      setTimeout(() => {
+        window.scrollTo({ top: 800, behavior: 'smooth' });
+      }, 200);
+    }
+  }, [autoFetch, backendURL, cost, fetchCurrent, fetchPast, hs, partner, report]);
+
+  useEffect(() => {
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }, [])
+
   // Pinning
   const [pinned, setPinned] = useState([]);
   useEffect(() => {
@@ -126,7 +333,7 @@ export function Calculator({ onMenuClick }) {
             // Fallback to comma-separated string format
             setPinned(storedPins.split(",").map((p) => Number(p.trim())));
           }
-        } catch (e) {
+        } catch {
           // If JSON parsing fails, try comma-separated format
           setPinned(storedPins.split(",").map((p) => Number(p.trim())));
         }
@@ -134,16 +341,16 @@ export function Calculator({ onMenuClick }) {
     }
   }, []);
 
-  const [fieldLabels, setFieldLabels] = useState({
+  const fieldLabels = useMemo(() => ({
     reportingCountry: "Reporting Country",
-    partnerCountry: "Partner Country", 
+    partnerCountry: "Partner Country",
     item: "Item",
     tariffRate: "Tariff Rate (%)",
     tariffAmount: "Tariff Amount (USD)",
     itemCostWithTariff: "Cost of Item including Tariff (USD)",
-    tariffId: "IGNORE", 
+    tariffId: "IGNORE",
     tariffDescription: "Tariff Description"
-  });
+  }), []);
 
   const [fieldValues, setFieldValues] = useState({
     reportingCountry: "",
@@ -191,6 +398,31 @@ export function Calculator({ onMenuClick }) {
     }
   }, [success]);
 
+  // auto fetch search results when navigating from dashboard with search data
+  useEffect(() => {
+    if (location.state?.autoFill && location.state?.searchData) { // uses optional chaining operator to avoid errors when state is undefined
+      const searchData = location.state.searchData;
+      
+      // set the form fields with the search data
+      setReport(searchData.reportingCountry || ""); 
+      setPartner(searchData.partnerCountry || "");
+      setCost(100);
+      setHS(searchData.item || "");
+
+      setCurrent({});
+      setPast({});
+
+      // automatically fetch both current and past data
+      if (searchData.reportingCountry && searchData.partnerCountry && searchData.item) {
+        setSuccess("Search data loaded successfully. Results are displayed below.");
+        setAutoFetch(true);
+      }
+
+      // maybe need to clear the location state to prevent re-triggering
+      // window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   // ====================================
   // DATA PROCESSING & TRANSFORMATION
   // ====================================
@@ -224,21 +456,6 @@ export function Calculator({ onMenuClick }) {
   // ====================================
   // API REQUEST DATA TRANSFER OBJECTS (DTOs)
   // ====================================
-
-  // DTO for current tariff calculation API call
-  const tariffCalculationQueryDTO = {
-    reportingCountry: report, // Country doing the importing
-    partnerCountry: partner, // Country exporting the goods
-    item: hs, // HS Code for product classification
-    itemCost: cost, // Cost of the item in USD
-  };
-
-  // DTO for historical tariff data (overview) API call
-  const tariffOverviewQueryDTO = {
-    reportingCountry: report, // Country doing the importing
-    partnerCountry: partner, // Country exporting the goods
-    item: hs, // HS Code for product classification
-  };
 
   // ====================================
   // UTILITY FUNCTIONS
@@ -276,79 +493,11 @@ export function Calculator({ onMenuClick }) {
 
     // Execute the fetch function
     fetchCountry();
-  }, []); // Empty dependency array = run only once on component mount
+  }, [backendURL]); // Empty dependency array = run only once on component mount
 
   // ====================================
   // USER ACTION HANDLERS
   // ====================================
-
-  // Function to fetch current tariff calculation from backend
-  const fetchCurrent = async () => {
-    if (!report || !partner || !hs || !cost) {
-      setError("Please fill in all fields before calculating.");
-      return;
-    }
-
-    setLoadingCurrent(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      // POST request to get current tariff calculation
-      const response = await axios.post(
-        `${backendURL}/tariff/current`,
-        tariffCalculationQueryDTO
-      );
-
-      // Update state with current tariff results
-      setCurrent(response.data);
-
-      setSuccess("Tariff calculation completed successfully!");
-    } catch (error) {
-      console.error("Error fetching current tariff:", error);
-      setError(
-        error.response?.data?.message ||
-          "This country combination for this item does not exists. Please check your inputs and try again."
-      );
-    } finally {
-      setLoadingCurrent(false);
-    }
-  };
-
-  // Function to fetch historical tariff data for chart visualization
-  const fetchPast = async () => {
-    if (!report || !partner || !hs) {
-      setError(
-        "Please fill in reporting country, partner country, and Item/Item Description before viewing historical data."
-      );
-      return;
-    }
-
-    setLoadingPast(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      // POST request to get historical tariff data
-      const response = await axios.post(
-        `${backendURL}/tariff/past`,
-        tariffCalculationQueryDTO
-      );
-
-      // Update state with historical tariff data
-      setPast(response.data);
-
-      setSuccess("Historical data loaded successfully!");
-    } catch (error) {
-      console.error("Error fetching historical tariff data:", error);
-      setError(
-        error.response?.data?.message ||
-          "Unable to retrieve historical data. Please verify your inputs and try again."
-      );
-    } finally {
-      setLoadingPast(false);
-    }
-  };
 
   // Function to add to pin
   const togglePin = (item) => {
@@ -406,6 +555,22 @@ export function Calculator({ onMenuClick }) {
     }
   };
 
+  const handleSearchHistoryClick = (data) => {
+    setReport(data.reportingCountry || "");
+    setPartner(data.partnerCountry || "");
+    setHS(data.item || "");
+    setCost(100);
+    
+    // clear current results to avoid showing incomplete data
+    setCurrent({});
+    setPast({});
+    
+    setSuccess("Loading search from history...");
+
+    // to trigger auto fetch after state updates
+    setAutoFetch(true);
+  };
+
   // ====================================
   // COMPONENT RENDER (JSX)
   // ====================================
@@ -427,6 +592,7 @@ export function Calculator({ onMenuClick }) {
       <AnimatePresence>
         {success && (
           <motion.div
+            key="success-notification"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -453,6 +619,7 @@ export function Calculator({ onMenuClick }) {
 
         {error && (
           <motion.div
+            key="error-notification"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -614,39 +781,39 @@ export function Calculator({ onMenuClick }) {
                       e.target.style.color = "#ffffff";
                     }}
                   >
-                    {loadingCurrent ? (
+                    {loadingCurrent || loadingPast ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
                       <CalculatorIcon className="h-4 w-4 mr-2" />
                     )}
-                    Calculate Current Tariff
+                    Calculate Current And Historical Tariff
                   </Button>
-                  <Button
-                    onClick={fetchPast}
-                    disabled={loadingPast}
-                    variant="outline"
-                    className="flex-1"
-                    style={{
-                      backgroundColor: colors.accent,
-                      borderColor: colors.accent,
-                      color: "#ffffff",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = colors.hover;
-                      e.target.style.color = "#ffffff";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = `${colors.accent}`;
-                      e.target.style.color = "#ffffff";
-                    }}
-                  >
-                    {loadingPast ? (
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                    )}
-                    View Historical Data
-                  </Button>
+                  {/* <Button
+                      onClick={fetchPast}
+                      disabled={loadingPast}
+                      variant="outline"
+                      className="flex-1"
+                      style={{
+                        backgroundColor: colors.accent,
+                        borderColor: colors.accent,
+                        color: "#ffffff",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = colors.hover;
+                        e.target.style.color = "#ffffff";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = `${colors.accent}`;
+                        e.target.style.color = "#ffffff";
+                      }}
+                    >
+                      {loadingPast ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                      )}
+                      View Historical Data
+                    </Button> */}
                 </div>
               </CardContent>
             </Card>
@@ -765,6 +932,97 @@ export function Calculator({ onMenuClick }) {
               </Card>
             </motion.div>
           )}
+
+          {/* Current Data Loading State */}
+          {loadingCurrent && (
+            <motion.div variants={itemVariants}>
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <RefreshCw className="h-6 w-6 inline mr-2 animate-spin" />
+                    Loading Current Tariff Results
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>
+                    Fetching current tariff data, please wait...
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <RefreshCw
+                        className="h-12 w-12 mx-auto mb-4 animate-spin"
+                        style={{ color: colors.accent }}
+                      />
+                      <p style={{ color: colors.muted }}>
+                        Loading current tariff data...
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Historical Data Loading State */}
+          {loadingPast && (
+            <motion.div variants={itemVariants}>
+              <Card
+                style={{
+                  backgroundColor: `${colors.surface}95`,
+                  borderColor: colors.border,
+                }}
+              >
+                <CardHeader>
+                  <CardTitle style={{ color: colors.foreground }}>
+                    <RefreshCw className="h-6 w-6 inline mr-2 animate-spin" />
+                    Loading Historical Tariff Trends
+                  </CardTitle>
+                  <CardDescription style={{ color: colors.muted }}>
+                    Fetching historical tariff data, please wait...
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <RefreshCw
+                        className="h-12 w-12 mx-auto mb-4 animate-spin"
+                        style={{ color: colors.accent }}
+                      />
+                      <p style={{ color: colors.muted }}>
+                        Loading historical data...
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Search History Display */}
+          <motion.div variants={itemVariants}>
+            <Card
+              style={{
+                backgroundColor: `${colors.surface}95`,
+                borderColor: colors.border,
+              }}
+            >
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  <History className="h-6 w-6 inline mr-2" />
+                  {isAuthenticated ? "Your Top Searches" : "Search History"}
+                </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <searchMethods.SearchDisplay onSearchClick={handleSearchHistoryClick} colors={colors} />
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* No Data Message */}
           {(!current || Object.keys(current).length === 0) &&

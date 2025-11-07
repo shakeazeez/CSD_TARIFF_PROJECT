@@ -75,8 +75,8 @@ export const validateColorConversions = () => {
     surface: '#F5F5F5'
   };
   
-  Object.entries(colors).forEach(([name, hex]) => {
-    const hsl = hexToHsl(hex);
+  Object.entries(colors).forEach(() => {
+    // const hsl = hexToHsl(hex);
   });
 };
 
@@ -84,6 +84,7 @@ export const validateColorConversions = () => {
 export const debugTheme = () => {
   // Check if theme context is available
   if (window.React) {
+    // React is available
   }
   
   // Check if all themed components are present
@@ -94,8 +95,8 @@ export const debugTheme = () => {
     '.chart-container'
   ];
   
-  themedComponents.forEach(selector => {
-    const elements = document.querySelectorAll(selector);
+  themedComponents.forEach(() => {
+    // const elements = document.querySelectorAll(selector);
   });
   
   validateCustomColors();
@@ -122,7 +123,9 @@ if (typeof window !== 'undefined') {
     const result = debugTheme();
     
     if (result.hasDataAttribute) {
+      // Data attribute theme is applied
     } else {
+      // No data attribute theme
     }
     
     // Check if custom colors are applied
@@ -130,7 +133,9 @@ if (typeof window !== 'undefined') {
     const accentColor = rootStyles.getPropertyValue('--accent');
     
     if (accentColor.includes('152')) { // Our custom green accent HSL
+      // Custom accent color is applied
     } else {
+      // Custom accent color not applied
     }
   }, 1000); // Wait for components to load
 }

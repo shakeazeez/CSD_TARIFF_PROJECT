@@ -1,11 +1,13 @@
+
+### env files ###
 .env
+.env.prod
 
 #frontend
 node_modules
 
 # mac issues 
 .DS_Store
-
 # Spring issues
 HELP.md
 target/
@@ -40,3 +42,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### scripts ###
+*.cmd
+*.sh

@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState } from 'react' // React hooks for state management and side effects
+import { useEffect } from 'react' // React hooks for state management and side effects
 import { useNavigate } from 'react-router-dom' // Navigation hook
 
 // Animation library for smooth transitions
@@ -13,8 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../components/ui/button' // Customizable button component
 
 // Theme and icon components
-import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
-import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
+import { useTheme } from '../contexts/use-theme.js' // Custom theme context for component-level theming
+// import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
 import {
     Calculator,
     Globe,
@@ -69,10 +69,10 @@ export function Home({ onMenuClick }){
     // ====================================
 
     // Get theme context for component-level color management
-    const { colors, toggleTheme, isDark } = useTheme();
+    const { colors } = useTheme();
 
     // Get authentication context for user management
-    const { user } = useAuth();
+    // const { user } = useAuth();
 
     // Navigation hook
     const navigate = useNavigate();
@@ -81,7 +81,7 @@ export function Home({ onMenuClick }){
     // STATE VARIABLES
     // ====================================
 
-    const [animatedElements, setAnimatedElements] = useState([]);
+    // const [animatedElements, setAnimatedElements] = useState([]);
 
     // ====================================
     // EFFECTS
@@ -121,14 +121,14 @@ export function Home({ onMenuClick }){
             }
         }
 
-        setAnimatedElements(elements);
+        // setAnimatedElements(elements);
     }, []);
 
     useEffect(() => {
         if(localStorage.getItem("authToken") != null){
             navigate("/dashboard");
         }
-    },[]);
+    }, [navigate]);
 
     // ====================================
     // COMPONENT RENDER (JSX)

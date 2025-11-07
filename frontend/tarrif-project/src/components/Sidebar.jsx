@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,10 +12,14 @@ import {
   LogOut,
   Sun,
   Moon,
-  BarChart3
+  BarChart3,
+  Bot,
+  ChartLine,
+  Newspaper,
+  ScrollText
 } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/use-theme';
+import { useAuth } from '../contexts/use-auth';
 import { Button } from './ui/button';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -23,6 +27,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const { isDark, toggleTheme, colors } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
+
+  // Check if user has bank role
+  const isBankUser = user?.role?.toUpperCase() === 'BANK';
+  const isBusinessUser = user?.role?.toUpperCase() === 'BUSINESS';
 
   const menuItems = [
     ...(isAuthenticated ? [] : [
@@ -39,19 +47,51 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/calculator',
       description: 'Calculate international tariffs'
     },
-    {
-      icon: HelpCircle,
-      label: 'FAQ',
-      path: '/faq',
-      description: 'Frequently asked questions'
-    },
     ...(isAuthenticated ? [
       {
         icon: BarChart3,
         label: 'My Dashboard',
         path: '/dashboard',
         description: 'View your tariff calculations and history'
-      },
+      }
+    ] : []),
+   
+    ...(isAuthenticated && isBankUser ? [
+      {
+        icon: ChartLine,
+        label: 'Industry Trends',
+        path: '/bank',
+        description: 'Analyse tariff rates by industry and country'
+      }
+    ] : []),
+
+    ...(isAuthenticated && isBusinessUser ? [
+      {
+        icon: ScrollText,
+        label: 'Business Insights',
+        path: '/business',
+        description: 'Analyse your tariff data and trends'
+      }
+    ] : []),
+    {
+      icon: Bot,
+      label: 'Chatbot',
+      path: '/chatbot',
+      description: 'AI powered tariff Q&A'
+    },
+    {
+      icon: HelpCircle,
+      label: 'FAQ',
+      path: '/faq',
+      description: 'Frequently asked questions'
+    },
+    {
+      icon: Newspaper,
+      label: 'News',
+      path: '/news',
+      description: 'Latest tariff news and articles'
+    },
+    ...(isAuthenticated ? [
       {
         icon: User,
         label: 'Settings',
