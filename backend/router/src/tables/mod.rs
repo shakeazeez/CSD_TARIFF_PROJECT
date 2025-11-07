@@ -1,13 +1,13 @@
 use std::fmt::Display;
 
-use crate::schema::{user_role, user};
+use crate::schema::{user};
 use diesel::sql_types::Int2;
 use diesel::Selectable;
 use diesel::{
     deserialize::{FromSql, FromSqlRow},
     expression::AsExpression,
     pg::Pg,
-    prelude::{Identifiable, Insertable, Queryable},
+    prelude::{Identifiable, Queryable},
     serialize::ToSql,
 };
 use serde::{Deserialize, Serialize};
@@ -20,13 +20,7 @@ pub struct AuthUser {
     pub id: i32,
     pub username: String,
     pub hashedpassword: String,
-}
-
-#[derive(Queryable, Identifiable, Insertable, Debug, Selectable, Clone)]
-#[diesel(table_name = user_role, primary_key(user_id, user_roles))]
-pub struct UserRole {
-    pub user_id: i32,
-    pub user_roles: Role,
+    pub user_roles: Role
 }
 
 #[repr(i32)]

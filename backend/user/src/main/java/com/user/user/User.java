@@ -57,17 +57,22 @@ public class User {
     private List<History> history;
 
     // Will add all the ontop stuff on here
-    @ElementCollection
     @Enumerated(EnumType.ORDINAL)
-    @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "user_roles")
-    private List<Role> role;
+    private Role role;
+    
+    @ElementCollection
+    @CollectionTable(name = "pinned_tariff", joinColumns = @JoinColumn(name = "user_id"))
+    @MapKeyColumn(name = "pinned_tariff")
+    @Column(name = "pinned_tariffs")
+    private List<Integer> pinnedTariffId;
 
     public User(String username, String hashedPassword,
-            List<Role> role) {
+            Role role) {
         this.username = username;
         this.hashedPassword = hashedPassword;
         this.history = new ArrayList<>();
         this.role = role;
+        this.pinnedTariffId = new ArrayList<>();
     }
 }

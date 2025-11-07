@@ -13,6 +13,7 @@ import com.user.history.History;
 import com.user.history.HistoryRepo;
 import com.user.user.User;
 import com.user.user.UserRepo;
+import com.user.dto.UserInfoDTO;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,6 +75,44 @@ public class UserServiceImpl implements UserService {
 
         // return the most searched top 5 tariffs
         return res;
+    }
+    
+    public List<Integer> addPinnedTariff(String username, Integer tariffId) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            if (user.getPinnedTariffId().size() >= 3) {
+                throw new IllegalStateException("Cannot pin more than 3 tariffs");
+            }
+
+            if (!user.getPinnedTariffId().contains(tariffId)) {
+                user.getPinnedTariffId().add(tariffId);
+                userRepo.save(user);
+            }
+
+            return user.getPinnedTariffId();
+    }
+
+    @Transactional
+    public List<Integer> removePinnedTariff(String username, Integer tariffId) {
+
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        if (user.getPinnedTariffId().contains(tariffId)) {
+            user.getPinnedTariffId().remove(Integer.valueOf(tariffId));
+            userRepo.save(user);
+        }
+    
+        return user.getPinnedTariffId();
+    }
+    
+    
+    public UserInfoDTO getPinnedTariff(String username) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                
+        return new UserInfoDTO(user.getPinnedTariffId());
     }
 
     public List<User> getAllUsers() {

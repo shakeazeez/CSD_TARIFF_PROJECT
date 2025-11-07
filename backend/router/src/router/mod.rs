@@ -150,7 +150,7 @@ pub async fn user_route(req: HttpRequest, body: web::Bytes) -> impl Responder {
     }
 
     let url = format!("{base_url}{uri}");
-
+    println!("{url}");
     let response = establish_connection(&req, &url, body).await;
 
     match response {

@@ -17,7 +17,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@DiscriminatorValue("bank_user")
+@DiscriminatorValue("BANK")
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -30,7 +30,7 @@ public class BankUser extends User {
     private String originCountry;
 
     public BankUser(String username, String hashedPassword,
-            List<Role> role,
+            Role role,
             Industry industry,
             String originCountry) {
 

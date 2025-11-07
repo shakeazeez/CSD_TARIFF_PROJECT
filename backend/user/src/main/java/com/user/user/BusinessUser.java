@@ -1,7 +1,9 @@
 package com.user.user;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.user.enums.Role;
 
@@ -10,6 +12,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
 import lombok.AllArgsConstructor;
@@ -20,35 +23,35 @@ import lombok.Setter;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@DiscriminatorValue("business")
+@DiscriminatorValue("BUSINESS")
 @Getter
 @Setter
 public class BusinessUser extends User {
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "items_sold", joinColumns = @JoinColumn(name = "user_id"))
     @MapKeyColumn(name = "item_sold")
     @Column(name = "item_sold")
-    private List<String> itemsSold;
+    private Set<String> itemsSold;
 
     @ElementCollection
     @CollectionTable(name = "destination_country", joinColumns = @JoinColumn(name = "user_id"))
     @MapKeyColumn(name = "destination_country")
     @Column(name = "destination_country")
-    private List<String> destinationCountries;
+    private Set<String> destinationCountries;
 
     @Column(name = "origin_country")
     private String originCountry;
 
     public BusinessUser(String username, String hashedPassword,
-            List<Role> role,
+            Role role,
             List<String> itemsSold,
             List<String> destinationCountries,
             String originCountry) {
         super(username, hashedPassword, role);
-
-        this.itemsSold = itemsSold;
-        this.destinationCountries = destinationCountries;
+        // System.out.println(itemsSold.toString());
+        this.itemsSold = new HashSet<>(itemsSold);
+        this.destinationCountries = new HashSet<>(destinationCountries);
         this.originCountry = originCountry;
     }
 
