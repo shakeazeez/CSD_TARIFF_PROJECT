@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from "react";
-import { useTheme } from '../contexts/ThemeContext.jsx';
+import React, { useRef, useEffect, useMemo } from "react";
+import { useTheme } from '../contexts/use-theme.js';
 
 // WorldMapRoutes.jsx
 // Self-contained component with simplified world map background, country lookup, and animated routes.
@@ -265,34 +265,36 @@ export default function WorldMapRoutes({
   width = 1920,
   height = 1080,
   countryList = Object.keys(countryCoords),
-  type = "plane",
   color = "#436083ff",
   speed = 0.01,
   background = true,
 }) {
   const svgRef = useRef(null);
   const animRef = useRef([]);
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   // Convert countries → coordinates
   const allStops = countryList.map((c) => ({ ...countryCoords[c], name: c })).filter((c) => c.lat && c.lon);
 
   // Build random routes between countries for animation
-  const pathData = [];
-  const numRoutes = Math.min(15, Math.floor(allStops.length / 2)); // Limit routes for performance
+  const pathData = useMemo(() => {
+    const data = [];
+    const numRoutes = Math.min(15, Math.floor(allStops.length / 2)); // Limit routes for performance
 
-  for (let i = 0; i < numRoutes; i++) {
-    const fromIdx = Math.floor(Math.random() * allStops.length);
-    let toIdx = Math.floor(Math.random() * allStops.length);
-    while (toIdx === fromIdx) toIdx = Math.floor(Math.random() * allStops.length);
+    for (let i = 0; i < numRoutes; i++) {
+      const fromIdx = Math.floor(Math.random() * allStops.length);
+      let toIdx = Math.floor(Math.random() * allStops.length);
+      while (toIdx === fromIdx) toIdx = Math.floor(Math.random() * allStops.length);
 
-    const from = allStops[fromIdx];
-    const to = allStops[toIdx];
-    const [x1, y1] = project(from.lat, from.lon, width, height);
-    const [x2, y2] = project(to.lat, to.lon, width, height);
-    const d = makeCurvePath(x1, y1, x2, y2, 0.15);
-    pathData.push({ d, from, to });
-  }
+      const from = allStops[fromIdx];
+      const to = allStops[toIdx];
+      const [x1, y1] = project(from.lat, from.lon, width, height);
+      const [x2, y2] = project(to.lat, to.lon, width, height);
+      const d = makeCurvePath(x1, y1, x2, y2, 0.15);
+      data.push({ d, from, to });
+    }
+    return data;
+  }, [allStops, width, height]);
 
   // Filter stops to only include countries used in routes
   const routeCountries = new Set();

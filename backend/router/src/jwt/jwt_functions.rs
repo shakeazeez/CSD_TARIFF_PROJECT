@@ -5,7 +5,7 @@ use jsonwebtoken::{errors::{Error}, jws::encode, DecodingKey, EncodingKey, Heade
 use serde::{Deserialize, Serialize};
 
 
-use crate::tables::{AuthUser, Role, UserRole};
+use crate::tables::{AuthUser, Role};
 
 /*
  * This is an object that contains all the necessary claims to be 
@@ -54,7 +54,7 @@ pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
  * 
  * Return       -> String that contains the raw token 
  */
-pub fn generate_token(user: &AuthUser, roles: &UserRole) -> String {
+pub fn generate_token(user: &AuthUser) -> String {
     let now_plus_60 = std::time::SystemTime::now()
         .checked_add_signed(Duration::days(1))
         .expect("System time break at duration add by 1 day")
@@ -68,7 +68,7 @@ pub fn generate_token(user: &AuthUser, roles: &UserRole) -> String {
             iss: env::var("USER_URL").unwrap(),
             exp: now_plus_60,
             sub: user.username.clone(),
-            groups: roles.user_roles,
+            groups: user.user_roles,
             aud: "frontend".to_owned()
         };
 

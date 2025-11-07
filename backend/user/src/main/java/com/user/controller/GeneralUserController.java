@@ -14,9 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.user.service.MemberUserService;
 import com.user.service.UserService;
-import com.user.user.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,11 +30,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class GeneralUserController {
     private final Logger log = LoggerFactory.getLogger(GeneralUserController.class);
     private final UserService userService;
-    private final MemberUserService memberUserService;
 
-    public GeneralUserController(UserService userService, MemberUserService memberUserService) {
+    public GeneralUserController(UserService userService) {
         this.userService = userService;
-        this.memberUserService = memberUserService;
     }
 
     @Operation(
@@ -67,7 +63,7 @@ public class GeneralUserController {
 
     @Operation(
         summary = "Get user query history", 
-        description = "Retrieve all tariff calculations in the user's query history with timestamps"
+        description = "Retrieve top 5 tariff calculations in the user's query history with timestamps"
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User history retrieved successfully", 
@@ -83,12 +79,95 @@ public class GeneralUserController {
             @Parameter(description = "Username to retrieve history for", required = true)
             @PathVariable String username) {
         try {
-            Map<Integer, LocalDate> history = userService.retrieveHistory(username);
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username, 5);
             return ResponseEntity.ok(history);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
+    
+    @Operation(
+        summary = "Get information for csv", 
+        description = "Retrieve all tariff calculations in the user's query history with timestamps"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User history retrieved successfully", 
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", description = "Invalid username provided", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Access denied - user mismatch", content = @Content),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+    })
+    @GetMapping("/{username}/csv/")
+    public ResponseEntity<Map<Integer, LocalDate>> getHistoryDownload(
+            @Parameter(description = "Username to retrieve history for", required = true)
+            @PathVariable String username
+    ) {
+        try {
+            Map<Integer, LocalDate> history = userService.retrieveHistory(username, Integer.MAX_VALUE);
+            return ResponseEntity.ok(history);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+    
+    
+    @Operation(summary = "Add pinned tariff", description = "Pins a tariff for the user. Maximum of 3 tariffs can be pinned.")
+       @ApiResponses(value = {
+               @ApiResponse(responseCode = "200", description = "Pinned tariff successfully added", content = @Content(mediaType = "application/json")),
+               @ApiResponse(responseCode = "400", description = "Bad request. User not found.", content = @Content),
+               @ApiResponse(responseCode = "409", description = "Cannot pin more than 3 tariffs", content = @Content)
+       })
+       @PostMapping("/{username}/pinned-tariffs/{tariffId}")
+       public ResponseEntity<List<Integer>> addPinnedTariff(@PathVariable String username,
+               @PathVariable Integer tariffId) {
+           try {
+               List<Integer> tariffIds = userService.addPinnedTariff(username, tariffId);
+               return ResponseEntity.ok(tariffIds);
+           } catch (IllegalArgumentException e) {
+               log.info(e.getMessage());
+               return ResponseEntity.badRequest().body(null);
+           } catch (IllegalStateException e) {
+               log.info(e.getMessage());
+               return ResponseEntity.status(409).build();
+           } catch (Exception e) {
+               log.info(e.getMessage()); 
+               return ResponseEntity.internalServerError().build();
+           }
+       }
+   
+       @Operation(summary = "Remove pinned tariff", responses = {
+           @ApiResponse(responseCode = "200", description = "Pinned tariff successfully removed", content = @Content(mediaType = "application/json")),
+           @ApiResponse(responseCode = "400", description = "Bad request. User not found", content = @Content)
+       })
+       @PostMapping("/{username}/unpinned-tariffs/{tariffId}")
+       public ResponseEntity<List<Integer>> removePinnedTariffs(@PathVariable String username,
+               @PathVariable Integer tariffId) {
+           try {
+               List<Integer> tariffIds = userService.removePinnedTariff(username, tariffId);
+               return ResponseEntity.ok(tariffIds);
+           } catch (IllegalArgumentException e) {
+               log.info(e.getMessage());
+               return ResponseEntity.badRequest().build();
+           } catch (Exception e) {
+               log.info(e.getMessage()); 
+               return ResponseEntity.internalServerError().build();
+           }
+       }
+       
+       @GetMapping("/{username}")
+       public ResponseEntity<?> getPinnedTariff(@PathVariable String username) {
+           try {
+			return ResponseEntity.ok(userService.getPinnedTariff(username));
+		} catch (IllegalAccessError e) {
+		    log.info(e.getMessage());
+		    return ResponseEntity.status(403).build();
+		} catch (IllegalArgumentException e) {
+		    log.info(e.getMessage());
+		    return ResponseEntity.status(404).build();
+		}
+	}
 
     @Operation(summary = "Test unauthenticated endpoint", description = "Returns a simple string to verify unauthenticated access")
     @ApiResponse(
@@ -102,11 +181,5 @@ public class GeneralUserController {
     @GetMapping("/testauth/multilevel")
     public String testAuth() {
         return "Hello from authenticated";
-    }
-
-    // REMOVE THs
-    @GetMapping("/all")
-    public List<User> returnAllUsers() {
-        return userService.getAllUsers();
     }
 }

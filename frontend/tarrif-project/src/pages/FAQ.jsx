@@ -15,8 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible' // Collapsible components
 
 // Theme and icon components
-import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
-import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
+import { useTheme } from '../contexts/use-theme.js' // Custom theme context for component-level theming
+// import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
 import {
     HelpCircle,
     ChevronDown,
@@ -70,10 +70,10 @@ export function FAQ({ onMenuClick }){
     // ====================================
 
     // Get theme context for component-level color management
-    const { colors, toggleTheme, isDark } = useTheme();
+    const { colors } = useTheme();
 
     // Get authentication context for user management
-    const { user } = useAuth();
+    // const { user } = useAuth();
 
     // Navigation hook
     const navigate = useNavigate();

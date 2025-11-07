@@ -9,22 +9,24 @@ import { Dashboard } from './pages/Dashboard.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import WorldMapRoutes from './components/worldmaproutes.jsx'
-import { ThemeProvider } from './contexts/ThemeContext.jsx'
-import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import { ThemeProvider } from './contexts/theme-provider.jsx'
+import { AuthProvider } from './contexts/AuthContext.jsx'
+import { useAuth } from './contexts/use-auth.js'
 import { Footer } from './components/Footer.jsx'
 import { NotFound } from './pages/NotFound.jsx'
 import { Toaster } from './components/Toaster.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 import { Business } from './pages/Business.jsx'
-import { IndustrySearch } from './pages/IndustrySearch.jsx'
+import { Bank } from './pages/Bank.jsx'
 import { ChatBot } from './pages/ChatBot.jsx'
 import { News } from './pages/News.jsx'
 
 /**
  * Protected Route component that redirects to login if not authenticated
+ * Enforces role-based access (allowedRoles: array of role strings)
  */
-const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+    const { isAuthenticated, loading, user } = useAuth();
 
     if (loading) {
         return (
@@ -34,7 +36,23 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    return isAuthenticated ? children : <Navigate to="/" replace />;
+    if (!isAuthenticated) {
+        return <Navigate to="/" replace />;
+    }
+
+    // if allowedRoles provided, check user's role
+    if (allowedRoles.length > 0) {
+        const userRole = user?.role || '';
+        const hasAccess = allowedRoles.some( // checks if the user's role matches any allowed role for certain route
+            role => userRole.toUpperCase() === role.toUpperCase()
+        );
+        
+        if (!hasAccess) {
+            return <Navigate to="/" replace />;
+        }
+    }
+
+    return children;
 };
 
 /**
@@ -120,7 +138,9 @@ function App() {
                 <Home onMenuClick={() => setSidebarOpen(true)} />
               }/>
               <Route path="/bank" element={
-                <IndustrySearch onMenuClick={() => setSidebarOpen(true)} />
+                <ProtectedRoute allowedRoles={["BANK"]}>
+                  <Bank onMenuClick={() => setSidebarOpen(true)} />
+                </ProtectedRoute>
               }/>
 
               <Route path="*" element={<NotFound/>}/>

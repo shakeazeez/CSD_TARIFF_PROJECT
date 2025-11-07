@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState } from 'react' // React hooks for state management and side effects
+import { useEffect, useState, useCallback } from 'react' // React hooks for state management and side effects
 import { useNavigate } from 'react-router-dom' // Navigation hook
 import axios from 'axios' // HTTP client for API requests
 
@@ -16,31 +16,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Progress } from '../components/ui/progress' // Progress bar component
 
 // Theme and icon components
-import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
-import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
+import { useTheme } from '../contexts/use-theme.js' // Custom theme context for component-level theming
+import { useAuth } from '../contexts/use-auth.js' // Authentication context for user management
 import {
-    Menu,
-    Sun,
-    Moon,
-    Calculator,
-    TrendingUp,
-    Globe,
-    BarChart3,
-    Activity,
-    Users,
-    DollarSign,
-    Clock,
-    Star,
-    Zap,
-    Target,
-    Award,
-    AlertCircle,
-    CheckCircle,
-    User,
-    Settings,
-    LogOut,
-    History,
-    ConstructionIcon
+  Menu,
+  Sun,
+  Moon,
+  Calculator,
+  TrendingUp,
+  Globe,
+  BarChart3,
+  Activity,
+  Users,
+  DollarSign,
+  Clock,
+  Star,
+  Zap,
+  Target,
+  Award,
+  AlertCircle,
+  CheckCircle,
+  User,
+  Settings,
+  LogOut,
+  History,
+  ConstructionIcon
 } from 'lucide-react' // SVG icons
 
 // Custom components
@@ -54,595 +54,729 @@ import { useToast } from '../hooks/use-toast'
 // ====================================
 
 const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            duration: 0.6,
-            staggerChildren: 0.1
-        }
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      staggerChildren: 0.1
     }
+  }
 }
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.5,
-            ease: "easeOut"
-        }
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
     }
+  }
 }
 
 // ====================================
 // DASHBOARD COMPONENT
 // ====================================
 
-export function Dashboard({ onMenuClick }){
-    // ====================================
-    // THEME INTEGRATION
-    // ====================================
+export function Dashboard({ onMenuClick }) {
+  // ====================================
+  // THEME INTEGRATION
+  // ====================================
 
     // Get theme context for component-level color management
-    const { colors, theme, toggleTheme, isDark } = useTheme();
+    const { colors } = useTheme();
 
     // Get authentication context for user management
-    const { user, logout, isAuthenticated } = useAuth();
+    const { user, isAuthenticated } = useAuth();
 
-    // Toast hook
-    const { toast } = useToast();
+  // Toast hook
+  const { toast } = useToast();
 
-    // Navigation hook
-    const navigate = useNavigate();
+  // Navigation hook
+  const navigate = useNavigate();
 
-    // ====================================
-    // STATE VARIABLES
-    // ====================================
+  // ====================================
+  // STATE VARIABLES
+  // ====================================
 
-    // Get backend URLs from environment variables (.env file)
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
+  // Get backend URLs from environment variables (.env file)
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-    // Initialize search functionality
-    const searchMethods = Searches({ backendURL });
+  // Initialize search functionality
+  const searchMethods = Searches({ backendURL });
 
-    // Dashboard data
-    const [stats, setStats] = useState({
-        totalCalculations: 0,
-        countriesCovered: 0,
-        avgTariffRate: 0,
-        recentActivity: []
+  // Dashboard data
+  const [stats, setStats] = useState({
+    totalCalculations: 0,
+    countriesCovered: 0,
+    avgTariffRate: 0,
+    recentActivity: []
+  });
+
+  // UI state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // ====================================
+  // EFFECTS
+  // ====================================
+
+  // Auto-dismiss error message after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Auto-dismiss success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // ====================================
+  // NAVIGATION FUNCTION
+  // ====================================
+
+  // handles navigation to calculator with pre filled data (search history or pinned tariffs)
+  const handleCalculatorNavigation = (data) => {
+    // navigate to calculator with state containing the data
+    navigate('/calculator', {
+      state: {
+        searchData: data,
+        autoFill: true
+      }
     });
+  };
 
-    // UI state
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+  // ====================================
+  // DATA FETCHING
+  // ====================================
 
-    // ====================================
-    // EFFECTS
-    // ====================================
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        // In a real app, you'd fetch actual dashboard data from the backend
+        // For now, we'll use mock data
+        setTimeout(() => {
+          setStats({
+            totalCalculations: 47,
+            countriesCovered: 89,
+            avgTariffRate: 8.3,
+            recentActivity: [
+              { id: 1, action: "Calculated tariff for USA → China", time: "2 hours ago", type: "calculation" },
+              { id: 2, action: "Viewed historical trends for Singapore → Malaysia", time: "1 day ago", type: "analysis" },
+              { id: 3, action: "Exported tariff report", time: "2 days ago", type: "export" },
+              { id: 4, action: "Updated profile settings", time: "3 days ago", type: "settings" }
+            ]
+          });
+          setLoading(false);
 
-    // Auto-dismiss error message after 5 seconds
-    useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => setError(''), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
+          // Show market alerts as toasts
+          setTimeout(() => {
+            toast({
+              title: "💡 Optimal Trade Route",
+              description: "Consider Singapore → Vietnam for electronics. Current average tariff: 2.1%",
+              variant: "default",
+              duration: 3000,
+            });
+          }, 1000);
 
-    // Auto-dismiss success message after 5 seconds
-    useEffect(() => {
-        if (success) {
-            const timer = setTimeout(() => setSuccess(''), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [success]);
+          setTimeout(() => {
+            toast({
+              title: "⚠️ Market Trend Alert",
+              description: "EU tariffs on Chinese goods increased by 12% in Q4. Monitor closely.",
+              variant: "destructive",
+              duration: 3000,
+            });
+          }, 2000);
 
-    // ====================================
-    // NAVIGATION FUNCTION
-    // ====================================
-
-    // handles navigation to calculator with pre filled data (search history or pinned tariffs)
-    const handleCalculatorNavigation = (data) => {
-        // navigate to calculator with state containing the data
-        navigate('/calculator', { 
-            state: { 
-                searchData: data,
-                autoFill: true 
-            } 
-        });
+          setTimeout(() => {
+            toast({
+              title: "💰 Cost Saving Opportunity",
+              description: "Switch to Malaysia for manufacturing could save 8.5% on total landed costs.",
+              variant: "success",
+              duration: 3000,
+            });
+          }, 4000);
+        }, 1000);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        setError("Failed to load dashboard data. Please try again.");
+        setLoading(false);
+      }
     };
 
-    // ====================================
-    // DATA FETCHING
-    // ====================================
+    fetchDashboardData();
+  }, [toast]);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                // In a real app, you'd fetch actual dashboard data from the backend
-                // For now, we'll use mock data
-                setTimeout(() => {
-                    setStats({
-                        totalCalculations: 47,
-                        countriesCovered: 89,
-                        avgTariffRate: 8.3,
-                        recentActivity: [
-                            { id: 1, action: "Calculated tariff for USA → China", time: "2 hours ago", type: "calculation" },
-                            { id: 2, action: "Viewed historical trends for Singapore → Malaysia", time: "1 day ago", type: "analysis" },
-                            { id: 3, action: "Exported tariff report", time: "2 days ago", type: "export" },
-                            { id: 4, action: "Updated profile settings", time: "3 days ago", type: "settings" }
-                        ]
-                    });
-                    setLoading(false);
+  const pinnedTariffRate = useCallback(async (pinnedId) => {
+    try {
+      const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
 
-                    // Show market alerts as toasts
-                    setTimeout(() => {
-                        toast({
-                            title: "💡 Optimal Trade Route",
-                            description: "Consider Singapore → Vietnam for electronics. Current average tariff: 2.1%",
-                            variant: "default",
-                            duration: 3000,
-                        });
-                    }, 1000);
+      // Map pinnedId -> response.data
+      setShowPin(prev => ({
+        ...prev,
+        [pinnedId]: response.data,
+      }));
 
-                    setTimeout(() => {
-                        toast({
-                            title: "⚠️ Market Trend Alert",
-                            description: "EU tariffs on Chinese goods increased by 12% in Q4. Monitor closely.",
-                            variant: "destructive",
-                            duration: 3000,
-                        });
-                    }, 2000);
+    } catch (error) {
+      console.error("Error fetching pinned tariff data:", error);
+    }
+  }, [backendURL]);
 
-                    setTimeout(() => {
-                        toast({
-                            title: "💰 Cost Saving Opportunity",
-                            description: "Switch to Malaysia for manufacturing could save 8.5% on total landed costs.",
-                            variant: "success",
-                            duration: 3000,
-                        });
-                    }, 4000);
-                }, 1000);
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-                setError("Failed to load dashboard data. Please try again.");
-                clearMessages();
-                setLoading(false);
-            }
-        };
+  const [pinned, setPinned] = useState([]);
+  const [showPin, setShowPin] = useState({}); // object: { id: response.data }
 
-        fetchDashboardData();
-    }, []);
-
-    const [pinned, setPinned] = useState([]);
-    const [showPin, setShowPin] = useState({}); // object: { id: response.data }
-
-    useEffect(() => {
-        const storedPins = localStorage.getItem("pin");
-        if (storedPins) {
-            try {
-                // Try to parse as JSON array first (from login/signup responses)
-                const parsedPins = JSON.parse(storedPins);
-                if (Array.isArray(parsedPins)) {
-                    setPinned(parsedPins.map(p => Number(p)));
-                    // Fetch for each pinnedId
-                    parsedPins.forEach(id => pinnedTariffRate(id));
-                } else {
-                    // Fallback to comma-separated string format
-                    const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
-                    setPinned(pinsArray);
-                    // Fetch for each pinnedId
-                    pinsArray.forEach(id => pinnedTariffRate(id));
-                }
-            } catch (e) {
-                // If JSON parsing fails, try comma-separated format
-                const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
-                setPinned(pinsArray);
-                // Fetch for each pinnedId
-                pinsArray.forEach(id => pinnedTariffRate(id));
-            }
-        }
-    }, []);
-
-    const pinnedTariffRate = async (pinnedId) => {
-        try {
-            const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
-
-            // Map pinnedId -> response.data
-            setShowPin(prev => ({
-            ...prev,
-            [pinnedId]: response.data,
-            }));
-
-        } catch (error) {
-            console.error("Error fetching pinned tariff data:", error);
-        }
-    };
-
-    const togglePin = (item) => {
-        let updatedPins;
-        if (pinned.includes(item)) {
-            // Remove the item
-            updatedPins = pinned.filter(p => p !== item);
-            delPin(item); // optional, if you handle backend
+  useEffect(() => {
+    const storedPins = localStorage.getItem("pin");
+    if (storedPins) {
+      try {
+        // Try to parse as JSON array first (from login/signup responses)
+        const parsedPins = JSON.parse(storedPins);
+        if (Array.isArray(parsedPins)) {
+          setPinned(parsedPins.map(p => Number(p)));
+          // Fetch for each pinnedId
+          parsedPins.forEach(id => pinnedTariffRate(id));
         } else {
-            // Add the item
-            updatedPins = [...pinned, item];
-            addPin(item); // optional, if you handle backend
+          // Fallback to comma-separated string format
+          const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
+          setPinned(pinsArray);
+          // Fetch for each pinnedId
+          pinsArray.forEach(id => pinnedTariffRate(id));
         }
-        // Update state
-        setPinned(updatedPins);
-        // Sync to localStorage as string
-        localStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
-    };
+      } catch {
+        // If JSON parsing fails, try comma-separated format
+        const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
+        setPinned(pinsArray);
+        // Fetch for each pinnedId
+        pinsArray.forEach(id => pinnedTariffRate(id));
+      }
+    }
+  }, [pinnedTariffRate]);
 
-    const addPin = async(item) => {
-        try {
-            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "", {
-            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
-            localStorage.setItem("pin", response.data);
-        } catch (error) {
-            console.error("Error adding pin:", error);
+  const togglePin = (item) => {
+    let updatedPins;
+    if (pinned.includes(item)) {
+      // Remove the item
+      updatedPins = pinned.filter(p => p !== item);
+      delPin(item); // optional, if you handle backend
+    } else {
+      // Add the item
+      updatedPins = [...pinned, item];
+      addPin(item); // optional, if you handle backend
+    }
+    // Update state
+    setPinned(updatedPins);
+    // Sync to localStorage as string
+    localStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
+  };
+
+  const addPin = async (item) => {
+    try {
+      const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+      });
+      localStorage.setItem("pin", response.data);
+    } catch (error) {
+      console.error("Error adding pin:", error);
+    }
+  };
+
+  const delPin = async (item) => {
+    try {
+      const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+      });
+      localStorage.setItem("pin", response.data);
+    } catch (error) {
+      console.error("Error removing pin:", error);
+    }
+  };
+
+
+  const downloadCSV = async () => {
+    var response;
+    try {
+      response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/csv/`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+      });
+
+    } catch {
+      console.error("Error calling user history. Breaking....", error);
+      return;
+    }
+
+    const tariffData = [];
+    // console.log(response.data);
+    for (const [id, date] of Object.entries(response.data)) {
+      console.log("Id " + id + " Date " + date);
+      try {
+        const tariffResponse = await axios.post(`${backendURL}/tariff/past/${id}`, "", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
+        });
+
+        for (const record of tariffResponse.data) {
+          const enhancedDTO = {
+            searchDate: date,
+            ...record, // Keep all existing DTO properties
+          };
+
+          console.log(enhancedDTO);
+          tariffData.push(enhancedDTO);
         }
-    };
 
-    const delPin = async(item) => {
-        try {
-            const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "", {
-            headers: {Authorization: `Bearer ${localStorage.getItem("authToken")}`}});
-            localStorage.setItem("pin", response.data);
-        } catch (error) {
-            console.error("Error removing pin:", error);
-        }
-    };
+      } catch (error) {
+        console.error("Error requesting for tariff data", error);
+      }
+    }
+
+    const csvHeaders = [
+      "Search Date",
+      "Reporting Country",
+      "Partner Country",
+      "item",
+      "tariff",
+      "description",
+    ]
+    // for ()
+    const csvRows = tariffData.map(row => [
+      row.searchDate,
+      row.reportingCountry,
+      row.partnerCountry,
+      row.item,
+      row.tariff,
+      row.description
+    ]);
+
+    const csvContent = [csvHeaders, ...csvRows]
+      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `tariff-data-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    setSuccess(`Successfully exported ${tariffData.length} tariff records to CSV!`);
+  };
 
 
-    // ====================================
-    // EVENT HANDLERS
-    // ====================================
+  // ====================================
+  // EVENT HANDLERS
+  // ====================================
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
+  const quickActions = [
+    {
+      title: "New Calculation",
+      description: "Calculate tariffs for new trade routes",
+      icon: Calculator,
+      action: () => navigate('/calculator'),
+      color: colors.accent
+    },
+    {
+      title: "View Trends",
+      description: "Analyze historical tariff data",
+      icon: TrendingUp,
+      action: () => navigate('/trends'),
+      color: "#3b82f6"
+    },
+    {
+      title: "Global Coverage",
+      description: "Explore countries and markets",
+      icon: Globe,
+      action: () => navigate('/globalcoverage'),
+      color: "#10b981"
+    },
+    {
+      title: "Settings",
+      description: "Manage your account preferences",
+      icon: Settings,
+      action: () => navigate('/settings'),
+      color: "#f59e0b"
+    },
+    {
+      title: "Download History",
+      description: "Download all your tariff data as CSV",
+      icon: BarChart3,
+      action: downloadCSV,
+      color: "#8b5cf6"
+    }
+  ];
 
-    const quickActions = [
-        {
-            title: "New Calculation",
-            description: "Calculate tariffs for new trade routes",
-            icon: Calculator,
-            action: () => navigate('/calculator'),
-            color: colors.accent
-        },
-        {
-            title: "View Trends",
-            description: "Analyze historical tariff data",
-            icon: TrendingUp,
-            action: () => navigate('/trends'),
-            color: "#3b82f6"
-        },
-        {
-            title: "Global Coverage",
-            description: "Explore countries and markets",
-            icon: Globe,
-            action: () => navigate('/globalcoverage'),
-            color: "#10b981"
-        },
-        {
-            title: "Settings",
-            description: "Manage your account preferences",
-            icon: Settings,
-            action: () => navigate('/settings'),
-            color: "#f59e0b"
-        }
-    ];
+  // ====================================
+  // COMPONENT RENDER (JSX)
+  // ====================================
 
-    // ====================================
-    // COMPONENT RENDER (JSX)
-    // ====================================
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen relative overflow-hidden"
+      style={{
+        background: "transparent",
+      }}
+    >
+      {/* TOP NAVIGATION */}
+      <Header onMenuClick={onMenuClick} showUserInfo={true} />
 
-    return (
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="min-h-screen relative overflow-hidden"
-        style={{
-          background: "transparent",
-        }}
-      >
-        {/* TOP NAVIGATION */}
-        <Header onMenuClick={onMenuClick} showUserInfo={true} />
-
-        {/* NOTIFICATIONS */}
-        <AnimatePresence>
-          {success && (
-            <motion.div
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              className="fixed top-20 right-4 z-50"
-            >
-              <Card
-                className="shadow-lg"
-                style={{
-                  borderColor: colors.success,
-                  backgroundColor: `${colors.success}20`,
-                  borderWidth: "1px",
-                }}
-              >
-                <CardContent className="flex items-center space-x-2 p-4">
-                  <CheckCircle
-                    className="h-5 w-5"
-                    style={{ color: colors.success }}
-                  />
-                  <span style={{ color: colors.foreground }}>{success}</span>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              className="fixed top-20 right-4 z-50"
-            >
-              <Card
-                className="shadow-lg"
-                style={{
-                  borderColor: colors.error,
-                  backgroundColor: `${colors.error}20`,
-                  borderWidth: "1px",
-                }}
-              >
-                <CardContent className="flex items-center space-x-2 p-4">
-                  <AlertCircle
-                    className="h-5 w-5"
-                    style={{ color: colors.error }}
-                  />
-                  <span style={{ color: colors.foreground }}>{error}</span>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* MAIN CONTENT */}
-        <div className="relative z-10 container mx-auto px-4 py-8">
+      {/* NOTIFICATIONS */}
+      <AnimatePresence>
+        {success && (
           <motion.div
-            variants={itemVariants}
-            className="max-w-7xl mx-auto space-y-8"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-20 right-4 z-50"
           >
-            {/* Welcome Section */}
-            <motion.div variants={itemVariants} className="text-center mb-8">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="inline-block mb-4"
-              >
-                <div
-                  className="p-4 rounded-2xl shadow-2xl mx-auto w-fit"
-                  style={{ backgroundColor: colors.accent }}
-                >
-                  <User className="h-12 w-12 text-white" />
-                </div>
-              </motion.div>
+            <Card
+              className="shadow-lg"
+              style={{
+                borderColor: colors.success,
+                backgroundColor: `${colors.success}20`,
+                borderWidth: "1px",
+              }}
+            >
+              <CardContent className="flex items-center space-x-2 p-4">
+                <CheckCircle
+                  className="h-5 w-5"
+                  style={{ color: colors.success }}
+                />
+                <span style={{ color: colors.foreground }}>{success}</span>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-              <motion.h1
-                variants={itemVariants}
-                className="text-4xl font-bold mb-4"
-                style={{ color: colors.foreground }}
-              >
-                Welcome back, {user?.username || "Trader"}! 👋
-              </motion.h1>
-              <motion.p
-                variants={itemVariants}
-                className="text-xl"
-                style={{ color: colors.muted }}
-              >
-                Ready to optimize your global trade strategy?
-              </motion.p>
-            </motion.div>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-20 right-4 z-50"
+          >
+            <Card
+              className="shadow-lg"
+              style={{
+                borderColor: colors.error,
+                backgroundColor: `${colors.error}20`,
+                borderWidth: "1px",
+              }}
+            >
+              <CardContent className="flex items-center space-x-2 p-4">
+                <AlertCircle
+                  className="h-5 w-5"
+                  style={{ color: colors.error }}
+                />
+                <span style={{ color: colors.foreground }}>{error}</span>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Stats Overview */}
-            <motion.div variants={itemVariants}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {[
-                  {
-                    title: "Total Calculations",
-                    value: stats.totalCalculations,
-                    icon: Calculator,
-                    description: "Tariff calculations performed",
-                    color: colors.accent,
-                  },
-                  {
-                    title: "Countries Covered",
-                    value: stats.countriesCovered,
-                    icon: Globe,
-                    description: "Markets analyzed",
-                    color: "#3b82f6",
-                  },
-                  {
-                    title: "Avg Tariff Rate",
-                    value: `${stats.avgTariffRate}%`,
-                    icon: TrendingUp,
-                    description: "Across all calculations",
-                    color: "#10b981",
-                  },
-                  {
-                    title: "Premium Member",
-                    value: "Active",
-                    icon: Star,
-                    description: "Since account creation",
-                    color: "#f59e0b",
-                  },
-                ].map((stat, index) => (
-                  <motion.div
-                    key={stat.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                  >
-                    <Card
-                      style={{
-                        backgroundColor: `${colors.surface}95`,
-                        borderColor: colors.border,
-                      }}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p
-                              className="text-sm font-medium"
-                              style={{ color: colors.muted }}
-                            >
-                              {stat.title}
-                            </p>
-                            <p
-                              className="text-3xl font-bold"
-                              style={{ color: colors.foreground }}
-                            >
-                              {stat.value}
-                            </p>
-                            <p
-                              className="text-xs"
-                              style={{ color: colors.muted }}
-                            >
-                              {stat.description}
-                            </p>
-                          </div>
-                          <div
-                            className="p-3 rounded-lg"
-                            style={{ backgroundColor: stat.color + "20" }}
-                          >
-                            <stat.icon
-                              className="h-6 w-6"
-                              style={{ color: stat.color }}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
+      {/* MAIN CONTENT */}
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <motion.div
+          variants={itemVariants}
+          className="max-w-7xl mx-auto space-y-8"
+        >
+          {/* Welcome Section */}
+          <motion.div variants={itemVariants} className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-block mb-4"
+            >
+              <div
+                className="p-4 rounded-2xl shadow-2xl mx-auto w-fit"
+                style={{ backgroundColor: colors.accent }}
+              >
+                <User className="h-12 w-12 text-white" />
               </div>
             </motion.div>
 
-{/* Pinned Items */}
-<motion.div variants={itemVariants}>
-    <Card style={{
-        backgroundColor: `${colors.surface}95`,
-        borderColor: colors.border
-    }}>
-        <CardHeader>
-            <CardTitle style={{ color: colors.foreground }}>
-                <Star className="h-6 w-6 inline mr-2" style={{ color: colors.accent }} />
-                Pinned Tariffs
-            </CardTitle>
-            <CardDescription style={{ color: colors.muted }}>
-                Your saved tariff calculations
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            {pinned.length > 0 ? (
-                <div className="flex flex-row justify-center items-center space-x-4 overflow-x-auto pb-2">
-                    {pinned.map((id, index) => {
-                        const rows = showPin[id];       // full array of results
-                        const lastRow = rows ? rows.at(-1) : null; // last row
-                        
-                        // Dynamically calculate width based on number of pins
-                        const width = pinned.length === 1 ? 'w-1/3' : 
-                                      pinned.length === 2 ? 'w-1/3' : 'w-1/3';
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl font-bold mb-4"
+              style={{ color: colors.foreground }}
+            >
+              Welcome back, {user?.username || "Trader"}! 👋
+            </motion.h1>
+            <motion.p
+              variants={itemVariants}
+              className="text-xl"
+              style={{ color: colors.muted }}
+            >
+              Ready to optimize your global trade strategy?
+            </motion.p>
+          </motion.div>
 
-                        return (
-                            <div key={id} className={`flex-shrink-0 ${width} min-w-[250px]`}>
-                                <div 
-                                    className="p-4 rounded-lg h-full shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-                                    style={{ 
-                                        backgroundColor: `${colors.border}80`,
-                                        borderColor: `${colors.border}80`,
-                                        borderWidth: '1px'
-                                    }}
-                                    onClick={() => handleCalculatorNavigation(lastRow)}
-                                >
-                                    <div className="text-lg font-bold mb-2" style={{ color: colors.foreground }}>
-                                        #{index + 1}
-                                    </div>
-                                    
-                                    {lastRow ? (
-                                        <div className="space-y-3">
-                                            <div className="text-center">
-                                                <div className="text-2xl font-bold mb-1" style={{ color: colors.foreground }}>
-                                                    {lastRow.tariff}%
-                                                </div>
-                                                <div className="text-md" style={{ color: colors.foreground }}>
-                                                    {lastRow.partnerCountry} → {lastRow.reportingCountry}
-                                                </div>
-                                                <div className="text-sm mt-1" style={{ color: `${colors.muted }`}}>
-                                                    {lastRow.item || "Unknown item"}
-                                                </div>
-                                            </div>
-                                            
-                                            <Button
-                                                onClick={() => togglePin(id)}
-                                                variant="outline"
-                                                className="w-full mt-2"
-                                                style={{
-                                                    background: colors.error,
-                                    
-                                                }}
-                                            >
-                                                <Star className="h-4 w-4 mr-2" style={{ fill: colors.error }} /> Unpin
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="py-4 text-center">
-                                            <p className="text-lg" style={{ color: colors.muted }}>Loading...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <p className="text-center py-6 text-lg" style={{ color: colors.muted }}>
-                    No pinned tariffs yet.
-                </p>
-            )}
-        </CardContent>
-    </Card>
-</motion.div>
-
-            {/* Search History Section */}
-            <div className="mt-8">
-              <Card
-                style={{
-                  backgroundColor: `${colors.surface}95`,
-                  borderColor: colors.border,
-                }}
-              >
-                <CardHeader>
-                  <CardTitle style={{ color: colors.foreground }}>
-                    <History className="h-6 w-6 inline mr-2" />
-                    {isAuthenticated ? "Your Top Searches" : "Search History"}
-                  </CardTitle>
-                  <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <searchMethods.SearchDisplay onSearchClick={handleCalculatorNavigation} colors={colors} />
-                </CardContent>
-              </Card>
+          {/* Stats Overview */}
+          <motion.div variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[
+                {
+                  title: "Total Calculations",
+                  value: stats.totalCalculations,
+                  icon: Calculator,
+                  description: "Tariff calculations performed",
+                  color: colors.accent,
+                },
+                {
+                  title: "Countries Covered",
+                  value: stats.countriesCovered,
+                  icon: Globe,
+                  description: "Markets analyzed",
+                  color: "#3b82f6",
+                },
+                {
+                  title: "Avg Tariff Rate",
+                  value: `${stats.avgTariffRate}%`,
+                  icon: TrendingUp,
+                  description: "Across all calculations",
+                  color: "#10b981",
+                },
+                {
+                  title: "Premium Member",
+                  value: "Active",
+                  icon: Star,
+                  description: "Since account creation",
+                  color: "#f59e0b",
+                },
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                >
+                  <Card
+                    style={{
+                      backgroundColor: `${colors.surface}95`,
+                      borderColor: colors.border,
+                    }}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p
+                            className="text-sm font-medium"
+                            style={{ color: colors.muted }}
+                          >
+                            {stat.title}
+                          </p>
+                          <p
+                            className="text-3xl font-bold"
+                            style={{ color: colors.foreground }}
+                          >
+                            {stat.value}
+                          </p>
+                          <p
+                            className="text-xs"
+                            style={{ color: colors.muted }}
+                          >
+                            {stat.description}
+                          </p>
+                        </div>
+                        <div
+                          className="p-3 rounded-lg"
+                          style={{ backgroundColor: stat.color + "20" }}
+                        >
+                          <stat.icon
+                            className="h-6 w-6"
+                            style={{ color: stat.color }}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
+          </motion.div>
 
-            {/* Quick Actions */}
+          {/* Pinned Items */}
+          <motion.div variants={itemVariants}>
+            <Card style={{
+              backgroundColor: `${colors.surface}95`,
+              borderColor: colors.border
+            }}>
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  <Star className="h-6 w-6 inline mr-2" style={{ color: colors.accent }} />
+                  Pinned Tariffs
+                </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>
+                  Your saved tariff calculations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pinned.length > 0 ? (
+                  <div className="flex flex-row justify-center items-center space-x-4 overflow-x-auto pb-2">
+                    {pinned.map((id, index) => {
+                      const rows = showPin[id];       // full array of results
+                      const lastRow = rows ? rows.at(-1) : null; // last row
+
+                      // Dynamically calculate width based on number of pins
+                      const width = pinned.length === 1 ? 'w-1/3' :
+                        pinned.length === 2 ? 'w-1/3' : 'w-1/3';
+
+                      return (
+                        <div key={id} className={`flex-shrink-0 ${width} min-w-[250px]`}>
+                          <div
+                            className="p-4 rounded-lg h-full shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                            style={{
+                              backgroundColor: `${colors.border}80`,
+                              borderColor: `${colors.border}80`,
+                              borderWidth: '1px'
+                            }}
+                            onClick={() => handleCalculatorNavigation(lastRow)}
+                          >
+                            <div className="text-lg font-bold mb-2" style={{ color: colors.foreground }}>
+                              #{index + 1}
+                            </div>
+
+                            {lastRow ? (
+                              <div className="space-y-3">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold mb-1" style={{ color: colors.foreground }}>
+                                    {lastRow.tariff}%
+                                  </div>
+                                  <div className="text-md" style={{ color: colors.foreground }}>
+                                    {lastRow.partnerCountry} → {lastRow.reportingCountry}
+                                  </div>
+                                  <div className="text-sm mt-1" style={{ color: `${colors.muted}` }}>
+                                    {lastRow.item || "Unknown item"}
+                                  </div>
+                                </div>
+
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePin(id);
+                                  }}
+                                  variant="outline"
+                                  className="w-full mt-2"
+                                  style={{
+                                    background: colors.error,
+
+                                  }}
+                                >
+                                  <Star className="h-4 w-4 mr-2" style={{ fill: colors.error }} /> Unpin
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="py-4 text-center">
+                                <p className="text-lg" style={{ color: colors.muted }}>Loading...</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-center py-6 text-lg" style={{ color: colors.muted }}>
+                    No pinned tariffs yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Search History Section */}
+          <div className="mt-8">
+            <Card
+              style={{
+                backgroundColor: `${colors.surface}95`,
+                borderColor: colors.border,
+              }}
+            >
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  <History className="h-6 w-6 inline mr-2" />
+                  {isAuthenticated ? "Your Top Searches" : "Search History"}
+                </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>Click on any previous search to view results</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <searchMethods.SearchDisplay onSearchClick={handleCalculatorNavigation} colors={colors} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <motion.div variants={itemVariants}>
+            <Card
+              style={{
+                backgroundColor: `${colors.surface}95`,
+                borderColor: colors.border,
+              }}
+            >
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  <Zap className="h-6 w-6 inline mr-2" />
+                  Quick Actions
+                </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>
+                  Jump into your most common tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {quickActions.map((action) => (
+                    <motion.div
+                      key={action.title}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        onClick={action.action}
+                        className="w-full h-auto p-4 flex flex-col items-center space-y-2"
+                        style={{
+                          backgroundColor: action.color + "10",
+                          borderColor: action.color,
+                          color: action.color,
+                        }}
+                        variant="outline"
+                      >
+                        <action.icon className="h-8 w-8" />
+                        <div className="text-center">
+                          <div className="font-semibold">{action.title}</div>
+                          <div className="text-xs opacity-75">
+                            {action.description}
+                          </div>
+                        </div>
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Recent Activity & Insights */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Recent Activity */}
             <motion.div variants={itemVariants}>
               <Card
                 style={{
@@ -652,39 +786,76 @@ export function Dashboard({ onMenuClick }){
               >
                 <CardHeader>
                   <CardTitle style={{ color: colors.foreground }}>
-                    <Zap className="h-6 w-6 inline mr-2" />
-                    Quick Actions
+                    <Clock className="h-6 w-6 inline mr-2" />
+                    Recent Activity
                   </CardTitle>
                   <CardDescription style={{ color: colors.muted }}>
-                    Jump into your most common tasks
+                    Your latest tariff analysis activities
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {quickActions.map((action, index) => (
+                  <div className="space-y-4">
+                    {stats.recentActivity.map((activity, index) => (
                       <motion.div
-                        key={action.title}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        key={activity.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * index }}
+                        className="flex items-center space-x-3 p-3 rounded-lg"
+                        style={{ backgroundColor: colors.background }}
                       >
-                        <Button
-                          onClick={action.action}
-                          className="w-full h-auto p-4 flex flex-col items-center space-y-2"
+                        <div
+                          className="p-2 rounded-lg"
                           style={{
-                            backgroundColor: action.color + "10",
-                            borderColor: action.color,
-                            color: action.color,
+                            backgroundColor:
+                              activity.type === "calculation"
+                                ? colors.accent + "20"
+                                : activity.type === "analysis"
+                                  ? "#3b82f620"
+                                  : activity.type === "export"
+                                    ? "#10b98120"
+                                    : "#f59e0b20",
                           }}
-                          variant="outline"
                         >
-                          <action.icon className="h-8 w-8" />
-                          <div className="text-center">
-                            <div className="font-semibold">{action.title}</div>
-                            <div className="text-xs opacity-75">
-                              {action.description}
-                            </div>
-                          </div>
-                        </Button>
+                          {activity.type === "calculation" && (
+                            <Calculator
+                              className="h-4 w-4"
+                              style={{ color: colors.accent }}
+                            />
+                          )}
+                          {activity.type === "analysis" && (
+                            <TrendingUp
+                              className="h-4 w-4"
+                              style={{ color: "#3b82f6" }}
+                            />
+                          )}
+                          {activity.type === "export" && (
+                            <BarChart3
+                              className="h-4 w-4"
+                              style={{ color: "#10b981" }}
+                            />
+                          )}
+                          {activity.type === "settings" && (
+                            <Settings
+                              className="h-4 w-4"
+                              style={{ color: "#f59e0b" }}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p
+                            className="text-sm font-medium"
+                            style={{ color: colors.foreground }}
+                          >
+                            {activity.action}
+                          </p>
+                          <p
+                            className="text-xs"
+                            style={{ color: colors.muted }}
+                          >
+                            {activity.time}
+                          </p>
+                        </div>
                       </motion.div>
                     ))}
                   </div>
@@ -692,120 +863,7 @@ export function Dashboard({ onMenuClick }){
               </Card>
             </motion.div>
 
-            {/* Recent Activity & Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Recent Activity */}
-              <motion.div variants={itemVariants}>
-                <Card
-                  style={{
-                    backgroundColor: `${colors.surface}95`,
-                    borderColor: colors.border,
-                  }}
-                >
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.foreground }}>
-                      <Clock className="h-6 w-6 inline mr-2" />
-                      Recent Activity
-                    </CardTitle>
-                    <CardDescription style={{ color: colors.muted }}>
-                      Your latest tariff analysis activities
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {stats.recentActivity.map((activity, index) => (
-                        <motion.div
-                          key={activity.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.1 * index }}
-                          className="flex items-center space-x-3 p-3 rounded-lg"
-                          style={{ backgroundColor: colors.background }}
-                        >
-                          <div
-                            className="p-2 rounded-lg"
-                            style={{
-                              backgroundColor:
-                                activity.type === "calculation"
-                                  ? colors.accent + "20"
-                                  : activity.type === "analysis"
-                                  ? "#3b82f620"
-                                  : activity.type === "export"
-                                  ? "#10b98120"
-                                  : "#f59e0b20",
-                            }}
-                          >
-                            {activity.type === "calculation" && (
-                              <Calculator
-                                className="h-4 w-4"
-                                style={{ color: colors.accent }}
-                              />
-                            )}
-                            {activity.type === "analysis" && (
-                              <TrendingUp
-                                className="h-4 w-4"
-                                style={{ color: "#3b82f6" }}
-                              />
-                            )}
-                            {activity.type === "export" && (
-                              <BarChart3
-                                className="h-4 w-4"
-                                style={{ color: "#10b981" }}
-                              />
-                            )}
-                            {activity.type === "settings" && (
-                              <Settings
-                                className="h-4 w-4"
-                                style={{ color: "#f59e0b" }}
-                              />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p
-                              className="text-sm font-medium"
-                              style={{ color: colors.foreground }}
-                            >
-                              {activity.action}
-                            </p>
-                            <p
-                              className="text-xs"
-                              style={{ color: colors.muted }}
-                            >
-                              {activity.time}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Trade Insights */}
-              <motion.div variants={itemVariants}>
-                <Card
-                  style={{
-                    backgroundColor: `${colors.surface}95`,
-                    borderColor: colors.border,
-                  }}
-                >
-                  <CardHeader>
-                    <CardTitle style={{ color: colors.foreground }}>
-                      <Target className="h-6 w-6 inline mr-2" />
-                      Trade Insights
-                    </CardTitle>
-                    <CardDescription style={{ color: colors.muted }}>
-                      AI-powered recommendations for your business
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Alerts moved to toasts */}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-
-            {/* Usage Progress */}
+            {/* Trade Insights */}
             <motion.div variants={itemVariants}>
               <Card
                 style={{
@@ -815,46 +873,70 @@ export function Dashboard({ onMenuClick }){
               >
                 <CardHeader>
                   <CardTitle style={{ color: colors.foreground }}>
-                    <BarChart3 className="h-6 w-6 inline mr-2" />
-                    Monthly Usage
+                    <Target className="h-6 w-6 inline mr-2" />
+                    Trade Insights
                   </CardTitle>
                   <CardDescription style={{ color: colors.muted }}>
-                    Your tariff calculation usage this month
+                    AI-powered recommendations for your business
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span style={{ color: colors.foreground }}>
-                        Calculations Used
-                      </span>
-                      <span style={{ color: colors.muted }}>47 / 100</span>
-                    </div>
-                    <Progress value={47} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span style={{ color: colors.foreground }}>
-                        Reports Generated
-                      </span>
-                      <span style={{ color: colors.muted }}>12 / 50</span>
-                    </div>
-                    <Progress value={24} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span style={{ color: colors.foreground }}>
-                        Data Exports
-                      </span>
-                      <span style={{ color: colors.muted }}>3 / 25</span>
-                    </div>
-                    <Progress value={12} className="h-2" />
-                  </div>
+                  {/* Alerts moved to toasts */}
                 </CardContent>
               </Card>
             </motion.div>
+          </div>
+
+          {/* Usage Progress */}
+          <motion.div variants={itemVariants}>
+            <Card
+              style={{
+                backgroundColor: `${colors.surface}95`,
+                borderColor: colors.border,
+              }}
+            >
+              <CardHeader>
+                <CardTitle style={{ color: colors.foreground }}>
+                  <BarChart3 className="h-6 w-6 inline mr-2" />
+                  Monthly Usage
+                </CardTitle>
+                <CardDescription style={{ color: colors.muted }}>
+                  Your tariff calculation usage this month
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: colors.foreground }}>
+                      Calculations Used
+                    </span>
+                    <span style={{ color: colors.muted }}>47 / 100</span>
+                  </div>
+                  <Progress value={47} className="h-2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: colors.foreground }}>
+                      Reports Generated
+                    </span>
+                    <span style={{ color: colors.muted }}>12 / 50</span>
+                  </div>
+                  <Progress value={24} className="h-2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: colors.foreground }}>
+                      Data Exports
+                    </span>
+                    <span style={{ color: colors.muted }}>3 / 25</span>
+                  </div>
+                  <Progress value={12} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
-        </div>
-      </motion.div>
-    );
+        </motion.div>
+      </div>
+    </motion.div>
+  );
 }

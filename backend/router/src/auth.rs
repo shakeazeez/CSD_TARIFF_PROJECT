@@ -6,14 +6,14 @@ use diesel::{
     prelude::*,
     r2d2::{ConnectionManager, Pool},
 };
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 
 use crate::{
     dto::{CreateDTO, LoginDTO, TokenDTO},
     encryption::{encrypt_password, verify_password},
     jwt::jwt_functions,
-    schema::{user::dsl::*, user_role::dsl::*},
-    tables::{AuthUser, Role, UserRole},
+    schema::{user::dsl::*},
+    tables::{AuthUser, Role},
 };
 
 /*
@@ -34,29 +34,6 @@ async fn get_user_details(
         .filter(username.eq(name))
         .select(AuthUser::as_select())
         .load::<AuthUser>(&mut connection)
-        .expect("Whoops");
-
-    return result;
-}
-
-/*
- * Requests the user_role table 
- * 
- * @Param database -> Pointer to database conenction 
- * @Param id       -> Id of user 
- * 
- * Return          -> ORM of the role table
- */
-async fn get_user_roles(
-    database: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    id_num: i32,
-) -> Vec<UserRole> {
-    let mut connection = database.get().unwrap();
-
-    let result = user_role
-        .filter(user_id.eq(id_num))
-        .select(UserRole::as_select())
-        .load::<UserRole>(&mut connection)
         .expect("Whoops");
 
     return result;
@@ -85,24 +62,27 @@ pub async fn login(
 ) -> impl Responder {
     let name = login_details.username.as_deref().unwrap();
     let acc: Vec<AuthUser> = get_user_details(&database, &name.to_string()).await;
-    
-    if acc.len() != 1 {
+    println!("{acc:?}");
+    if acc.len() > 1 {
         return HttpResponse::InternalServerError()
             .json("There is more than one user with the same username");
     }
-
-    let roles = get_user_roles(&database, acc[0].id).await;
+    
+    if acc.len() == 0 {
+        return HttpResponse::InternalServerError()
+            .json("User does not exist");
+    }
     // println!("{:?}", acc[0]);
     let password = login_details.password.as_deref().unwrap();
     match verify_password(&acc[0].hashedpassword, password.to_string()) {
         Ok(_) => {
-            let generated_token = jwt_functions::generate_token(&acc[0], &roles[0]);
+            let generated_token = jwt_functions::generate_token(&acc[0]);
 
             // Write function to get info from user back here
             let user_url = env::var("USER_URL").unwrap();
-            let response = match roles[0].user_roles {
+            let response = match acc[0].user_roles {
                 Role::MEMBER => {
-                        reqwest::get(format!("{}/member/{}", user_url, acc[0].username).as_str())
+                        reqwest::get(format!("{}/user/{}", user_url, acc[0].username).as_str())
                             .await
                             .unwrap()
                 }
@@ -128,6 +108,7 @@ pub async fn login(
             if status.is_success() {
                 let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
                 token_dto.token = Some(generated_token);
+                token_dto.role = Some(acc[0].user_roles.to_string());
                 token_dto.username = Some(acc[0].username.to_owned());
                 return HttpResponse::build(status).json(token_dto);
             }
@@ -158,8 +139,15 @@ pub async fn create_user(
     database: web::Data<Pool<ConnectionManager<PgConnection>>>,
     login_details: web::Json<CreateDTO>,
 ) -> impl Responder {
+    
+    
     println!("{login_details:?}");
     let mut borrow = login_details.into_inner();
+    let checker = get_user_details(&database, &borrow.username).await;
+    
+    if checker.len() != 0 {
+        return HttpResponse::build(StatusCode::CONFLICT).finish()
+    }
     borrow.password = encrypt_password(borrow.password.clone());
     println!("{:?}", borrow);
     let client = Client::new();
@@ -181,10 +169,10 @@ pub async fn create_user(
             }
 
             let acc = get_user_details(&database, &borrow.username).await;
-            let roles = get_user_roles(&database, acc[0].id).await;
             // println!("{body}");
             let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
-            token_dto.token = Some(jwt_functions::generate_token(&acc[0], &roles[0]));
+            token_dto.token = Some(jwt_functions::generate_token(&acc[0]));
+            token_dto.role = Some(borrow.role.to_uppercase());
             // println!("{:?}", token_dto);
             println!("Status: {}", status);
             HttpResponse::build(status).json(token_dto)

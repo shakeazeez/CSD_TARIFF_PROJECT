@@ -3,7 +3,7 @@
 // ====================================
 
 import { motion } from 'framer-motion'
-import { useTheme } from '../contexts/ThemeContext.jsx'
+import { useTheme } from '../contexts/use-theme.js'
 
 export function Footer() {
     const { colors } = useTheme()

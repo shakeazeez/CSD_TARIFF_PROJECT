@@ -1,11 +1,20 @@
-name: CI/CD Pipeline
+name: Deploy to AWS
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main, v3 ]
   workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag to deploy (leave empty for auto-versioning)'
+        required: false
+        default: ''
+
+env:
+  AWS_REGION: us-east-1  # Change to your preferred region
+  ECR_REPOSITORY_BACKEND: tariff-backend
+  ECR_REPOSITORY_ROUTER: tariff-router
+  ECR_REPOSITORY_FRONTEND: tariff-frontend
 
 jobs:
   test:
@@ -21,11 +30,13 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Test Backend
+    - name: Test Backend Services
       run: |
         cd backend/tariffCalc
         mvn test
         cd ../user
+        mvn test
+        cd ../news
         mvn test
 
     - name: Set up Node.js 22
@@ -37,67 +48,106 @@ jobs:
       run: |
         cd frontend/tarrif-project
         npm install
-        npm test
+        npm run lint
 
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  build-and-push:
     needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/v3'
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy to AWS EC2
-      uses: appleboy/ssh-action@v1.0.3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          source ~/.bashrc
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-          # Set environment variables from secrets
-          export DB_USERNAME="${{ secrets.DB_USERNAME }}"
-          export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-          export MOACH_API_KEY="${{ secrets.MOACH_API_KEY }}"
-          export SIGNING_SECRET="${{ secrets.SIGNING_SECRET }}"
-          export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
-          export VITE_BACKEND_URL="${{ secrets.VITE_BACKEND_URL }}"
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
 
-          cd ~/Projects/CSD_TARIFF_PROJECT
+    - name: Set version tag
+      id: version
+      run: |
+        if [ -n "${{ github.event.inputs.version_tag }}" ]; then
+          echo "tag=${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=V${{ github.run_number }}" >> $GITHUB_OUTPUT
+        fi
 
-          git pull origin main
+    - name: Build and push backend image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ steps.version.outputs.tag }}
+      run: |
+        cd backend
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY_BACKEND }}:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY_BACKEND }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.ECR_REPOSITORY_BACKEND }}:latest
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY_BACKEND }}:$IMAGE_TAG
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY_BACKEND }}:latest
 
-          # Create backup of current docker-compose.yml
-          cp docker-compose.yml docker-compose.backup
+    - name: Build and push router image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ steps.version.outputs.tag }}
+      run: |
+        cd backend/router
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY_ROUTER }}:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY_ROUTER }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.ECR_REPOSITORY_ROUTER }}:latest
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY_ROUTER }}:$IMAGE_TAG
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY_ROUTER }}:latest
 
-          # Clean up Docker system
-          docker system prune -f
-          # Note: Keeping postgres_data volume intact to preserve database
-          docker container prune -f
+    - name: Build and push frontend image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ steps.version.outputs.tag }}
+      run: |
+        cd frontend/tarrif-project
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY_FRONTEND }}:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY_FRONTEND }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.ECR_REPOSITORY_FRONTEND }}:latest
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY_FRONTEND }}:$IMAGE_TAG
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY_FRONTEND }}:latest
 
-          # Stop current containers
-          docker-compose down
+    - name: Deploy to EC2
+      env:
+        IMAGE_TAG: ${{ steps.version.outputs.tag }}
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        # Create deployment script
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
 
-          # Start new deployment
-          if docker-compose up -d; then
+        # Stop existing containers
+        docker-compose -f docker-compose.prod.yml down || true
 
-            # Wait a bit for containers to start
-            sleep 30
+        # Pull latest images
+        TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml pull
 
-            # Check if containers are running
-            if docker-compose ps | grep -q "Up"; then
+        # Start services
+        TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml up -d
 
-              # Clean up old images
-              docker image prune -f
+        # Clean up old images
+        docker image prune -f
 
-            else
-              docker-compose logs
-              exit 1
-            fi
-          else
-            # Restore backup and restart
-            cp docker-compose.backup docker-compose.yml
-            docker-compose up -d
-            exit 1
-          fi
+        # Save current version for rollback
+        echo $IMAGE_TAG > /opt/tariff/current_version.txt
+        EOF
+
+        # Copy files to EC2
+        echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key
+        chmod 600 ec2_key
+
+        scp -i ec2_key -o StrictHostKeyChecking=no deploy.sh ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
+        scp -i ec2_key -o StrictHostKeyChecking=no docker-compose.prod.yml ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
+        scp -i ec2_key -o StrictHostKeyChecking=no .env.prod ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/ || echo "No .env.prod file found"
+
+        # Execute deployment on EC2
+        ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
+          chmod +x deploy.sh
+          ./deploy.sh
+        EOF

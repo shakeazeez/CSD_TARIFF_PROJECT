@@ -1,23 +1,22 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
-import IndustryChart from "../components/IndustryChart";
+import IndustryChart from "../components/IndustryChart.jsx";
 import { Header } from "../components/Header.jsx";
-import Dropdown from "../components/Dropdown";
-import { Label } from "../components/ui/label";
+import Dropdown from "../components/Dropdown.jsx";
+import { Label } from "../components/ui/label.jsx";
 import { useTheme } from "../contexts/use-theme.js";
-import { Input } from "../components/ui/input"; // input component
-import Calendar from "../components/ui/calendar";
+import { Input } from "../components/ui/input.jsx"; // input component
+import Calendar from "../components/ui/calendar.jsx";
 import { AlignCenter } from "lucide-react";
+import { useToast } from "../hooks/use-toast.js";
 
-export function IndustrySearch({ onMenuClick }) {
+export function Bank({ onMenuClick }) {
   const backendURL = import.meta.env.VITE_BACKEND_URL;
   const { colors } = useTheme();
 
   /*
-   * Drop down for countries and industry selection
+   * Store information for drop down for countries and industry selection
    */
-
-  // load the list of countries and industries for dropdown and store in list
   const [countryList, setCountryList] = useState([]);
   const [industryList, setIndustryList] = useState([]);
 
@@ -59,21 +58,23 @@ export function IndustrySearch({ onMenuClick }) {
         }))
       : [];
 
-  // states to hold input that user enters
+  /* 
+   * Take in and store user input for endpoint
+   */
+
+  // States to store homecountry and industry selection
   const [homeCountry, setHomeCountry] = useState("");
   const [industry, setIndustry] = useState("");
 
-  /*
-   * Start and End date, input or calendar select
-   */
-
+  // States to store period that user wishes to query 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
+  // States to check for valid period selected
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
 
-  // set default start and end date range (in case users don't enter date range)
+  // Dates are set to a default range from ten years ago to today 
   useEffect(() => {
     const today = new Date();
     const tenYearsAgo = new Date();
@@ -83,7 +84,7 @@ export function IndustrySearch({ onMenuClick }) {
     setEndDate(today);
   }, []);
 
-  // check the start and end dates
+  // Perform validation on the period selected
   const validateStartDateChanges = (newStartDate) => {
     if (endDate && newStartDate > endDate) {
       setStartDateError(true);
@@ -106,18 +107,13 @@ export function IndustrySearch({ onMenuClick }) {
     }
   };
 
-  /*
-   * Send query to backend, get items list
-   */
-
   const [itemList, setItemList] = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [errorItems, setErrorItems] = useState(null);
 
-  // BACKEND returns => items of the selected industry
+  // Construct DTO to query backend for the list of all items in the industry
   const userInput = {
     homeCountry: homeCountry,
-    // destCountry,
     industry: industry,
     startDate: startDate ? startDate.toISOString().split("T")[0] : "",
     endDate: endDate ? endDate.toISOString().split("T")[0] : "",
@@ -138,8 +134,6 @@ export function IndustrySearch({ onMenuClick }) {
     setTariffDetails({});
     setValidItemDetailsMap({});
 
-    setItemErrors([]);
-
     // Reset the invalid items from the previous search
     setInvalidItems([]);
 
@@ -148,12 +142,37 @@ export function IndustrySearch({ onMenuClick }) {
         `${backendURL}/tariff/items`,
         userInput
       );
-      console.log("Retrieving items of homeCountry: industry.");
-      // The response contains a list of strings (item names)
+
+      console.log("Successfully retrieved items of country: ", homeCountry, ", and industry: ", industry);
       setItemList(response.data);
+
+      if (response.data.length === 0) {
+        toast({
+          title: "No items found",
+          description: "No items have tariff data for the selected date range. Showing items available in the last 10 years.",
+        });
+        // Refetch with default dates
+        const defaultUserInput = {
+          homeCountry: homeCountry,
+          industry: industry,
+          startDate: "",
+          endDate: "",
+        };
+        try {
+          const defaultResponse = await axios.post(
+            `${backendURL}/tariff/items`,
+            defaultUserInput
+          );
+          setItemList(defaultResponse.data);
+        } catch (error) {
+          console.error("Failed to retrieve default items", error);
+        }
+      }
+
     } catch {
-      console.error("Failed to retrieve items.");
+      console.error("Failed to retrieve items for input DTO ", userInput);
       setErrorItems("Unable to retrieve items.");
+
     } finally {
       setLoadingItems(false);
     }
@@ -162,56 +181,6 @@ export function IndustrySearch({ onMenuClick }) {
   /*
    * Track item options that user selects to load tariff details about
    */
-
-  // used to keep track of items user selects to load
-  const [selectedItems, setSelectedItems] = useState([]);
-  const prevSelectedItemsRef = useRef([]);
-
-  useEffect(() => {
-    const prevSelectedItems = prevSelectedItemsRef.current;
-    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
-    const newlyAdded = filteredItems.filter(item => !prevSelectedItems.includes(item));
-
-    if (newlyAdded.length > 0) {
-      queryTariffs(backupCountries, newlyAdded);
-    }
-
-    prevSelectedItemsRef.current = selectedItems;
-  }, [selectedItems, queryTariffs, backupCountries, invalidItems]);
-
-  // load and store tariff details for the selected items
-  const [tariffDetails, setTariffDetails] = useState({});
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [itemErrors, setItemErrors] = useState([]);
-
-  // Add a debounce timer ref
-  const debounceTimerRef = useRef(null);
-
-  useEffect(() => {
-    // Clear the previous timeout if it exists
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Clear tariff details if no items are selected
-    if (selectedItems.length === 0) {
-      setTariffDetails({});
-      setItemErrors([]);
-      return;
-    }
-
-    // Only fetch after 1 second of inactivity
-    debounceTimerRef.current = setTimeout(() => {
-      fetchTariffDetails();
-    }, 1000);
-
-    // Cleanup function to clear timeout when component unmounts
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [selectedItems, fetchTariffDetails]);
 
   const backupCountries = useMemo(() => [
     "Cambodia",
@@ -228,20 +197,32 @@ export function IndustrySearch({ onMenuClick }) {
     "Georgia"
   ], []);
 
-  const queryTariffs = useCallback((backupCountries, selectedItems) => {
-    backupCountries.forEach((partnerCountry) => {
-      selectedItems.forEach((item) => {
-        const tariffCalculationQueryDTO = {
-          reportingCountry : homeCountry,
-          partnerCountry : partnerCountry,
-          item : item,
-          itemCost : 100,
-        };
+  // used to keep track of items user selects to load
+  const [selectedItems, setSelectedItems] = useState([]);
+  const prevSelectedItemsRef = useRef([]);
 
-        fetchCurrent(tariffCalculationQueryDTO);
-      });
-    });
-  }, [homeCountry, fetchCurrent]);
+  // Map to store all the tariff details for existing items that have been queried 
+  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
+
+  const { toast } = useToast();
+
+  // Array to store invalid items for displaying error messages 
+  const [invalidItems,setInvalidItems] = useState([]);
+
+   // Function to fetch historical tariff for items and backup partner countries
+  const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
+
+    try {
+      // POST request to get historical tariff data
+      await axios.post(
+        `${backendURL}/tariff/past`,
+        tariffCalculationQueryDTO
+      );
+
+    } catch (error) {
+      console.error("Error fetching historical tariff data:", error);
+    } 
+  }, [backendURL]);
 
   // Method to fetch current tariff information for items and backup partner countries 
   const fetchCurrent = useCallback(async (tariffCalculationQueryDTO) => {
@@ -263,41 +244,22 @@ export function IndustrySearch({ onMenuClick }) {
       }
   }, [backendURL, fetchPast]);
   
-  // Function to fetch historical tariff for items and backup partner countries
-  const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
 
-    try {
-      // POST request to get historical tariff data
-      await axios.post(
-        `${backendURL}/tariff/past`,
-        tariffCalculationQueryDTO
-      );
+  const queryTariffs = useCallback((backupCountries, selectedItems) => {
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
+    backupCountries.forEach((partnerCountry) => {
+      filteredItems.forEach((item) => {
+        const tariffCalculationQueryDTO = {
+          reportingCountry : homeCountry,
+          partnerCountry : partnerCountry,
+          item : item,
+          itemCost : 100,
+        };
 
-    } catch (error) {
-      console.error("Error fetching historical tariff data:", error);
-    } 
-  }, [backendURL]);
-
-  // Map to store all the tariff details for existing items that have been queried 
-  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
-
-  useEffect(() => {
-    console.log("Item is stored in existing map ", existingItemDetailsMap);
-  }, [existingItemDetailsMap]);
-
-  // Map to store all the tariff details for valid items 
-  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
-
-  useEffect(() => {
-    console.log("Item is stored in valid map ", validItemDetailsMap);
-  }, [validItemDetailsMap]);
-
-  // Array to store invalid items for displaying error messages 
-  const [invalidItems,setInvalidItems] = useState([]);
-
-  useEffect(() => {
-    console.log("INVALID ITEMS ", invalidItems);
-  }, [invalidItems]);
+        fetchCurrent(tariffCalculationQueryDTO);
+      });
+    });
+  }, [invalidItems, homeCountry, fetchCurrent]);
 
   /* 
    * Method to fetch tariff details for each item 1 second after selection change
@@ -306,7 +268,6 @@ export function IndustrySearch({ onMenuClick }) {
     if (selectedItems.length === 0) return;
 
     setLoadingDetails(true);
-    setItemErrors([]);
 
     console.log("Before filtering: ", selectedItems);
 
@@ -343,9 +304,9 @@ export function IndustrySearch({ onMenuClick }) {
         console.log("Successfully retrieved tariff details for item ", filteredItems[i], "Number of countries: ", response.data.tariffDetailsList.length);
         console.log("Tariff Details ", response.data);
 
-      if (response.data.tariffDetailsList.length == 0) {
-        throw new Error(`No tariff data available for item: ${filteredItems[i]}`);
-      }
+        if (!response.data || !response.data.tariffDetailsList || response.data.tariffDetailsList.length == 0) {
+          throw new Error(`No tariff data available for item: ${filteredItems[i]}`);
+        }
 
         // Store the item and it's tariff data
         setValidItemDetailsMap(prev => ({
@@ -365,37 +326,91 @@ export function IndustrySearch({ onMenuClick }) {
         }));
 
       } catch (error) {
-      setInvalidItems(prev => [...prev, currentItem]);  // add the invalid item into the list 
+        setInvalidItems(prev => [...prev, currentItem]);  // add the invalid item into the list 
         console.log("Failed to load tariff for item ", filteredItems[i], error);
-
-      } finally {
-        setLoadingDetails(false);
       }
     }
+
+    setLoadingDetails(false);
     
   }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate, backendURL]);
-  /* 
 
-  Maps: 1 to store all queried items, 1 to store newly queried items 
-  Array: invalid items
+
+  useEffect(() => {
+    const prevSelectedItems = prevSelectedItemsRef.current;
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
+    const newlyAdded = filteredItems.filter(item => !prevSelectedItems.includes(item));
+
+    if (newlyAdded.length > 0) {
+      newlyAdded.forEach(item => {
+        if (item in existingItemDetailsMap) {
+          setValidItemDetailsMap(prev => ({
+            ...prev,
+            [item]: existingItemDetailsMap[item]
+            }));
+
+          setTariffDetails(prev => ({
+            ...prev,
+            [item]: existingItemDetailsMap[item]
+          }));
+
+        } else {
+          queryTariffs(backupCountries, newlyAdded);
+        }
+      });
+
+    }
+
+    prevSelectedItemsRef.current = selectedItems;
+  }, [selectedItems, backupCountries, existingItemDetailsMap, invalidItems, queryTariffs]);
+
+  // load and store tariff details for the selected items
+  const [tariffDetails, setTariffDetails] = useState({});
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // Add a debounce timer ref
+  const debounceTimerRef = useRef(null);
   
-  User selects reporting country, industry, start date, end date => display list of items 
-  - clear all queried items and newly queried items
 
-  User selects individual items:
-    - add all items into newly queried items 
-    - check if the items is in all queried items -> if yes, remove from newly queried items 
+  useEffect(() => {
+    // Clear the previous timeout if it exists
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
-    - for each queried items -> post to backend using the SelectedItemDTO => Change DTO to only be for one item
-    - catch any error for that item if any -> add the item to invalid items to display error messages 
-    - continue querying for the next item 
+    // Clear tariff details if no items are selected
+    if (selectedItems.length === 0) {
+      setTariffDetails({});
+      return;
+    }
 
-    Results: TariffDetailsforItemDTO for details of tariffs of that item 
-    store it into a details Map 
+    // Only fetch after 1 second of inactivity
+    debounceTimerRef.current = setTimeout(() => {
+      fetchTariffDetails();
+    }, 1000);
 
-  - display content for valid items in the map
-  - for invalid items in the array, display the error message
-  */
+    // Cleanup function to clear timeout when component unmounts
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [selectedItems, fetchTariffDetails]);
+
+  useEffect(() => {
+    console.log("Item is stored in existing map ", existingItemDetailsMap);
+  }, [existingItemDetailsMap]);
+
+  // Map to store all the tariff details for valid items 
+  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
+
+  useEffect(() => {
+    console.log("Item is stored in valid map ", validItemDetailsMap);
+  }, [validItemDetailsMap]);
+
+  useEffect(() => {
+    console.log("INVALID ITEMS ", invalidItems);
+  }, [invalidItems]);
 
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]
@@ -598,9 +613,22 @@ export function IndustrySearch({ onMenuClick }) {
 
             <div className="flex items-center mb-3 text-sm">
               <button
-                onClick={() => setSelectedItems([...itemList])}
-                className="hover:underline"
+                onClick={() => {
+                  setSelectedItems([...itemList]);
+
+                  const validItems = Object.keys(validItemDetailsMap);
+                  const newItems = itemList.filter(item => !validItems.includes(item));
+
+                  setTariffDetails(validItemDetailsMap)
+
+                  if (newItems.length > 0) {
+                    console.log("New items to fetch: ", newItems);
+                  }
+                }}
+                className="hover:underline transition-colors duration-200"
                 style={{ color: colors.accent }}
+                onMouseEnter={(e) => e.target.style.color = colors.hover}
+                onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 All
               </button>
@@ -608,9 +636,14 @@ export function IndustrySearch({ onMenuClick }) {
                 |
               </span>
               <button
-                onClick={() => setSelectedItems([])}
-                className="hover:underline"
+                onClick={() => {
+                  setSelectedItems([]);
+                  setTariffDetails({});
+                }}
+                className="hover:underline transition-colors duration-200"
                 style={{ color: colors.accent }}
+                onMouseEnter={(e) => e.target.style.color = colors.hover}
+                onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 None
               </button>
@@ -636,19 +669,7 @@ export function IndustrySearch({ onMenuClick }) {
                       key={item}
                       onClick={() => {
                         if (isSelected) {
-                          const newSelectedItems = selectedItems.filter(
-                            (id) => id !== item
-                          );
-                          setSelectedItems(newSelectedItems);
-                          // Immediately remove error for this item
-                          setItemErrors((prev) =>
-                            prev.filter((error) => !error.includes(`"${item}"`))
-                          );
-                          // Clear all errors if no items remain selected
-                          if (newSelectedItems.length === 0) {
-                            setItemErrors([]);
-                            setTariffDetails({});
-                          }
+                          setSelectedItems(selectedItems.filter(i => i !== item));
                         } else {
                           setSelectedItems([...selectedItems, item]);
                         }
@@ -677,12 +698,12 @@ export function IndustrySearch({ onMenuClick }) {
                           <div
                             className="w-4 h-4 rounded-full flex items-center justify-center"
                             style={{
-                              backgroundColor: "#d1d5db",
+                              backgroundColor: colors.accent,
                             }}
                           >
                             <span
                               className="text-xs"
-                              style={{ color: "#374151" }}
+                              style={{ color: colors.background }}
                             >
                               ✓
                             </span>
@@ -730,7 +751,7 @@ export function IndustrySearch({ onMenuClick }) {
           )}
 
           {/* Item-specific errors */}
-          {itemErrors.length > 0 && selectedItems.length > 0 && (
+          {invalidItems.filter(item => selectedItems.includes(item)).length > 0 && (
             <div
               className="p-6 rounded-md shadow-sm mb-6 border-l-4"
               style={{
@@ -743,18 +764,16 @@ export function IndustrySearch({ onMenuClick }) {
                 className="font-semibold mb-2"
                 style={{ color: colors.warning }}
               >
-                Some items could not be loaded:
+                No tariff information found:
               </h3>
               <ul className="list-disc list-inside space-y-1">
-                {itemErrors.map((error, index) => (
-                  <li
-                    key={index}
-                    className="text-sm"
-                    style={{ color: colors.foreground }}
-                  >
-                    {error}
-                  </li>
-                ))}
+                {invalidItems
+                  .filter(item => selectedItems.includes(item))
+                  .map((error, index) => (
+                    <li key={index} className="test-sm" style={{color: colors.foreground}}>
+                      {error}
+                    </li>
+                  ))}
               </ul>
             </div>
           )}

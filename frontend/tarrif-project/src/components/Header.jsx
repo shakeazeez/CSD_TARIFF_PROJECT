@@ -5,8 +5,8 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from './ui/button'
-import { useTheme } from '../contexts/ThemeContext.jsx'
-import { useAuth } from '../contexts/AuthContext.jsx'
+import { useTheme } from '../contexts/use-theme.js'
+import { useAuth } from '../contexts/use-auth.js'
 import {
     Calculator,
     Menu,

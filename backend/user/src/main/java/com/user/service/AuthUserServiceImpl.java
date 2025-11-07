@@ -1,30 +1,28 @@
 package com.user.service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.user.dto.CreateUserDTO;
 import com.user.dto.TokenDTO;
 import com.user.enums.Industry;
 import com.user.enums.Role;
-import com.user.history.History;
 import com.user.user.User;
 import com.user.user.BankUser;
 import com.user.user.BusinessUser;
 import com.user.user.MemberUser;
 import com.user.user.UserRepo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthUserServiceImpl implements AuthUserService {
 
     private final UserRepo generalUserRepo;
+    private final Logger log = LoggerFactory.getLogger(AuthUserServiceImpl.class);
 
     public AuthUserServiceImpl(UserRepo generalUserRepo) {
         this.generalUserRepo = generalUserRepo;
@@ -43,37 +41,40 @@ public class AuthUserServiceImpl implements AuthUserService {
         User creation;
 
         switch (createUserDTO.role().toUpperCase()) {
-            case "MEMBER": {
-                creation = new MemberUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
-                        new ArrayList<>());
-                break;
-            }
             case "BANK": {
                 if (createUserDTO.industry() == null || createUserDTO.originCountry() == null) {
                     throw new IllegalArgumentException("Not enough parameters valid for bank user");
-                } 
-                creation = new BankUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
+                }
+                creation = new BankUser(createUserDTO.username(), passwordHash,
+                        Role.valueOf(createUserDTO.role().toUpperCase()),
                         Industry.valueOf(createUserDTO.industry().toUpperCase()), createUserDTO.originCountry());
                 break;
             }
             case "BUSINESS": {
-                if (createUserDTO.itemsSold() == null || createUserDTO.destinationCountries() == null ||  createUserDTO.originCountry() == null) {
+                if (createUserDTO.itemsSold() == null || createUserDTO.destinationCountries() == null
+                        || createUserDTO.originCountry() == null) {
                     throw new IllegalArgumentException("Not enough parameters valid for bank user");
-                } 
-                creation = new BusinessUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
+                }
+                log.info(createUserDTO.toString());
+                creation = new BusinessUser(createUserDTO.username(), passwordHash,
+                        Role.valueOf(createUserDTO.role().toUpperCase()),
                         createUserDTO.itemsSold(), createUserDTO.destinationCountries(), createUserDTO.originCountry());
                 break;
             }
             case "ADMIN": {
-                creation = new User(createUserDTO.username(), passwordHash, new ArrayList<>());
+                creation = new User(createUserDTO.username(), passwordHash,
+                        Role.valueOf(createUserDTO.role().toUpperCase()));
+                break;
+            }
+            case "MEMBER": {
+                creation = new User(createUserDTO.username(), passwordHash,
+                        Role.valueOf(createUserDTO.role().toUpperCase()));
                 break;
             }
             default: {
                 throw new IllegalArgumentException("User type not available");
             }
         }
-
-        creation.getRole().add(Role.valueOf(createUserDTO.role().toUpperCase()));
         generalUserRepo.save(creation);
 
         switch (createUserDTO.role().toUpperCase()) {
@@ -81,7 +82,7 @@ public class AuthUserServiceImpl implements AuthUserService {
                 return new TokenDTO(
                         createUserDTO.username(),
                         null,
-                        ((MemberUser) creation).getPinnedTariffId(),
+                        creation.getPinnedTariffId(),
                         new HashMap<>());
             }
             case "BANK": {

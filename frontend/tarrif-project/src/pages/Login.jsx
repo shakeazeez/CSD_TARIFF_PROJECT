@@ -18,8 +18,10 @@ import { Label } from '../components/ui/label' // Form label component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select' // Select component
 
 // Theme and icon components
-import { useTheme } from '../contexts/ThemeContext.jsx' // Custom theme context for component-level theming
-import { useAuth } from '../contexts/AuthContext.jsx' // Authentication context for user management
+import { useTheme } from '../contexts/use-theme.js' // Custom theme context for component-level theming
+import { useAuth } from '../contexts/use-auth.js' // Authentication context for user management
+import Dropdown from '../components/Dropdown.jsx' // Custom dropdown component
+import MultiSelect from '../components/MultiSelect.jsx' // Custom multiselect component
 import {
     Sun,
     Moon,
@@ -37,7 +39,7 @@ import {
     X
 } from 'lucide-react' // SVG icons
 
-import { useToast } from '../hooks/use-toast'
+// import { useToast } from '../hooks/use-toast' // Not currently used
 
 // ====================================
 // ANIMATION VARIANTS
@@ -93,8 +95,8 @@ export function Login(){
     // Get authentication context
     const { isAuthenticated, login } = useAuth();
 
-    // Toast hook
-    const { toast } = useToast();
+    // Toast hook - commented out as not currently used
+    // const { toast } = useToast();
 
     // ====================================
     // NAVIGATION
@@ -117,7 +119,15 @@ export function Login(){
     const backendURL = import.meta.env.VITE_BACKEND_URL;
 
     // Login form data
-    const [form, setForm] = useState({ username: "", password: "", rePassword: "" }); // Form data
+    const [form, setForm] = useState({ 
+        username: "", 
+        password: "", 
+        rePassword: "",
+        industry: "",
+        originCountry: "",
+        itemsSold: "",
+        destinationCountries: []
+    }); // Form data
     const [role, setRole] = useState(""); // User role for signup
     const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
     const [showRePassword, setShowRePassword] = useState(false); // Re-enter password visibility toggle
@@ -133,6 +143,9 @@ export function Login(){
         number: false,
         special: false
     }); // Password requirements status
+
+    // Countries data
+    const [countries, setCountries] = useState([]); // List of countries from backend
 
     // ====================================
     // EFFECTS
@@ -154,17 +167,37 @@ export function Login(){
         }
     }, [success]);
 
+    // Fetch countries on component mount
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const response = await axios.get(`${backendURL}/tariff/countries`);
+                setCountries(response.data);
+            } catch (error) {
+                console.error("Error fetching countries:", error);
+            }
+        };
+        fetchCountries();
+    }, [backendURL]);
+
+    // Transform countries for dropdown compatibility
+    const modCountries = countries && Array.isArray(countries)
+        ? countries.map((item) => ({
+            id: item.countryName, // Display name for dropdown
+            code: item.countryName, // Value sent to backend
+        }))
+        : [];
+
     // ====================================
     // USER DTO
     // ====================================
 
-    // DTO for login/signup API call
-    // DTO for login/signup API call
-    const authDTO = {
-        username: form.username,
-        password: form.password,
-        role: role
-    }
+    // DTO for login/signup API call - commented out as not used
+    // const authDTO = {
+    //     username: form.username,
+    //     password: form.password,
+    //     role: role
+    // }
 
     // ====================================
     // UTILITY FUNCTIONS
@@ -185,6 +218,16 @@ export function Login(){
         }
     };
 
+    // Handle dropdown changes
+    const handleDropdownChange = (name, value) => {
+        setForm({...form, [name]: value});
+    };
+
+    // Handle multiselect changes
+    const handleMultiSelectChange = (name, value) => {
+        setForm({...form, [name]: value});
+    };
+
     // Validate form inputs
     const validateInputs = () => {
         if (!form.username) return "Please enter your username";
@@ -193,6 +236,18 @@ export function Login(){
         if (form.password.length > 20) return "Password must be at most 20 characters long";
         if (isSignUp && !role) return "Please select a role";
         if (isSignUp && form.password !== form.rePassword) return "Passwords do not match";
+        
+        // Role-specific validation
+        if (isSignUp && role === 'Business') {
+            if (!form.originCountry) return "Please enter your origin country";
+            if (!form.destinationCountries || form.destinationCountries.length === 0) return "Please enter destination countries";
+            if (!form.itemsSold) return "Please enter items sold";
+        }
+        if (isSignUp && role === 'Bank') {
+            if (!form.industry) return "Please select your industry";
+            if (!form.originCountry) return "Please enter your origin country";
+        }
+        
         return null;
     };
 
@@ -203,7 +258,7 @@ export function Login(){
         let tempErrors = ({username: "", password: "", rePassword: ""});
 
         const usernameValidChars = /^[a-zA-Z0-9._]+$/;
-        const passwordValidChars = /^[a-zA-Z0-9#$]+$/;
+        // const passwordValidChars = /^[a-zA-Z0-9#$]+$/; // Not currently used
 
         if (form.username == "" || form.password == "") {
             tempErrors.username = "Username is required";
@@ -251,38 +306,44 @@ export function Login(){
         setSuccess("");
 
         try{
-            // DEMO CREDENTIALS - Remove in production
-            const DEMO_USERNAME = "demo_user";
-            const DEMO_PASSWORD = "DemoPass123!";
-
-            // Check for demo credentials first
-            if (form.username === DEMO_USERNAME && form.password === DEMO_PASSWORD) {
-                const demoToken = `demo-token-${Date.now()}`;
-
-                login({
-                    username: DEMO_USERNAME,
-                    name: "Demo User",
-                    role: "member",
-                    token: demoToken,
-                    pin: []
-                });
-
-                // Redirect to dashboard page after successful authentication
-                navigate('/dashboard');
-
-                setIsLoading(false);
-                return;
-            }
 
             // Prepare form data for backend
-            const data = {
+            // Provide safe defaults for role-specific fields to match backend CreateUserDTO
+            const baseData = {
                 username: form.username,
                 password: form.password,
-                ...(isSignUp && { role })
             };
+
+            let roleExtras = {};
+            if (isSignUp && role) {
+                const normalizedRole = role; // keep presentation value, backend upper-cases internally
+                if (normalizedRole === 'Business') {
+                    // backend expects itemsSold, destinationCountries, originCountry
+                    roleExtras = {
+                        role: normalizedRole,
+                        itemsSold: form.itemsSold ? form.itemsSold.split(',').map(item => item.trim()) : [],
+                        destinationCountries: form.destinationCountries || [],
+                        originCountry: form.originCountry || ''
+                    };
+                } else if (normalizedRole === 'Bank') {
+                    // backend expects industry and originCountry for banks
+                    roleExtras = {
+                        role: normalizedRole,
+                        industry: form.industry || '',
+                        originCountry: form.originCountry || ''
+                    };
+                } else {
+                    roleExtras = { role: normalizedRole };
+                }
+            }
+
+            const data = { ...baseData, ...(isSignUp ? roleExtras : {}) };
 
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
+            // Debug: log outgoing payload (remove in production)
+            console.debug('Auth request payload:', { endpoint: `${backendURL}${endpoint}`, data });
+            console.debug('Username being sent:', data.username);
             const response = await axios.post(`${backendURL}${endpoint}`, data, {
                 headers: {
                     'Content-Type': 'application/json'
@@ -306,7 +367,7 @@ export function Login(){
                 authPayload = loginResponse?.data ?? {};
             }
 
-            const { token, username, pin, ...restPayload } = authPayload ?? {};
+            const { token, username, pin, destinationCountries, ...restPayload } = authPayload ?? {};
 
             if (!token || !username) {
                 throw new Error('Authentication response is missing required fields.');
@@ -319,17 +380,31 @@ export function Login(){
                 ...restPayload
             });
 
-            if (isSignUp) {
-                setSuccess('Account created successfully. Redirecting to dashboard...');
+            // Determine redirect path based on user role
+            let redirectPath = '/dashboard'; // default for MEMBER and BANK
+            if (destinationCountries) {
+                // Business user
+                redirectPath = '/business';
             }
 
-            navigate('/dashboard');
+            if (isSignUp) {
+                setSuccess(`Account created successfully. Redirecting to ${redirectPath === '/business' ? 'business page' : 'dashboard'}...`);
+            }
+
+            navigate(redirectPath);
 
         } catch(error){
+            // Log full error details to help debugging (includes server validation message)
             console.error(`${isSignUp ? 'Signup' : 'Login'} error:`, error);
+            if (error?.response) {
+                console.error('Server response status:', error.response.status);
+                console.error('Server response data:', error.response.data);
+            }
             const action = isSignUp ? 'signup' : 'login';
             const errorMessage = error.response?.status === 401
                 ? "Username or password is invalid."
+                : error.response?.status === 409
+                ? "Username already exists. Please choose a different username."
                 : (error.response?.data?.message || error.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
             setAllow(errorMessage);
         } finally {
@@ -764,6 +839,144 @@ export function Login(){
                                 </motion.div>
                             )}
 
+                            {/* ADDITIONAL FIELDS FOR BUSINESS ROLE */}
+                            {isSignUp && role === 'Business' && (
+                                <motion.div
+                                    variants={itemVariants}
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="originCountry"
+                                            className="text-sm font-medium transition-colors duration-300"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            Origin Country
+                                        </Label>
+                                        <Dropdown
+                                            options={modCountries}
+                                            value={form.originCountry}
+                                            onChange={(option) => handleDropdownChange('originCountry', option ? option.code : '')}
+                                            title="Select origin country"
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="destinationCountries"
+                                            className="text-sm font-medium transition-colors duration-300"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            Destination Countries
+                                        </Label>
+                                        <MultiSelect
+                                            options={modCountries}
+                                            value={form.destinationCountries}
+                                            onChange={(value) => handleMultiSelectChange('destinationCountries', value)}
+                                            title="Select destination countries"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="itemsSold"
+                                            className="text-sm font-medium transition-colors duration-300"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            Items Sold (comma-separated)
+                                        </Label>
+                                        <Input
+                                            type="text"
+                                            id="itemsSold"
+                                            name="itemsSold"
+                                            placeholder="e.g., electronics, clothing, food"
+                                            value={form.itemsSold}
+                                            onChange={handleChange}
+                                            className="transition-colors duration-300"
+                                            style={{
+                                                backgroundColor: colors.input,
+                                                borderColor: colors.border,
+                                                color: colors.foreground
+                                            }}
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* ADDITIONAL FIELDS FOR BANK ROLE */}
+                            {isSignUp && role === 'Bank' && (
+                                <motion.div
+                                    variants={itemVariants}
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="industry"
+                                            className="text-sm font-medium transition-colors duration-300"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            Industry
+                                        </Label>
+                                        <Select value={form.industry} onValueChange={(value) => handleDropdownChange('industry', value)} disabled={isLoading}>
+                                            <SelectTrigger
+                                                className="transition-colors duration-300"
+                                                style={{
+                                                    backgroundColor: colors.input,
+                                                    borderColor: colors.border,
+                                                    color: colors.foreground
+                                                }}
+                                            >
+                                                <SelectValue placeholder="Select your industry" />
+                                            </SelectTrigger>
+                                            <SelectContent
+                                                style={{
+                                                    backgroundColor: colors.surface,
+                                                    borderColor: colors.border
+                                                }}
+                                            >
+                                                <SelectItem value="Agriculture" style={{ color: colors.foreground }}>Agriculture</SelectItem>
+                                                <SelectItem value="Manufacturing" style={{ color: colors.foreground }}>Manufacturing</SelectItem>
+                                                <SelectItem value="Retail" style={{ color: colors.foreground }}>Retail</SelectItem>
+                                                <SelectItem value="Healthcare" style={{ color: colors.foreground }}>Healthcare</SelectItem>
+                                                <SelectItem value="Technology" style={{ color: colors.foreground }}>Technology</SelectItem>
+                                                <SelectItem value="Finance" style={{ color: colors.foreground }}>Finance</SelectItem>
+                                                <SelectItem value="Education" style={{ color: colors.foreground }}>Education</SelectItem>
+                                                <SelectItem value="Construction" style={{ color: colors.foreground }}>Construction</SelectItem>
+                                                <SelectItem value="Transportation" style={{ color: colors.foreground }}>Transportation</SelectItem>
+                                                <SelectItem value="Energy" style={{ color: colors.foreground }}>Energy</SelectItem>
+                                                <SelectItem value="Real Estate" style={{ color: colors.foreground }}>Real Estate</SelectItem>
+                                                <SelectItem value="Hospitality" style={{ color: colors.foreground }}>Hospitality</SelectItem>
+                                                <SelectItem value="Entertainment" style={{ color: colors.foreground }}>Entertainment</SelectItem>
+                                                <SelectItem value="Food and Beverage" style={{ color: colors.foreground }}>Food and Beverage</SelectItem>
+                                                <SelectItem value="Automotive" style={{ color: colors.foreground }}>Automotive</SelectItem>
+                                                <SelectItem value="Pharmaceuticals" style={{ color: colors.foreground }}>Pharmaceuticals</SelectItem>
+                                                <SelectItem value="Telecommunications" style={{ color: colors.foreground }}>Telecommunications</SelectItem>
+                                                <SelectItem value="Aerospace" style={{ color: colors.foreground }}>Aerospace</SelectItem>
+                                                <SelectItem value="Chemicals" style={{ color: colors.foreground }}>Chemicals</SelectItem>
+                                                <SelectItem value="Mining" style={{ color: colors.foreground }}>Mining</SelectItem>
+                                                <SelectItem value="Other" style={{ color: colors.foreground }}>Other</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="originCountry"
+                                            className="text-sm font-medium transition-colors duration-300"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            Origin Country
+                                        </Label>
+                                        <Dropdown
+                                            options={modCountries}
+                                            value={form.originCountry}
+                                            onChange={(option) => handleDropdownChange('originCountry', option ? option.code : '')}
+                                            title="Select origin country"
+                                            className="w-full"
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
                             {/* AUTH BUTTON */}
                             <motion.div
                                 variants={itemVariants}
@@ -813,7 +1026,15 @@ export function Login(){
                                         setError({username: "", password: "", rePassword: ""});
                                         setAllow("");
                                         setSuccess("");
-                                        setForm({ username: "", password: "", rePassword: "" });
+                                        setForm({ 
+                                            username: "", 
+                                            password: "", 
+                                            rePassword: "",
+                                            industry: "",
+                                            originCountry: "",
+                                            itemsSold: "",
+                                            destinationCountries: ""
+                                        });
                                         setRole("");
                                     }}
                                     className="text-sm transition-colors duration-300"

@@ -25,7 +25,7 @@ import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { ChevronDown } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { useTheme } from "../../contexts/ThemeContext.jsx";
+import { useTheme } from "../../contexts/use-theme.js";
 
 const Calendar = ({
   placeholder = "Select date",

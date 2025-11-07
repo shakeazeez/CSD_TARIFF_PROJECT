@@ -9,7 +9,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { useTheme } from "../contexts/ThemeContext.jsx"; // Import theme context
+import { useTheme } from "../contexts/use-theme.js"; // Import theme context
 
 // Register components
 ChartJS.register(
@@ -52,7 +52,7 @@ ChartJS.register(
 
 const IndustryChart = ({ labels, value }) => {
   // Get theme colors for chart styling
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Calculate dynamic max value based on data
   const calculateMaxValue = () => {
