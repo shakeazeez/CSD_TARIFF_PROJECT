@@ -23,7 +23,7 @@ import {
 
 // Theme and icon components
 import { useTheme } from "../contexts/use-theme.js"; // Custom theme context for component-level theming
-// import { useAuth } from "../contexts/AuthContext.jsx"; // Authentication context for user management
+import { useAuth } from "../contexts/use-auth.js"; // Authentication context for user management
 import {
     Calculator as CalculatorIcon,
     Menu,
@@ -35,6 +35,7 @@ import {
     RefreshCw,
     AlertCircle,
     CheckCircle,
+    LetterTextIcon,
 } from "lucide-react"; // SVG icons
 
 // Custom components
@@ -52,30 +53,21 @@ export function Business({onMenuClick}) {
     // Get theme context for component-level color management
     const { colors } = useTheme();
     const backendURL = import.meta.env.VITE_BACKEND_URL;
-    // Country data and user selections
-    const [report, setReport] = useState(""); // Selected reporting country (importer) - form commented out
-    const [partner, setPartner] = useState(""); // Selected partner country (exporter) - form commented out
-    const [tableData, setTableData] = useState([]); // State for the table data
 
+    // auth / username resolution
+    const { user } = useAuth?.() ?? {}; // gracefully handle if useAuth not available
+    const username = user?.username || localStorage.getItem("username") || "demo";
+
+    // Country data and user selections
+    const [report, setReport] = useState(""); // Selected reporting country (importer)
+    const [partner, setPartner] = useState(""); // Selected partner country (exporter)
+    const [tableData, setTableData] = useState([]); // State for the table data (unused but kept)
+    const [list, setList] = useState([]); // List of countries from backend
     // Tariff calculation inputs
-    const [hs, setHS] = useState(""); // HS Code - form commented out
+    const [hs, setHS] = useState(""); // HS Code / item description
     const [cost, setCost] = useState(); // Item cost in USD - not currently used
 
-    // preset list of stuff for testing
-    /**
-     * presetList consists of objects with the following structure:
-     * String report
-     * List<String> partner
-     * List<String> hsCode
-     * List<Integer> rate
-     */
-    // Preset list of business items for testing
-    const presetList = useMemo(() => [
-        { report: "United States", partner: "Mexico", hsCode: "slipper", rate: 5 },
-        { report: "United States", partner: "Germany", hsCode: "slipper", rate: 7 },
-        { report: "Canada", partner: "Mexico", hsCode: "slipper", rate: 6 },
-    ], []);
-
+    // local items state (normalized to same shape used in UI)
     const presetListJSON = [
         {
             report: "United States",
@@ -90,90 +82,87 @@ export function Business({onMenuClick}) {
             rate: [6, 4, 8]
         },
     ];
+    const [items, setItems] = useState(presetListJSON);
 
-    
+    // Helper: normalize backend response into items shape used by UI
+    const normalizeToItems = (data) => {
+        if (!data) return presetListJSON;
+        // If already an array of items in the expected shape
+        if (Array.isArray(data) && data.length && data[0].report) return data;
+        // If response is an object that contains items list
+        if (Array.isArray(data.items)) return data.items;
+        if (Array.isArray(data.businessItems)) return data.businessItems;
+        // If response has a map of report -> partners, convert (best-effort)
+        if (typeof data === "object") {
+            const arr = [];
+            for (const key of Object.keys(data)) {
+                if (Array.isArray(data[key].partner)) {
+                    arr.push({
+                        report: key,
+                        partner: data[key].partner,
+                        hsCode: data[key].hsCode || data[key].hs || [],
+                        rate: data[key].rate || []
+                    });
+                }
+            }
+            if (arr.length) return arr;
+        }
+        return presetListJSON;
+    };
 
-    // modList commented out as form is commented out
-    // login -> certain values not null -> itemList returns business page 
-    // Put in get mapping 
-    // Get mapping is business/{username}
-
+    // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
+        if (!username) return;
         try {
-            const response = await axios.get(
-                `${backendURL}/business/items`
-            );
-            setTableData(response.data);
+            const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`);
+            const data = resp?.data;
+            const normalized = normalizeToItems(data);
+            setItems(normalized);
+            setTableData(normalized); // keep tableData in sync if used elsewhere
         } catch (error) {
             console.error("Error fetching business items:", error);
-            setTableData(presetList); // Fallback to preset list on error
+            // fallback: keep existing items (or use preset)
+            // setItems(presetListJSON);
         }
-    }, [backendURL, presetList]);
+    }, [backendURL, username]);
 
     useEffect(() => {
         fetchBusinessItems();
     }, [fetchBusinessItems]);
 
-    // Add state to track data updates
-    const [items, setItems] = useState(presetListJSON);
-    
-    // Modified handleAddItem to update items state
-    const handleAddItem = () => {
-        if (report && partner && hs) {
-            const newItems = [...items];
-            let entry = newItems.find(item => item.report === report);
-            
-            if (entry) {
-                entry.partner.push(partner);
-                entry.hsCode.push(hs);
-                //rate to get from backend
-                
-            } else {
-                newItems.push({
-                    report: report,
-                    partner: [partner],
-                    hsCode: [hs],
-                    rate: [Math.floor(Math.random() * 10) + 1]
-                });
-            }
-            
-            // Update items state to trigger re-render
-            setItems(newItems);
-            
-            // Clear inputs
-            setHS("");
-            setPartner("");
-            // Optionally clear report if needed
-            // setReport("");
-        }
+    useEffect(() => {
+    // Async function to fetch all available countries from backend
+    const fetchCountry = async () => {
+      try {
+        // Make GET request to backend countries endpoint
+        const response = await axios.get(`${backendURL}/tariff/countries`);
+
+        // Update state with fetched country list
+        setList(response.data);
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+
+        // FALLBACK DATA: Uncomment below for development/testing without backend
+        const fallbackCountries = [
+            { countryName: "United States" },
+            { countryName: "China" },
+            { countryName: "Singapore" },
+            { countryName: "Malaysia" },
+            { countryName: "Japan" },
+            { countryName: "South Korea" },
+            { countryName: "Germany" },
+            { countryName: "United Kingdom" },
+            { countryName: "France" },
+            { countryName: "Canada" }
+        ];
+        setList(fallbackCountries);
+      }
     };
 
-    // Add delete handler
-    const handleDelete = (reportingCountry, partnerIndex) => {
-        const newItems = items.map(item => {
-            if (item.report === reportingCountry) {
-                return {
-                    ...item,
-                    partner: item.partner.filter((_, idx) => idx !== partnerIndex),
-                    hsCode: item.hsCode.filter((_, idx) => idx !== partnerIndex),
-                    rate: item.rate.filter((_, idx) => idx !== partnerIndex)
-                };
-            }
-            return item;
-        }).filter(item => item.partner.length > 0); // Remove empty entries
-        
-        setItems(newItems);
-    };
+    // Execute the fetch function
+    fetchCountry();
+  }, [backendURL]); // run on mount / backendURL change
 
-    const list = [
-        { countryName: "United States" },
-        { countryName: "Canada" },
-        { countryName: "Mexico" },
-        { countryName: "Germany" },
-        { countryName: "France" },
-        { countryName: "China" },
-        { countryName: "Japan" },
-    ];
 
     const modList =
         list && Array.isArray(list)
@@ -183,6 +172,119 @@ export function Business({onMenuClick}) {
             }))
             : [];
 
+    // Add item: POST to /business/{username}/items
+    const handleAddItem = async () => {
+        if (!report || !partner || !hs) return;
+
+        // fetch current rate from tariff service first (best-effort)
+        let currentRate = 5; // default fallback
+        try {
+            const response = await axios.post(`${backendURL}/tariff/current`, {
+                reportingCountry: report,
+                partnerCountry: partner,
+                item: hs,
+                itemCost: 1000 // dummy cost, magic number
+            });
+            const fetched = response?.data;
+            const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
+            if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
+                currentRate = rateFromResp;
+            } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
+                currentRate = Number(rateFromResp);
+            }
+        } catch (err) {
+            console.warn("Could not fetch tariff rate, using fallback rate:", err);
+        }
+
+        // Build payload expected by backend ReceiveListDTO: { information: [ ... ] }
+        const payload = {
+            information: [
+                {
+                    report,
+                    partner,
+                    hsCode: hs,
+                    rate: currentRate
+                }
+            ]
+        };
+
+        try {
+            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/items`, payload);
+            // refresh from server after successful add
+            await fetchBusinessItems();
+        } catch (err) {
+            console.error("Error adding item to backend, falling back to local update:", err);
+            // fallback: update local items state
+            const newItems = items.map((it) => ({
+                ...it,
+                partner: Array.isArray(it.partner) ? [...it.partner] : [],
+                hsCode: Array.isArray(it.hsCode) ? [...it.hsCode] : [],
+                rate: Array.isArray(it.rate) ? [...it.rate] : [],
+            }));
+            let entry = newItems.find(item => item.report === report);
+            if (entry) {
+                entry.partner.push(partner);
+                entry.hsCode.push(hs);
+                entry.rate.push(currentRate);
+            } else {
+                newItems.push({
+                    report,
+                    partner: [partner],
+                    hsCode: [hs],
+                    rate: [currentRate]
+                });
+            }
+            setItems(newItems);
+        }
+
+        // Clear inputs
+        setHS("");
+        setPartner("");
+    };
+
+    // Delete an item: call DELETE /business/{username}/items with body { information: [...] }
+    const handleDelete = async (reportingCountry, partnerIndex) => {
+        // find the item details from current state
+        const entry = items.find(it => it.report === reportingCountry);
+        if (!entry) return;
+        const partnerName = entry.partner?.[partnerIndex];
+        const hsCode = entry.hsCode?.[partnerIndex];
+
+        if (!partnerName) return;
+
+        const payload = {
+            information: [
+                {
+                    report: reportingCountry,
+                    partner: partnerName,
+                    hsCode: hsCode
+                }
+            ]
+        };
+
+        try {
+            // axios.delete with body requires { data: payload } as second arg
+            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/items`, { data: payload });
+            // refresh from server
+            await fetchBusinessItems();
+        } catch (err) {
+            console.error("Error deleting item on backend, falling back to local delete:", err);
+            // fallback: local state update
+            const newItems = items.map(item => {
+                if (item.report === reportingCountry) {
+                    return {
+                        ...item,
+                        partner: item.partner.filter((_, idx) => idx !== partnerIndex),
+                        hsCode: item.hsCode.filter((_, idx) => idx !== partnerIndex),
+                        rate: item.rate.filter((_, idx) => idx !== partnerIndex)
+                    };
+                }
+                return item;
+            }).filter(item => item.partner.length > 0); // Remove empty entries
+
+            setItems(newItems);
+        }
+    };
 
     return (
         <>
