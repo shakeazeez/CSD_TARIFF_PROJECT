@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.tariff.calculation.tariffCalc.service.EmbeddingService;
@@ -14,6 +15,7 @@ import com.tariff.calculation.tariffCalc.service.EmbeddingService;
 import jakarta.annotation.PostConstruct;
 
 @Service
+@Profile("!test")
 public class CategoryService {
 
     private static final Logger log = LoggerFactory.getLogger(CategoryService.class);
