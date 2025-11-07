@@ -126,10 +126,10 @@ jobs:
         docker-compose -f docker-compose.prod.yml down || true
 
         # Pull latest images
-        TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml pull
+        TAG=$IMAGE_TAG ECR_REGISTRY=$ECR_REGISTRY docker-compose --env-file .env.prod -f docker-compose.prod.yml pull
 
         # Start services
-        TAG=$IMAGE_TAG docker-compose -f docker-compose.prod.yml up -d
+        TAG=$IMAGE_TAG ECR_REGISTRY=$ECR_REGISTRY docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
 
         # Clean up old images
         docker image prune -f
