@@ -67,7 +67,7 @@ public class TariffController {
             @ApiResponse(responseCode = "404", description = "Countries not found", content = @Content)
     })
     @GetMapping("/countries")
-    public ResponseEntity<List<Country>> getAllItems() {
+    public ResponseEntity<List<Country>> getAllCountries() {
         List<Country> country = null;
 
         try {
