@@ -99,7 +99,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
      * @return TariffDetailsforItemDTO, each containing tariff details for the top 10 lowest-tariff partner countries of the selected item.
      */
 
-    public TariffDetailsforItemDTO getTariffDetailsForItems (SelectedItemsDTO selectedItemsDTO) {
+    public TariffDetailsforItemDTO getTariffDetailsForItem (SelectedItemsDTO selectedItemsDTO) {
 
         List<TariffDetails> topTenCountriesTariffDetails = new ArrayList<>();
 
