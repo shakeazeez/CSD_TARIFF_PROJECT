@@ -143,6 +143,11 @@
 					</execution>
 				</executions>
 				<configuration>
+				<!-- Exclude certain classes from coverage if needed -->
+					<excludes>
+						<exclude>**/UserApplication.class</exclude>
+						<exclude>**/config/**</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 		</plugins>

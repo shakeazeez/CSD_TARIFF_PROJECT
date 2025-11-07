@@ -1,4 +1,4 @@
-package com.tariff.news.service;
+package com.tariff.news.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -10,8 +10,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.mockito.Mockito.mock;
 
 /**
- * Test configuration for NewsEmbeddingService tests
- * Provides mock beans and test-specific configurations
+ * Test-only Spring configuration for NewsEmbeddingService-related tests.
+ * - Provides @Primary beans so tests can inject predictable collaborators.
+ * - WebClient is a Mockito mock to avoid real network I/O in unit/integration tests.
+ * - ObjectMapper is a real instance for stable JSON parsing/serialization in tests.
  */
 @TestConfiguration
 public class NewsEmbeddingServiceTestConfig {
