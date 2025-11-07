@@ -2,7 +2,7 @@ name: Deploy to AWS
 
 on:
   push:
-    branches: [ main, v3 ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       version_tag:
@@ -11,10 +11,10 @@ on:
         default: ''
 
 env:
-  AWS_REGION: us-east-1  # Change to your preferred region
-  ECR_REPOSITORY_BACKEND: tariff-backend
-  ECR_REPOSITORY_ROUTER: tariff-router
-  ECR_REPOSITORY_FRONTEND: tariff-frontend
+  AWS_REGION: ap-southeast-1  # Change to your preferred region
+  ECR_REPOSITORY_BACKEND: backend
+  ECR_REPOSITORY_ROUTER: router
+  ECR_REPOSITORY_FRONTEND: frontend
 
 jobs:
   test:

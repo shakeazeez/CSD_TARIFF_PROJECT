@@ -17,9 +17,7 @@ services:
       MOACH_API_KEY: ${MOACH_API_KEY}
       SIGNING_SECRET: ${SIGNING_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
-      # DATABASE_URL: ${DATABASE_URL}
       DATABASE_PASSWORD: ${DB_PASSWORD}
-      # DB_PASSWORD: ${DB_PASSWORD}
       OPEN_AI_KEY: ${OPEN_AI_KEY}
       TARIFF_URL: http://backend:8081
       NEWS_URL: http://backend:8083
@@ -40,7 +38,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    # Ignore first
+
     environment:
         RUST_DATABASE_URL: ${RUST_DATABASE_URL}
         FRONTEND_URL: ${FRONTEND_URL}

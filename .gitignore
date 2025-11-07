@@ -1,6 +1,7 @@
 
 ### env files ###
 .env
+.env.prod
 
 #frontend
 node_modules
