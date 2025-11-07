@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
 import IndustryChart from "../components/IndustryChart.jsx";
 import { Header } from "../components/Header.jsx";
@@ -36,7 +36,7 @@ export function Bank({ onMenuClick }) {
       }
     };
     fetchData();
-  }, []);
+  }, [backendURL]);
 
   // Transform country list for dropdown component compatibility
   // Converts backend format to {id, code} format expected by Dropdown component
@@ -133,9 +133,6 @@ export function Bank({ onMenuClick }) {
     setTariffDetails({});
     setValidItemDetailsMap({});
 
-    setItemErrors([]);
-    setErrorDetails(null);
-
     // Reset the invalid items from the previous search
     setInvalidItems([]);
 
@@ -172,7 +169,7 @@ export function Bank({ onMenuClick }) {
 
     if (newlyAdded.length > 0) {
       newlyAdded.forEach(item => {
-        if (existingItemDetailsMap.hasOwnProperty(item)) {
+        if (item in existingItemDetailsMap) {
           setValidItemDetailsMap(prev => ({
             ...prev,
             [item]: existingItemDetailsMap[item]
@@ -191,13 +188,11 @@ export function Bank({ onMenuClick }) {
     }
 
     prevSelectedItemsRef.current = selectedItems;
-  }, [selectedItems]);
+  }, [selectedItems, backupCountries, existingItemDetailsMap, invalidItems, queryTariffs]);
 
   // load and store tariff details for the selected items
   const [tariffDetails, setTariffDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [errorDetails, setErrorDetails] = useState(null);
-  const [itemErrors, setItemErrors] = useState([]);
 
   // Add a debounce timer ref
   const debounceTimerRef = useRef(null);
@@ -211,7 +206,6 @@ export function Bank({ onMenuClick }) {
     // Clear tariff details if no items are selected
     if (selectedItems.length === 0) {
       setTariffDetails({});
-      setItemErrors([]);
       return;
     }
 
@@ -226,9 +220,9 @@ export function Bank({ onMenuClick }) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [selectedItems]);
+  }, [selectedItems, fetchTariffDetails]);
 
-  const backupCountries = [
+  const backupCountries = useMemo(() => [
     "Cambodia",
     "Chile",
     "Costa Rica", 
@@ -241,9 +235,9 @@ export function Bank({ onMenuClick }) {
     "Australia",
     "Iceland",
     "Georgia"
-  ]
+  ], []);
 
-  const queryTariffs = (backupCountries, selectedItems) => {
+  const queryTariffs = useCallback((backupCountries, selectedItems) => {
     const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
     backupCountries.forEach((partnerCountry) => {
       filteredItems.forEach((item) => {
@@ -257,10 +251,10 @@ export function Bank({ onMenuClick }) {
         fetchCurrent(tariffCalculationQueryDTO);
       });
     });
-  };
+  }, [invalidItems, homeCountry, fetchCurrent]);
 
   // Method to fetch current tariff information for items and backup partner countries 
-  const fetchCurrent = async (tariffCalculationQueryDTO) => {
+  const fetchCurrent = useCallback(async (tariffCalculationQueryDTO) => {
       try {
         // POST request to get current tariff calculation
         const response = await axios.post(
@@ -277,14 +271,14 @@ export function Bank({ onMenuClick }) {
 
         fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
       }
-  }
+  }, [backendURL, fetchPast]);
   
   // Function to fetch historical tariff for items and backup partner countries
-  const fetchPast = async (tariffCalculationQueryDTO) => {
+  const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
 
     try {
       // POST request to get historical tariff data
-      const response = await axios.post(
+      await axios.post(
         `${backendURL}/tariff/past`,
         tariffCalculationQueryDTO
       );
@@ -292,7 +286,7 @@ export function Bank({ onMenuClick }) {
     } catch (error) {
       console.error("Error fetching historical tariff data:", error);
     } 
-  };
+  }, [backendURL]);
 
   // Map to store all the tariff details for existing items that have been queried 
   const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
@@ -318,12 +312,10 @@ export function Bank({ onMenuClick }) {
   /* 
    * Method to fetch tariff details for each item 1 second after selection change
    */
-  const fetchTariffDetails = async () => {
+  const fetchTariffDetails = useCallback(async () => {
     if (selectedItems.length === 0) return;
 
     setLoadingDetails(true);
-    setErrorDetails(null);
-    setItemErrors([]);
 
     console.log("Before filtering: ", selectedItems);
 
@@ -336,7 +328,7 @@ export function Bank({ onMenuClick }) {
       const currentItem = filteredItems[i];
 
       // If the item has been queried before, add it to the valid map to display later
-      if (existingItemDetailsMap.hasOwnProperty(currentItem)) {
+      if (currentItem in existingItemDetailsMap) {
         setValidItemDetailsMap(prev => ({
           ...prev,
           [currentItem] : existingItemDetailsMap[currentItem]
@@ -382,16 +374,14 @@ export function Bank({ onMenuClick }) {
         }));
 
       } catch (error) {
-      setInvalidItems(prev => [...prev, currentItem]);  // add the invalid item into the list 
+        setInvalidItems(prev => [...prev, currentItem]);  // add the invalid item into the list 
         console.log("Failed to load tariff for item ", filteredItems[i], error);
-
-      } finally {
       }
     }
 
     setLoadingDetails(false);
     
-  }
+  }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate, backendURL]);
 
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]
@@ -651,12 +641,8 @@ export function Bank({ onMenuClick }) {
                           );
                           setSelectedItems(newSelectedItems);
                           // Immediately remove error for this item
-                          setItemErrors((prev) =>
-                            prev.filter((error) => !error.includes(`"${item}"`))
-                          );
                           // Clear all errors if no items remain selected
                           if (newSelectedItems.length === 0) {
-                            setItemErrors([]);
                             setTariffDetails({});
                           }
                         } else {

@@ -210,13 +210,12 @@ export function Dashboard({ onMenuClick }) {
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError("Failed to load dashboard data. Please try again.");
-        clearMessages();
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [toast]);
 
   const [pinned, setPinned] = useState([]);
   const [showPin, setShowPin] = useState({}); // object: { id: response.data }
@@ -238,7 +237,7 @@ export function Dashboard({ onMenuClick }) {
           // Fetch for each pinnedId
           pinsArray.forEach(id => pinnedTariffRate(id));
         }
-      } catch (e) {
+      } catch {
         // If JSON parsing fails, try comma-separated format
         const pinsArray = storedPins.split(",").map(p => Number(p.trim()));
         setPinned(pinsArray);
@@ -246,9 +245,9 @@ export function Dashboard({ onMenuClick }) {
         pinsArray.forEach(id => pinnedTariffRate(id));
       }
     }
-  }, []);
+  }, [pinnedTariffRate]);
 
-  const pinnedTariffRate = async (pinnedId) => {
+  const pinnedTariffRate = useCallback(async (pinnedId) => {
     try {
       const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
 
@@ -261,7 +260,7 @@ export function Dashboard({ onMenuClick }) {
     } catch (error) {
       console.error("Error fetching pinned tariff data:", error);
     }
-  };
+  }, [backendURL]);
 
   const togglePin = (item) => {
     let updatedPins;
@@ -382,11 +381,6 @@ export function Dashboard({ onMenuClick }) {
   // ====================================
   // EVENT HANDLERS
   // ====================================
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   const quickActions = [
     {
@@ -746,7 +740,7 @@ export function Dashboard({ onMenuClick }) {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {quickActions.map((action, index) => (
+                  {quickActions.map((action) => (
                     <motion.div
                       key={action.title}
                       whileHover={{ scale: 1.02 }}
@@ -797,13 +791,8 @@ export function Dashboard({ onMenuClick }) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-<<<<<<< HEAD
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {quickActions.map((action) => (
-=======
                   <div className="space-y-4">
                     {stats.recentActivity.map((activity, index) => (
->>>>>>> origin/v3
                       <motion.div
                         key={activity.id}
                         initial={{ opacity: 0, x: -20 }}

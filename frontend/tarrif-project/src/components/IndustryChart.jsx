@@ -52,7 +52,7 @@ ChartJS.register(
 
 const IndustryChart = ({ labels, value }) => {
   // Get theme colors for chart styling
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Calculate dynamic max value based on data
   const calculateMaxValue = () => {
