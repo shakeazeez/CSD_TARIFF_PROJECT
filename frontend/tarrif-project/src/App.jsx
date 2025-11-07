@@ -17,6 +17,7 @@ import { NotFound } from './pages/NotFound.jsx'
 import { Toaster } from './components/Toaster.jsx'
 import './utils/themeUtils.js' // Import theme debugging utilities
 import { Business } from './pages/Business.jsx'
+import { Bank } from './pages/Bank.jsx'
 import { ChatBot } from './pages/ChatBot.jsx'
 import { News } from './pages/News.jsx'
 
@@ -118,6 +119,9 @@ function App() {
               }/>
               <Route path="/" element={
                 <Home onMenuClick={() => setSidebarOpen(true)} />
+              }/>
+              <Route path="/bank" element={
+                <Bank onMenuClick={() => setSidebarOpen(true)} />
               }/>
 
               <Route path="*" element={<NotFound/>}/>

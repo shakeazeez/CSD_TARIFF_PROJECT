@@ -35,7 +35,7 @@ pub struct TokenDTO {
     #[serde(rename = "destinationCountries")]
     destination_countries: Option<Vec<String>>,
     #[serde(rename = "itemsSold")]
-    items_sold: Option<String>,
+    items_sold: Option<Vec<String>>,
     #[serde(rename = "historicalTariffId")]
     historical_tariff_id: Option<IndexMap<i32, String>>
 }

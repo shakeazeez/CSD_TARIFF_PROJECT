@@ -49,11 +49,17 @@ public class AuthUserServiceImpl implements AuthUserService {
                 break;
             }
             case "BANK": {
+                if (createUserDTO.industry() == null || createUserDTO.originCountry() == null) {
+                    throw new IllegalArgumentException("Not enough parameters valid for bank user");
+                } 
                 creation = new BankUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
                         Industry.valueOf(createUserDTO.industry().toUpperCase()), createUserDTO.originCountry());
                 break;
             }
             case "BUSINESS": {
+                if (createUserDTO.itemsSold() == null || createUserDTO.destinationCountries() == null ||  createUserDTO.originCountry() == null) {
+                    throw new IllegalArgumentException("Not enough parameters valid for bank user");
+                } 
                 creation = new BusinessUser(createUserDTO.username(), passwordHash, new ArrayList<>(),
                         createUserDTO.itemsSold(), createUserDTO.destinationCountries(), createUserDTO.originCountry());
                 break;

@@ -7,16 +7,34 @@ use serde::{Deserialize, Serialize};
 
 use crate::tables::{AuthUser, Role, UserRole};
 
+/*
+ * This is an object that contains all the necessary claims to be 
+ * stored during creation of the JWT token. 
+ * 
+ * @Param custom_claims -> Indicates reason token is created 
+ * @Param iss           -> Issuer of token (User URL)
+ * @Param exp           -> How long each token lasts for (1 day as standard implementation)
+ * @Param sub           -> Contains login username 
+ * @Param groups        -> Role of the user
+ * @Param aud           -> Who owns the spring 
+ */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Claims {
     custom_claims: String,
     iss: String,
+    exp: u64,
     sub: String,
-    aud: String,
     pub groups: Role,
-    exp: u64
+    aud: String,
 }
 
+/*
+ * Validates whether the JSON Token is a valid token and not something randomly sent in by user
+ * 
+ * @Param token -> A string token from the request
+ * @Return      -> A result struct that either contains the verified token or a jwtwebtoken error
+ *                 if is an invalid token. 
+ */
 pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
     let mut validation = Validation::new(jsonwebtoken::Algorithm::HS512);
     validation.required_spec_claims = HashSet::new();
@@ -27,6 +45,15 @@ pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
     jsonwebtoken::decode::<Claims>(&token, &secret, &validation)
 }
 
+/*
+ * Generates the token for the user 
+ * 
+ * @Param user  -> This is the orm containing username and password
+ * @Param roles -> This is the orm contaning the relationship between user 
+ *                 and role
+ * 
+ * Return       -> String that contains the raw token 
+ */
 pub fn generate_token(user: &AuthUser, roles: &UserRole) -> String {
     let now_plus_60 = std::time::SystemTime::now()
         .checked_add_signed(Duration::days(1))

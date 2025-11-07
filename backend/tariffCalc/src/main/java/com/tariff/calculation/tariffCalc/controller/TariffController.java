@@ -1,9 +1,12 @@
 package com.tariff.calculation.tariffCalc.controller;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
+import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
@@ -31,7 +35,11 @@ import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
+import com.tariff.calculation.tariffCalc.dto.bankServiceDto.SelectedItemsDTO;
+import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffDetailsforItemDTO;
+import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
+import com.tariff.calculation.tariffCalc.service.BankIndustrySearchService;
 
 @Tag(name = "Tariff Controller", description = "Tariff calculation and overview endpoints")
 @RequestMapping("/tariff")
@@ -40,13 +48,15 @@ public class TariffController {
 
     private final TariffCalculationService tariffService;
     private final TariffOverviewService tariffOverviewService;
+    private final BankIndustrySearchService bankIndustrySearchService;
 
     private final Logger log = Logger.getLogger(TariffController.class.getName());
 
     @Autowired
-    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService) {
+    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService, BankIndustrySearchService bankIndustrySearchService) {
         this.tariffService = tariffService;
         this.tariffOverviewService = tariffOverviewService;
+        this.bankIndustrySearchService = bankIndustrySearchService;
     }
 
     @Operation(summary = "Get all countries", description = "Retrieve a list of all available countries for tariff calculations")
@@ -69,6 +79,89 @@ public class TariffController {
         return ResponseEntity.ok(country);
     }
 
+    /*
+     * Return the full list of industries (in String)
+     */
+
+    @GetMapping("/industries")
+    public ResponseEntity<List<String>> getAllIndustries() {
+        Industry[] values = null;
+        List<String> industryList = new ArrayList<>();
+
+        try {
+            values = Industry.values();
+
+            for (Industry ind : values) {
+                industryList.add(ind.toString());
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(industryList);
+    }
+
+    /* 
+     * Get the list of items available in this industry for this period of time
+     */
+    @Operation(summary = "Get items of a certain industry", description = "Returns all items of the industry with at least one valid tariff entry")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully returned list of items", content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Invalid industry selected", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Items of this industry not found", content = @Content)
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Items query parameters", 
+        required = true, content = @Content(mediaType = "application/json", 
+            schema = @Schema(implementation = TariffItemFilterDTO.class), 
+            examples = @ExampleObject(value = "{ \"homeCountry\": \"China\", \"industry\": \"AGRICULTURE\", \"startDate\": \"2004-05-06\", \"endDate\": \"2024-05-20\"}")
+    ))
+    @PostMapping("/items")
+    public ResponseEntity<List<String>> getAllItemsAvailableInTheIndustry(@RequestBody TariffItemFilterDTO itemFilterDTO) {
+        
+        List<String> itemList = null;
+
+        try {
+            itemList = bankIndustrySearchService.getAllItemsAvailableInTheIndustry(itemFilterDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(itemList);
+    } 
+
+    /*
+     * Get the top 10 countries and their tariff rates for the period specified for a certain item
+     */
+    @Operation(summary = "Get tariff details for item", description = "Returns all tariff details for this item for the top ten best partner countries")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully returned tariff details", content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = TariffDetailsforItemDTO.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Invalid item selected", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Tariff data not found", content = @Content)
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Item tariff details query parameters", 
+        required = true, content = @Content(mediaType = "application/json", 
+            schema = @Schema(implementation = SelectedItemsDTO.class), 
+            examples = @ExampleObject(value = "{ \"selectedItem\": \"seafood\", \"homeCountry\": \"China\", \"industry\": \"AGRICULTURE\", \"startDate\": \"1980-01-01\", \"endDate\": \"2025-01-01\" }")
+    ))
+    @PostMapping("/items/tariffDetails")
+    public ResponseEntity<TariffDetailsforItemDTO> getTariffDetailsForItem(@RequestBody SelectedItemsDTO selectedItemsDTO) {
+
+        TariffDetailsforItemDTO result = null;
+
+        try {
+            result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(result);
+    }
+    
     /*
      * Get tariff details for item between two countries of default(current) year
      */

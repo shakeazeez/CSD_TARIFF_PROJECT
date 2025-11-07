@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-    public Map<Integer, LocalDate> retrieveHistory(String username) {
+    public Map<Integer, LocalDate> retrieveHistory(String username, int limiter) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
         searched.sort((a, b) -> b.getCounter() - a.getCounter());
 
         Map<Integer, LocalDate> res = new LinkedHashMap<>();
-        for (int i = 0; i < Math.min(5, searched.size()); i++) {
+        for (int i = 0; i < Math.min(limiter, searched.size()); i++) {
             History temp = searched.get(i);
             res.put(temp.getTariffId(), temp.getLocalDate());
         }
