@@ -8,18 +8,6 @@ const ThemeContext = createContext({
   isLight: true
 });
 
-/**
- * Theme provider component that wraps the application
- * 
- * Features:
- * - Detects system theme preference
- * - Provides theme state and colors to all components
- * - Handles theme switching
- * - Persists theme preference in localStorage
- * 
- * @param {Object} props - Component props
- * @param {ReactNode} props.children - Child components
- */
 export const ThemeProvider = ({ children }) => {
   // Initialize theme from localStorage or system preference
   const [theme, setTheme] = useState(() => {

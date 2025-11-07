@@ -217,6 +217,21 @@ export function Dashboard({ onMenuClick }) {
     fetchDashboardData();
   }, [toast]);
 
+  const pinnedTariffRate = useCallback(async (pinnedId) => {
+    try {
+      const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
+
+      // Map pinnedId -> response.data
+      setShowPin(prev => ({
+        ...prev,
+        [pinnedId]: response.data,
+      }));
+
+    } catch (error) {
+      console.error("Error fetching pinned tariff data:", error);
+    }
+  }, [backendURL]);
+
   const [pinned, setPinned] = useState([]);
   const [showPin, setShowPin] = useState({}); // object: { id: response.data }
 
@@ -246,21 +261,6 @@ export function Dashboard({ onMenuClick }) {
       }
     }
   }, [pinnedTariffRate]);
-
-  const pinnedTariffRate = useCallback(async (pinnedId) => {
-    try {
-      const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
-
-      // Map pinnedId -> response.data
-      setShowPin(prev => ({
-        ...prev,
-        [pinnedId]: response.data,
-      }));
-
-    } catch (error) {
-      console.error("Error fetching pinned tariff data:", error);
-    }
-  }, [backendURL]);
 
   const togglePin = (item) => {
     let updatedPins;
