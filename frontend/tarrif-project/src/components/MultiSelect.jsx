@@ -35,7 +35,9 @@ const MultiSelect = ({ title, options = [], onChange, value = [] }) => {
   const [searchValue, setSearchValue] = React.useState("")
   const [selectedValues, setSelectedValues] = React.useState(value || [])
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1)
+  const [dropdownSide, setDropdownSide] = React.useState("bottom")
   const searchInputRef = React.useRef(null)
+  const triggerRef = React.useRef(null)
 
   // Update selected values when value prop changes
   React.useEffect(() => {
@@ -86,6 +88,21 @@ const MultiSelect = ({ title, options = [], onChange, value = [] }) => {
       setSearchValue("")
       setHighlightedIndex(-1)
     } else {
+      // Calculate optimal dropdown position
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const dropdownHeight = 300 // Estimated dropdown height
+        const spaceBelow = viewportHeight - rect.bottom
+        const spaceAbove = rect.top
+
+        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+          setDropdownSide("top")
+        } else {
+          setDropdownSide("bottom")
+        }
+      }
+
       // Focus search input when opening
       setTimeout(() => {
         searchInputRef.current?.focus()
@@ -132,6 +149,7 @@ const MultiSelect = ({ title, options = [], onChange, value = [] }) => {
     <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange}>
       <PopoverPrimitive.Trigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           className={cn(
             "flex min-h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
@@ -172,12 +190,14 @@ const MultiSelect = ({ title, options = [], onChange, value = [] }) => {
         </button>
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Content
-        className="w-full p-0"
+        className="w-full p-0 z-50"
+        side={dropdownSide}
         align="start"
         style={{
           backgroundColor: colors.surface,
           borderColor: colors.border,
-          color: colors.foreground
+          color: colors.foreground,
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
         }}
         onKeyDown={handleKeyDown}
       >

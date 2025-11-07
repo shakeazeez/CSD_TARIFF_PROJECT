@@ -15,7 +15,7 @@ import {
   BarChart3,
   Bot,
   ChartLine,
-  Newspaper
+  Newspaper,
   ScrollText
 } from 'lucide-react';
 import { useTheme } from '../contexts/use-theme';
@@ -30,6 +30,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   // Check if user has bank role
   const isBankUser = user?.role?.toUpperCase() === 'BANK';
+  const isBusinessUser = user?.role?.toUpperCase() === 'BUSINESS';
 
   const menuItems = [
     ...(isAuthenticated ? [] : [
