@@ -27,6 +27,7 @@ pub struct CreateDTO {
 pub struct TokenDTO {
     pub username: Option<String>,
     pub token: Option<String>,
+    pub role: Option<String>,
     #[serde(rename = "pin")]
     pin: Option<Vec<i32>>,
     industry: Option<String>,

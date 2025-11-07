@@ -108,6 +108,7 @@ pub async fn login(
             if status.is_success() {
                 let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
                 token_dto.token = Some(generated_token);
+                token_dto.role = Some(acc[0].user_roles.to_string());
                 token_dto.username = Some(acc[0].username.to_owned());
                 return HttpResponse::build(status).json(token_dto);
             }
@@ -171,6 +172,7 @@ pub async fn create_user(
             // println!("{body}");
             let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
             token_dto.token = Some(jwt_functions::generate_token(&acc[0]));
+            token_dto.role = Some(borrow.role.to_uppercase());
             // println!("{:?}", token_dto);
             println!("Status: {}", status);
             HttpResponse::build(status).json(token_dto)
