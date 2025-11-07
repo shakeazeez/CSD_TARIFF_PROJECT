@@ -16,6 +16,7 @@ import {
   Bot,
   ChartLine,
   Newspaper
+  ScrollText
 } from 'lucide-react';
 import { useTheme } from '../contexts/use-theme';
 import { useAuth } from '../contexts/use-auth';
@@ -60,6 +61,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         label: 'Industry Trends',
         path: '/bank',
         description: 'Analyse tariff rates by industry and country'
+      }
+    ] : []),
+
+    ...(isAuthenticated && isBusinessUser ? [
+      {
+        icon: ScrollText,
+        label: 'Business Insights',
+        path: '/business',
+        description: 'Analyse your tariff data and trends'
       }
     ] : []),
     {
