@@ -53,13 +53,13 @@ export function Business({onMenuClick}) {
     const { colors } = useTheme();
     const backendURL = import.meta.env.VITE_BACKEND_URL;
     // Country data and user selections
-    // const [report, setReport] = useState(""); // Selected reporting country (importer) - form commented out
-    // const [partner, setPartner] = useState(""); // Selected partner country (exporter) - form commented out
+    const [report, setReport] = useState(""); // Selected reporting country (importer) - form commented out
+    const [partner, setPartner] = useState(""); // Selected partner country (exporter) - form commented out
     const [tableData, setTableData] = useState([]); // State for the table data
 
     // Tariff calculation inputs
-    // const [hs, setHS] = useState(""); // HS Code - form commented out
-    // const [cost, setCost] = useState(); // Item cost in USD - not currently used
+    const [hs, setHS] = useState(""); // HS Code - form commented out
+    const [cost, setCost] = useState(); // Item cost in USD - not currently used
 
     // preset list of stuff for testing
     /**
@@ -76,11 +76,6 @@ export function Business({onMenuClick}) {
         { report: "Canada", partner: "Mexico", hsCode: "slipper", rate: 6 },
     ], []);
 
-    // json of how it maps
-    // report: String
-    // partnet: {String, String, String}
-    // hsCode: {String, String, String}
-    // rate: {Integer, Integer, Integer}
     const presetListJSON = [
         {
             report: "United States",
@@ -96,6 +91,7 @@ export function Business({onMenuClick}) {
         },
     ];
 
+    
 
     // modList commented out as form is commented out
     // login -> certain values not null -> itemList returns business page 
@@ -118,13 +114,82 @@ export function Business({onMenuClick}) {
         fetchBusinessItems();
     }, [fetchBusinessItems]);
 
+    // Add state to track data updates
+    const [items, setItems] = useState(presetListJSON);
+    
+    // Modified handleAddItem to update items state
+    const handleAddItem = () => {
+        if (report && partner && hs) {
+            const newItems = [...items];
+            let entry = newItems.find(item => item.report === report);
+            
+            if (entry) {
+                entry.partner.push(partner);
+                entry.hsCode.push(hs);
+                //rate to get from backend
+                
+            } else {
+                newItems.push({
+                    report: report,
+                    partner: [partner],
+                    hsCode: [hs],
+                    rate: [Math.floor(Math.random() * 10) + 1]
+                });
+            }
+            
+            // Update items state to trigger re-render
+            setItems(newItems);
+            
+            // Clear inputs
+            setHS("");
+            setPartner("");
+            // Optionally clear report if needed
+            // setReport("");
+        }
+    };
+
+    // Add delete handler
+    const handleDelete = (reportingCountry, partnerIndex) => {
+        const newItems = items.map(item => {
+            if (item.report === reportingCountry) {
+                return {
+                    ...item,
+                    partner: item.partner.filter((_, idx) => idx !== partnerIndex),
+                    hsCode: item.hsCode.filter((_, idx) => idx !== partnerIndex),
+                    rate: item.rate.filter((_, idx) => idx !== partnerIndex)
+                };
+            }
+            return item;
+        }).filter(item => item.partner.length > 0); // Remove empty entries
+        
+        setItems(newItems);
+    };
+
+    const list = [
+        { countryName: "United States" },
+        { countryName: "Canada" },
+        { countryName: "Mexico" },
+        { countryName: "Germany" },
+        { countryName: "France" },
+        { countryName: "China" },
+        { countryName: "Japan" },
+    ];
+
+    const modList =
+        list && Array.isArray(list)
+            ? list.map((item) => ({
+                id: item.countryName, // Display name for dropdown
+                code: item.countryName, // Value sent to backend
+            }))
+            : [];
+
 
     return (
         <>
             {/* TOP NAVIGATION */}
             <Header onMenuClick={onMenuClick} showUserInfo={true} />
             {/* Country Selection */}
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label
                         htmlFor="reporting-country"
@@ -159,10 +224,10 @@ export function Business({onMenuClick}) {
                         className="w-full"
                     />
                 </div>
-            </div> */}
+            </div>
 
             {/* HS Code and Cost */}
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label
                         htmlFor="hs-code"
@@ -184,9 +249,9 @@ export function Business({onMenuClick}) {
                     />
                 </div>
             </div>
-            <Button onClick={handleAddItem}>Add</Button> */}
+            <Button onClick={handleAddItem}>Add</Button>
 
-            {tableData.length > 0 && (
+            {items.length > 0 && (
                 <Card className="mt-8">
                     <CardHeader>
                         <CardTitle>Items List</CardTitle>
@@ -217,53 +282,27 @@ export function Business({onMenuClick}) {
                                         <th scope="col" className="px-6 py-3">
                                             Tariff Rate
                                         </th>
+                                        <th scope="col" className="px-6 py-3">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tableData.map((item, index) => (
-                                        <tr
-                                            key={index}
-                                            className="border-b"
-                                        >
-                                            <td className="px-6 py-4">
-                                                {item.report}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {item.partner}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {item.hsCode}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {item.rate}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </CardContent>
-                    {/* presetjson */}
-                    <CardContent> 
-                        <div className="text-sm text-gray-500">
-                            Note: Tariff rates are based on preset data for demonstration purposes.
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th className="px-4 py-2">Reporting Country</th>
-                                        <th className="px-4 py-2">Partner Countries</th>
-                                        <th className="px-4 py-2">HS Codes</th>
-                                        <th className="px-4 py-2">Rates (%)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {presetListJSON.map((entry, idx) => (
+                                    {items.map((entry, idx) => (
                                         entry.partner.map((partnerCountry, pIdx) => (
                                             <tr key={`${idx}-${pIdx}`}>
                                                 <td className="px-4 py-2">{entry.report}</td>
                                                 <td className="px-4 py-2">{partnerCountry}</td>
                                                 <td className="px-4 py-2">{entry.hsCode[pIdx]}</td>
                                                 <td className="px-4 py-2">{entry.rate[pIdx]}%</td>
+                                                <td className="px-4 py-2">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(entry.report, pIdx)}>
+                                                        Delete
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))
                                     ))}
