@@ -9,7 +9,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { useTheme } from "../hooks/useTheme.js"; // Import theme context
+import { useTheme } from "../contexts/use-theme.js"; // Import theme context
 
 // Register components
 ChartJS.register(

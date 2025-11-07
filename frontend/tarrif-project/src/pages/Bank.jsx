@@ -4,7 +4,7 @@ import IndustryChart from "../components/IndustryChart.jsx";
 import { Header } from "../components/Header.jsx";
 import Dropdown from "../components/Dropdown.jsx";
 import { Label } from "../components/ui/label.jsx";
-import { useTheme } from "../hooks/useTheme.js";
+import { useTheme } from "../contexts/use-theme.js";
 import { Input } from "../components/ui/input.jsx"; // input component
 import Calendar from "../components/ui/calendar.jsx";
 import { AlignCenter } from "lucide-react";
@@ -162,6 +162,90 @@ export function Bank({ onMenuClick }) {
   const [selectedItems, setSelectedItems] = useState([]);
   const prevSelectedItemsRef = useRef([]);
 
+  // Clear selected items and invalid items when filters change
+  useEffect(() => {
+    setSelectedItems([]);
+    setInvalidItems([]);
+    setTariffDetails({});
+    setValidItemDetailsMap({});
+    setExistingItemDetailsMap({});
+  }, [homeCountry, industry]);
+
+  const backupCountries = useMemo(() => [
+    "Cambodia",
+    "Chile",
+    "Costa Rica", 
+    "Hong Kong",
+    "India",
+    "Macao",
+    "Malaysia",
+    "Indonesia",
+    "Myanmar",
+    "Australia",
+    "Iceland",
+    "Georgia"
+  ], []);
+
+  // Array to store invalid items for displaying error messages 
+  const [invalidItems,setInvalidItems] = useState([]);
+
+  // Map to store all the tariff details for existing items that have been queried 
+  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
+
+  // Map to store all the tariff details for valid items 
+  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
+
+  // Function to fetch historical tariff for items and backup partner countries
+  const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
+
+    try {
+      // POST request to get historical tariff data
+      await axios.post(
+        `${backendURL}/tariff/past`,
+        tariffCalculationQueryDTO
+      );
+
+    } catch (error) {
+      console.error("Error fetching historical tariff data:", error);
+    } 
+  }, [backendURL]);
+
+  // Method to fetch current tariff information for items and backup partner countries 
+  const fetchCurrent = useCallback(async (tariffCalculationQueryDTO) => {
+      try {
+        // POST request to get current tariff calculation
+        const response = await axios.post(
+          `${backendURL}/tariff/current`,
+          tariffCalculationQueryDTO
+        );
+
+        console.log("fetchCurrent response:", response.data);
+
+      } catch (error) {
+        console.error("Error fetching current tariff:", error);
+
+      } finally {
+
+        fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
+      }
+  }, [backendURL, fetchPast]);
+
+  const queryTariffs = useCallback((backupCountries, selectedItems) => {
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
+    backupCountries.forEach((partnerCountry) => {
+      filteredItems.forEach((item) => {
+        const tariffCalculationQueryDTO = {
+          reportingCountry : homeCountry,
+          partnerCountry : partnerCountry,
+          item : item,
+          itemCost : 100,
+        };
+
+        fetchCurrent(tariffCalculationQueryDTO);
+      });
+    });
+  }, [invalidItems, homeCountry, fetchCurrent]);
+
   useEffect(() => {
     const prevSelectedItems = prevSelectedItemsRef.current;
     const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
@@ -196,118 +280,6 @@ export function Bank({ onMenuClick }) {
 
   // Add a debounce timer ref
   const debounceTimerRef = useRef(null);
-
-  useEffect(() => {
-    // Clear the previous timeout if it exists
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Clear tariff details if no items are selected
-    if (selectedItems.length === 0) {
-      setTariffDetails({});
-      return;
-    }
-
-    // Only fetch after 1 second of inactivity
-    debounceTimerRef.current = setTimeout(() => {
-      fetchTariffDetails();
-    }, 1000);
-
-    // Cleanup function to clear timeout when component unmounts
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [selectedItems, fetchTariffDetails]);
-
-  const backupCountries = useMemo(() => [
-    "Cambodia",
-    "Chile",
-    "Costa Rica", 
-    "Hong Kong",
-    "India",
-    "Macao",
-    "Malaysia",
-    "Indonesia",
-    "Myanmar",
-    "Australia",
-    "Iceland",
-    "Georgia"
-  ], []);
-
-  const queryTariffs = useCallback((backupCountries, selectedItems) => {
-    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
-    backupCountries.forEach((partnerCountry) => {
-      filteredItems.forEach((item) => {
-        const tariffCalculationQueryDTO = {
-          reportingCountry : homeCountry,
-          partnerCountry : partnerCountry,
-          item : item,
-          itemCost : 100,
-        };
-
-        fetchCurrent(tariffCalculationQueryDTO);
-      });
-    });
-  }, [invalidItems, homeCountry, fetchCurrent]);
-
-  // Method to fetch current tariff information for items and backup partner countries 
-  const fetchCurrent = useCallback(async (tariffCalculationQueryDTO) => {
-      try {
-        // POST request to get current tariff calculation
-        const response = await axios.post(
-          `${backendURL}/tariff/current`,
-          tariffCalculationQueryDTO
-        );
-
-        console.log("fetchCurrent response:", response.data);
-
-      } catch (error) {
-        console.error("Error fetching current tariff:", error);
-
-      } finally {
-
-        fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
-      }
-  }, [backendURL, fetchPast]);
-  
-  // Function to fetch historical tariff for items and backup partner countries
-  const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
-
-    try {
-      // POST request to get historical tariff data
-      await axios.post(
-        `${backendURL}/tariff/past`,
-        tariffCalculationQueryDTO
-      );
-
-    } catch (error) {
-      console.error("Error fetching historical tariff data:", error);
-    } 
-  }, [backendURL]);
-
-  // Map to store all the tariff details for existing items that have been queried 
-  const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
-
-  useEffect(() => {
-    console.log("Item is stored in existing map ", existingItemDetailsMap);
-  }, [existingItemDetailsMap]);
-
-  // Map to store all the tariff details for valid items 
-  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
-
-  useEffect(() => {
-    console.log("Item is stored in valid map ", validItemDetailsMap);
-  }, [validItemDetailsMap]);
-
-  // Array to store invalid items for displaying error messages 
-  const [invalidItems,setInvalidItems] = useState([]);
-
-  useEffect(() => {
-    console.log("INVALID ITEMS ", invalidItems);
-  }, [invalidItems]);
 
   /* 
    * Method to fetch tariff details for each item 1 second after selection change
@@ -382,6 +354,31 @@ export function Bank({ onMenuClick }) {
     setLoadingDetails(false);
     
   }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate, backendURL]);
+
+  useEffect(() => {
+    // Clear the previous timeout if it exists
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Clear tariff details if no items are selected
+    if (selectedItems.length === 0) {
+      setTariffDetails({});
+      return;
+    }
+
+    // Only fetch after 1 second of inactivity
+    debounceTimerRef.current = setTimeout(() => {
+      fetchTariffDetails();
+    }, 1000);
+
+    // Cleanup function to clear timeout when component unmounts
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [selectedItems, fetchTariffDetails]);
 
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]
@@ -596,8 +593,10 @@ export function Bank({ onMenuClick }) {
                     console.log("New items to fetch: ", newItems);
                   }
                 }}
-                className="hover:underline"
+                className="hover:underline transition-colors duration-200"
                 style={{ color: colors.accent }}
+                onMouseEnter={(e) => e.target.style.color = colors.hover}
+                onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 All
               </button>
@@ -609,8 +608,10 @@ export function Bank({ onMenuClick }) {
                   setSelectedItems([]);
                   setTariffDetails({});
                 }}
-                className="hover:underline"
+                className="hover:underline transition-colors duration-200"
                 style={{ color: colors.accent }}
+                onMouseEnter={(e) => e.target.style.color = colors.hover}
+                onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 None
               </button>
@@ -636,16 +637,16 @@ export function Bank({ onMenuClick }) {
                       key={item}
                       onClick={() => {
                         if (isSelected) {
-                          const newSelectedItems = selectedItems.filter(
-                            (id) => id !== item
-                          );
-                          setSelectedItems(newSelectedItems);
-                          // Immediately remove error for this item
-                          // Clear all errors if no items remain selected
-                          if (newSelectedItems.length === 0) {
-                            setTariffDetails({});
-                          }
-                        } else {
+            {loadingItems && (
+              <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                Loading items...
+              </p>
+            )}
+            {errorItems && (
+              <p className="text-sm" style={{ color: 'hsl(var(--destructive))' }}>
+                {errorItems}
+              </p>
+            )}          } else {
                           setSelectedItems([...selectedItems, item]);
                         }
                       }}
@@ -673,12 +674,12 @@ export function Bank({ onMenuClick }) {
                           <div
                             className="w-4 h-4 rounded-full flex items-center justify-center"
                             style={{
-                              backgroundColor: "#d1d5db",
+                              backgroundColor: colors.accent,
                             }}
                           >
                             <span
                               className="text-xs"
-                              style={{ color: "#374151" }}
+                              style={{ color: colors.background }}
                             >
                               ✓
                             </span>

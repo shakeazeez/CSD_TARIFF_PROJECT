@@ -4,7 +4,7 @@ import IndustryChart from "../components/IndustryChart";
 import { Header } from "../components/Header.jsx";
 import Dropdown from "../components/Dropdown";
 import { Label } from "../components/ui/label";
-import { useTheme } from "../hooks/useTheme.js";
+import { useTheme } from "../contexts/use-theme.js";
 import { Input } from "../components/ui/input"; // input component
 import Calendar from "../components/ui/calendar";
 import { AlignCenter } from "lucide-react";
