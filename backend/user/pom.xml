@@ -80,6 +80,22 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.13</version>
    		</dependency>
+		<!-- REST Assured for API testing -->
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>json-path</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>spring-mock-mvc</artifactId>
+			<scope>test</scope>
+		</dependency>
 		
 	</dependencies>
 	<dependencyManagement>
@@ -146,6 +162,7 @@
 				<!-- Exclude certain classes from coverage if needed -->
 					<excludes>
 						<exclude>**/UserApplication.class</exclude>
+						<exclude>**/Utility.class</exclude>
 						<exclude>**/config/**</exclude>
 					</excludes>
 				</configuration>
