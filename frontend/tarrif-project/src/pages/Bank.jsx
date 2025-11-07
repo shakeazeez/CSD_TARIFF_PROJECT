@@ -158,19 +158,6 @@ export function Bank({ onMenuClick }) {
    * Track item options that user selects to load tariff details about
    */
 
-  // used to keep track of items user selects to load
-  const [selectedItems, setSelectedItems] = useState([]);
-  const prevSelectedItemsRef = useRef([]);
-
-  // Clear selected items and invalid items when filters change
-  useEffect(() => {
-    setSelectedItems([]);
-    setInvalidItems([]);
-    setTariffDetails({});
-    setValidItemDetailsMap({});
-    setExistingItemDetailsMap({});
-  }, [homeCountry, industry]);
-
   const backupCountries = useMemo(() => [
     "Cambodia",
     "Chile",
@@ -186,16 +173,17 @@ export function Bank({ onMenuClick }) {
     "Georgia"
   ], []);
 
-  // Array to store invalid items for displaying error messages 
-  const [invalidItems,setInvalidItems] = useState([]);
+  // used to keep track of items user selects to load
+  const [selectedItems, setSelectedItems] = useState([]);
+  const prevSelectedItemsRef = useRef([]);
 
   // Map to store all the tariff details for existing items that have been queried 
   const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
 
-  // Map to store all the tariff details for valid items 
-  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
+  // Array to store invalid items for displaying error messages 
+  const [invalidItems,setInvalidItems] = useState([]);
 
-  // Function to fetch historical tariff for items and backup partner countries
+   // Function to fetch historical tariff for items and backup partner countries
   const fetchPast = useCallback(async (tariffCalculationQueryDTO) => {
 
     try {
@@ -229,6 +217,7 @@ export function Bank({ onMenuClick }) {
         fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
       }
   }, [backendURL, fetchPast]);
+  
 
   const queryTariffs = useCallback((backupCountries, selectedItems) => {
     const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
@@ -245,41 +234,6 @@ export function Bank({ onMenuClick }) {
       });
     });
   }, [invalidItems, homeCountry, fetchCurrent]);
-
-  useEffect(() => {
-    const prevSelectedItems = prevSelectedItemsRef.current;
-    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
-    const newlyAdded = filteredItems.filter(item => !prevSelectedItems.includes(item));
-
-    if (newlyAdded.length > 0) {
-      newlyAdded.forEach(item => {
-        if (item in existingItemDetailsMap) {
-          setValidItemDetailsMap(prev => ({
-            ...prev,
-            [item]: existingItemDetailsMap[item]
-            }));
-
-          setTariffDetails(prev => ({
-            ...prev,
-            [item]: existingItemDetailsMap[item]
-          }));
-
-        } else {
-          queryTariffs(backupCountries, newlyAdded);
-        }
-      });
-
-    }
-
-    prevSelectedItemsRef.current = selectedItems;
-  }, [selectedItems, backupCountries, existingItemDetailsMap, invalidItems, queryTariffs]);
-
-  // load and store tariff details for the selected items
-  const [tariffDetails, setTariffDetails] = useState({});
-  const [loadingDetails, setLoadingDetails] = useState(false);
-
-  // Add a debounce timer ref
-  const debounceTimerRef = useRef(null);
 
   /* 
    * Method to fetch tariff details for each item 1 second after selection change
@@ -355,6 +309,43 @@ export function Bank({ onMenuClick }) {
     
   }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate, backendURL]);
 
+
+  useEffect(() => {
+    const prevSelectedItems = prevSelectedItemsRef.current;
+    const filteredItems = selectedItems.filter(item => !invalidItems.includes(item));
+    const newlyAdded = filteredItems.filter(item => !prevSelectedItems.includes(item));
+
+    if (newlyAdded.length > 0) {
+      newlyAdded.forEach(item => {
+        if (item in existingItemDetailsMap) {
+          setValidItemDetailsMap(prev => ({
+            ...prev,
+            [item]: existingItemDetailsMap[item]
+            }));
+
+          setTariffDetails(prev => ({
+            ...prev,
+            [item]: existingItemDetailsMap[item]
+          }));
+
+        } else {
+          queryTariffs(backupCountries, newlyAdded);
+        }
+      });
+
+    }
+
+    prevSelectedItemsRef.current = selectedItems;
+  }, [selectedItems, backupCountries, existingItemDetailsMap, invalidItems, queryTariffs]);
+
+  // load and store tariff details for the selected items
+  const [tariffDetails, setTariffDetails] = useState({});
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // Add a debounce timer ref
+  const debounceTimerRef = useRef(null);
+  
+
   useEffect(() => {
     // Clear the previous timeout if it exists
     if (debounceTimerRef.current) {
@@ -379,6 +370,21 @@ export function Bank({ onMenuClick }) {
       }
     };
   }, [selectedItems, fetchTariffDetails]);
+
+  useEffect(() => {
+    console.log("Item is stored in existing map ", existingItemDetailsMap);
+  }, [existingItemDetailsMap]);
+
+  // Map to store all the tariff details for valid items 
+  const [validItemDetailsMap, setValidItemDetailsMap] = useState({});
+
+  useEffect(() => {
+    console.log("Item is stored in valid map ", validItemDetailsMap);
+  }, [validItemDetailsMap]);
+
+  useEffect(() => {
+    console.log("INVALID ITEMS ", invalidItems);
+  }, [invalidItems]);
 
   function getTopPartners(tariffDetailsList, n = 3) {
     return [...tariffDetailsList]

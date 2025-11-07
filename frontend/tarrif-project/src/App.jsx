@@ -23,9 +23,10 @@ import { News } from './pages/News.jsx'
 
 /**
  * Protected Route component that redirects to login if not authenticated
+ * Enforces role-based access (allowedRoles: array of role strings)
  */
-const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+    const { isAuthenticated, loading, user } = useAuth();
 
     if (loading) {
         return (
@@ -35,7 +36,23 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    return isAuthenticated ? children : <Navigate to="/" replace />;
+    if (!isAuthenticated) {
+        return <Navigate to="/" replace />;
+    }
+
+    // if allowedRoles provided, check user's role
+    if (allowedRoles.length > 0) {
+        const userRole = user?.role || '';
+        const hasAccess = allowedRoles.some( // checks if the user's role matches any allowed role for certain route
+            role => userRole.toUpperCase() === role.toUpperCase()
+        );
+        
+        if (!hasAccess) {
+            return <Navigate to="/" replace />;
+        }
+    }
+
+    return children;
 };
 
 /**
@@ -121,7 +138,9 @@ function App() {
                 <Home onMenuClick={() => setSidebarOpen(true)} />
               }/>
               <Route path="/bank" element={
-                <Bank onMenuClick={() => setSidebarOpen(true)} />
+                <ProtectedRoute allowedRoles={["BANK"]}>
+                  <Bank onMenuClick={() => setSidebarOpen(true)} />
+                </ProtectedRoute>
               }/>
 
               <Route path="*" element={<NotFound/>}/>

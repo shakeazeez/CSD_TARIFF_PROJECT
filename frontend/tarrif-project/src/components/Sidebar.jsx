@@ -13,7 +13,8 @@ import {
   Sun,
   Moon,
   BarChart3,
-  Bot
+  Bot,
+  ChartLine
 } from 'lucide-react';
 import { useTheme } from '../contexts/use-theme';
 import { useAuth } from '../contexts/use-auth';
@@ -24,6 +25,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const { isDark, toggleTheme, colors } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
+
+  // Check if user has bank role
+  const isBankUser = user?.role?.toUpperCase() === 'BANK';
 
   const menuItems = [
     ...(isAuthenticated ? [] : [
@@ -46,6 +50,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         label: 'My Dashboard',
         path: '/dashboard',
         description: 'View your tariff calculations and history'
+      }
+    ] : []),
+   
+    ...(isAuthenticated && isBankUser ? [
+      {
+        icon: ChartLine,
+        label: 'Industry Trends',
+        path: '/bank',
+        description: 'Analyse tariff rates by industry and country'
       }
     ] : []),
     {
