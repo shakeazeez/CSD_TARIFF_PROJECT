@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import ThemeContext from './ThemeContext.jsx';
+import ThemeContext from '../contexts/ThemeContext.jsx';
 
 /**
  * Custom hook to use the theme context
