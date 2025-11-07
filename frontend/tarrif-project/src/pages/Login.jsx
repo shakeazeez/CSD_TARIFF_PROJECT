@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 // Theme and icon components
 import { useTheme } from '../contexts/use-theme.js' // Custom theme context for component-level theming
 import { useAuth } from '../contexts/use-auth.js' // Authentication context for user management
+import Dropdown from '../components/Dropdown.jsx' // Custom dropdown component
+import MultiSelect from '../components/MultiSelect.jsx' // Custom multiselect component
 import {
     Sun,
     Moon,
@@ -124,7 +126,7 @@ export function Login(){
         industry: "",
         originCountry: "",
         itemsSold: "",
-        destinationCountries: ""
+        destinationCountries: []
     }); // Form data
     const [role, setRole] = useState(""); // User role for signup
     const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
@@ -141,6 +143,9 @@ export function Login(){
         number: false,
         special: false
     }); // Password requirements status
+
+    // Countries data
+    const [countries, setCountries] = useState([]); // List of countries from backend
 
     // ====================================
     // EFFECTS
@@ -161,6 +166,27 @@ export function Login(){
             return () => clearTimeout(timer);
         }
     }, [success]);
+
+    // Fetch countries on component mount
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const response = await axios.get(`${backendURL}/tariff/countries`);
+                setCountries(response.data);
+            } catch (error) {
+                console.error("Error fetching countries:", error);
+            }
+        };
+        fetchCountries();
+    }, [backendURL]);
+
+    // Transform countries for dropdown compatibility
+    const modCountries = countries && Array.isArray(countries)
+        ? countries.map((item) => ({
+            id: item.countryName, // Display name for dropdown
+            code: item.countryName, // Value sent to backend
+        }))
+        : [];
 
     // ====================================
     // USER DTO
@@ -192,6 +218,16 @@ export function Login(){
         }
     };
 
+    // Handle dropdown changes
+    const handleDropdownChange = (name, value) => {
+        setForm({...form, [name]: value});
+    };
+
+    // Handle multiselect changes
+    const handleMultiSelectChange = (name, value) => {
+        setForm({...form, [name]: value});
+    };
+
     // Validate form inputs
     const validateInputs = () => {
         if (!form.username) return "Please enter your username";
@@ -204,7 +240,7 @@ export function Login(){
         // Role-specific validation
         if (isSignUp && role === 'Business') {
             if (!form.originCountry) return "Please enter your origin country";
-            if (!form.destinationCountries) return "Please enter destination countries";
+            if (!form.destinationCountries || form.destinationCountries.length === 0) return "Please enter destination countries";
             if (!form.itemsSold) return "Please enter items sold";
         }
         if (isSignUp && role === 'Bank') {
@@ -286,7 +322,7 @@ export function Login(){
                     roleExtras = {
                         role: normalizedRole,
                         itemsSold: form.itemsSold ? form.itemsSold.split(',').map(item => item.trim()) : [],
-                        destinationCountries: form.destinationCountries ? form.destinationCountries.split(',').map(country => country.trim()) : [],
+                        destinationCountries: form.destinationCountries || [],
                         originCountry: form.originCountry || ''
                     };
                 } else if (normalizedRole === 'Bank') {
@@ -817,20 +853,12 @@ export function Login(){
                                         >
                                             Origin Country
                                         </Label>
-                                        <Input
-                                            type="text"
-                                            id="originCountry"
-                                            name="originCountry"
-                                            placeholder="e.g., Singapore"
+                                        <Dropdown
+                                            options={modCountries}
                                             value={form.originCountry}
-                                            onChange={handleChange}
-                                            className="transition-colors duration-300"
-                                            style={{
-                                                backgroundColor: colors.input,
-                                                borderColor: colors.border,
-                                                color: colors.foreground
-                                            }}
-                                            disabled={isLoading}
+                                            onChange={(option) => handleDropdownChange('originCountry', option ? option.code : '')}
+                                            title="Select origin country"
+                                            className="w-full"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -839,22 +867,13 @@ export function Login(){
                                             className="text-sm font-medium transition-colors duration-300"
                                             style={{ color: colors.foreground }}
                                         >
-                                            Destination Countries (comma-separated)
+                                            Destination Countries
                                         </Label>
-                                        <Input
-                                            type="text"
-                                            id="destinationCountries"
-                                            name="destinationCountries"
-                                            placeholder="e.g., China, Japan, USA"
+                                        <MultiSelect
+                                            options={modCountries}
                                             value={form.destinationCountries}
-                                            onChange={handleChange}
-                                            className="transition-colors duration-300"
-                                            style={{
-                                                backgroundColor: colors.input,
-                                                borderColor: colors.border,
-                                                color: colors.foreground
-                                            }}
-                                            disabled={isLoading}
+                                            onChange={(value) => handleMultiSelectChange('destinationCountries', value)}
+                                            title="Select destination countries"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -898,7 +917,7 @@ export function Login(){
                                         >
                                             Industry
                                         </Label>
-                                        <Select value={form.industry} onValueChange={(value) => setForm({...form, industry: value})} disabled={isLoading}>
+                                        <Select value={form.industry} onValueChange={(value) => handleDropdownChange('industry', value)} disabled={isLoading}>
                                             <SelectTrigger
                                                 className="transition-colors duration-300"
                                                 style={{
@@ -947,20 +966,12 @@ export function Login(){
                                         >
                                             Origin Country
                                         </Label>
-                                        <Input
-                                            type="text"
-                                            id="originCountry"
-                                            name="originCountry"
-                                            placeholder="e.g., Singapore"
+                                        <Dropdown
+                                            options={modCountries}
                                             value={form.originCountry}
-                                            onChange={handleChange}
-                                            className="transition-colors duration-300"
-                                            style={{
-                                                backgroundColor: colors.input,
-                                                borderColor: colors.border,
-                                                color: colors.foreground
-                                            }}
-                                            disabled={isLoading}
+                                            onChange={(option) => handleDropdownChange('originCountry', option ? option.code : '')}
+                                            title="Select origin country"
+                                            className="w-full"
                                         />
                                     </div>
                                 </motion.div>
