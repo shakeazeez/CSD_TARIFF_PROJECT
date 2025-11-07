@@ -274,8 +274,8 @@ class BankIndustrySearchServiceImplTest {
     }
 
     @Nested
-    @DisplayName("getTariffDetailsForItems() Tests")
-    class GetTariffDetailsForItemsTests {
+    @DisplayName("getTariffDetailsForItem() Tests")
+    class getTariffDetailsForItemTests {
 
         @Test
         @DisplayName("Should return tariff details when valid item and data exist")
@@ -300,7 +300,7 @@ class BankIndustrySearchServiceImplTest {
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, canadaCountry, electronicsItem)).thenReturn(canadaTariffs);
 
             // Act
-            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
 
             // Assert
             assertNotNull(result, "Result should not be null");
@@ -335,7 +335,7 @@ class BankIndustrySearchServiceImplTest {
             // Act & Assert
             IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO),
+                () -> bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO),
                 "Should throw IllegalArgumentException when item not found"
             );
             
@@ -362,7 +362,7 @@ class BankIndustrySearchServiceImplTest {
             // Act & Assert
             IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO),
+                () -> bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO),
                 "Should throw IllegalArgumentException when country not found"
             );
             
@@ -388,7 +388,7 @@ class BankIndustrySearchServiceImplTest {
             when(tariffRepo.findByReportingCountryAndItem(usaCountry, electronicsItem)).thenReturn(Collections.emptyList());
 
             // Act
-            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
 
             // Assert
             assertNotNull(result, "Result should not be null");
@@ -431,7 +431,7 @@ class BankIndustrySearchServiceImplTest {
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, chinaCountry, electronicsItem)).thenReturn(chinaTariffsWithZero);
 
             // Act
-            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
 
             // Assert
             assertNotNull(result, "Result should not be null");
@@ -468,7 +468,7 @@ class BankIndustrySearchServiceImplTest {
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, chinaCountry, electronicsItem)).thenReturn(chinaTariffs);
 
             // Act
-            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+            TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
 
             // Assert
             assertNotNull(result, "Result should not be null");
@@ -513,7 +513,7 @@ class BankIndustrySearchServiceImplTest {
 
             // Act & Assert
             assertDoesNotThrow(() -> {
-                TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+                TariffDetailsforItemDTO result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
                 assertNotNull(result, "Result should not be null");
                 
                 // Verify null date tariffs are filtered out

@@ -128,7 +128,7 @@ public class TariffController {
         TariffDetailsforItemDTO result = null;
 
         try {
-            result = bankIndustrySearchService.getTariffDetailsForItems(selectedItemsDTO);
+            result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
