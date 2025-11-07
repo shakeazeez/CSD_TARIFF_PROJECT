@@ -8,6 +8,7 @@ import { useTheme } from "../contexts/use-theme.js";
 import { Input } from "../components/ui/input.jsx"; // input component
 import Calendar from "../components/ui/calendar.jsx";
 import { AlignCenter } from "lucide-react";
+import { useToast } from "../hooks/use-toast.js";
 
 export function Bank({ onMenuClick }) {
   const backendURL = import.meta.env.VITE_BACKEND_URL;
@@ -145,6 +146,29 @@ export function Bank({ onMenuClick }) {
       console.log("Successfully retrieved items of country: ", homeCountry, ", and industry: ", industry);
       setItemList(response.data);
 
+      if (response.data.length === 0) {
+        toast({
+          title: "No items found",
+          description: "No items have tariff data for the selected date range. Showing items available in the last 10 years.",
+        });
+        // Refetch with default dates
+        const defaultUserInput = {
+          homeCountry: homeCountry,
+          industry: industry,
+          startDate: "",
+          endDate: "",
+        };
+        try {
+          const defaultResponse = await axios.post(
+            `${backendURL}/tariff/items`,
+            defaultUserInput
+          );
+          setItemList(defaultResponse.data);
+        } catch (error) {
+          console.error("Failed to retrieve default items", error);
+        }
+      }
+
     } catch {
       console.error("Failed to retrieve items for input DTO ", userInput);
       setErrorItems("Unable to retrieve items.");
@@ -179,6 +203,8 @@ export function Bank({ onMenuClick }) {
 
   // Map to store all the tariff details for existing items that have been queried 
   const [existingItemDetailsMap, setExistingItemDetailsMap] = useState({});
+
+  const { toast } = useToast();
 
   // Array to store invalid items for displaying error messages 
   const [invalidItems,setInvalidItems] = useState([]);
@@ -643,16 +669,8 @@ export function Bank({ onMenuClick }) {
                       key={item}
                       onClick={() => {
                         if (isSelected) {
-            {loadingItems && (
-              <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                Loading items...
-              </p>
-            )}
-            {errorItems && (
-              <p className="text-sm" style={{ color: 'hsl(var(--destructive))' }}>
-                {errorItems}
-              </p>
-            )}          } else {
+                          setSelectedItems(selectedItems.filter(i => i !== item));
+                        } else {
                           setSelectedItems([...selectedItems, item]);
                         }
                       }}

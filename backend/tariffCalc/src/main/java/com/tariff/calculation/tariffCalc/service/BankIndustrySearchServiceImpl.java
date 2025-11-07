@@ -1,7 +1,12 @@
 package com.tariff.calculation.tariffCalc.service;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -9,16 +14,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.tariff.calculation.tariffCalc.category.Industry;
+import com.tariff.calculation.tariffCalc.country.Country;
+import com.tariff.calculation.tariffCalc.country.CountryRepo;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.SelectedItemsDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffDetailsforItemDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
+import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffDetails;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
-import com.tariff.calculation.tariffCalc.country.CountryRepo;
-import com.tariff.calculation.tariffCalc.item.Item;
-import com.tariff.calculation.tariffCalc.country.Country;
 
 
 @Service
@@ -116,8 +121,12 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
             .orElseThrow(() -> new IllegalArgumentException("Country not found."));
 
         // Set the start and end year to check tariffs against
-        int startYear = LocalDate.parse(selectedItemsDTO.startDate()).getYear();
-        int endYear = LocalDate.parse(selectedItemsDTO.endDate()).getYear();    
+        String startDateStr = selectedItemsDTO.startDate();
+        String endDateStr = selectedItemsDTO.endDate();
+        LocalDate startDate = startDateStr != null && !startDateStr.isEmpty() ? LocalDate.parse(startDateStr) : LocalDate.now().minusYears(10);
+        LocalDate endDate = endDateStr != null && !endDateStr.isEmpty() ? LocalDate.parse(endDateStr) : LocalDate.now();
+        int startYear = startDate.getYear();
+        int endYear = endDate.getYear();    
         
         // Map to store the list of tariffs that a partner country has for this item
         Map<Country, List<Tariff>> map = new HashMap<>();

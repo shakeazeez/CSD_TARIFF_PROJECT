@@ -1,45 +1,41 @@
 package com.tariff.calculation.tariffCalc.controller;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
-import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
-import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
-import com.tariff.calculation.tariffCalc.tariff.Tariff;
-import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 import com.tariff.calculation.tariffCalc.dto.TariffResponseDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.SelectedItemsDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffDetailsforItemDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
 import com.tariff.calculation.tariffCalc.exception.ApiFailureException;
 import com.tariff.calculation.tariffCalc.service.BankIndustrySearchService;
+import com.tariff.calculation.tariffCalc.service.TariffCalculationService;
+import com.tariff.calculation.tariffCalc.service.TariffOverviewService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Tariff Controller", description = "Tariff calculation and overview endpoints")
 @RequestMapping("/tariff")

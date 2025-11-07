@@ -14,7 +14,8 @@ import {
   Moon,
   BarChart3,
   Bot,
-  ChartLine
+  ChartLine,
+  Newspaper
 } from 'lucide-react';
 import { useTheme } from '../contexts/use-theme';
 import { useAuth } from '../contexts/use-auth';
@@ -72,6 +73,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       label: 'FAQ',
       path: '/faq',
       description: 'Frequently asked questions'
+    },
+    {
+      icon: Newspaper,
+      label: 'News',
+      path: '/news',
+      description: 'Latest tariff news and articles'
     },
     ...(isAuthenticated ? [
       {
