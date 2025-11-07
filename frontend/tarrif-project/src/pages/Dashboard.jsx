@@ -670,7 +670,10 @@ export function Dashboard({ onMenuClick }) {
                                 </div>
 
                                 <Button
-                                  onClick={() => togglePin(id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePin(id);
+                                  }}
                                   variant="outline"
                                   className="w-full mt-2"
                                   style={{
