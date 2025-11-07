@@ -12,9 +12,9 @@ on:
 
 env:
   AWS_REGION: ap-southeast-1  # Change to your preferred region
-  ECR_REPOSITORY_BACKEND: backend
-  ECR_REPOSITORY_ROUTER: router
-  ECR_REPOSITORY_FRONTEND: frontend
+  ECR_REPOSITORY_BACKEND: goattariff/backend
+  ECR_REPOSITORY_ROUTER: goattariff/router
+  ECR_REPOSITORY_FRONTEND: goattariff/frontend
 
 jobs:
   test:
