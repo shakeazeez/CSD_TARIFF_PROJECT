@@ -9,6 +9,7 @@ const customColors = {
     // Text colors for good contrast
     foreground: '#1a1a1a',  // Dark text on light backgrounds
     muted: '#6b7280',       // Muted text for secondary content
+    mutedForeground: '#ffffff', // Light text on muted backgrounds
 
     // Interactive states
     hover: '#9bc4af',       // Slightly darker accent for hover states
@@ -30,6 +31,7 @@ const customColors = {
     // Text colors for dark mode
     foreground: '#f5f5f5',  // Light text on dark backgrounds
     muted: '#9ca3af',       // Muted text for secondary content
+    mutedForeground: '#1a1a1a', // Dark text on muted backgrounds
 
     // Interactive states
     hover: '#a3d4b7',       // Lighter accent for hover in dark mode

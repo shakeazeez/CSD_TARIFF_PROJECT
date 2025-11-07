@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import { useEffect, useState, useCallback, useMemo } from "react"; // React hooks for state management and side effects
+import { useEffect, useState, useCallback } from "react"; // React hooks for state management and side effects
 import axios from "axios"; // HTTP client for API requests
 
 // Animation library for smooth transitions
@@ -47,6 +47,51 @@ import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
 import { useToast } from "../hooks/use-toast";
 
+// ====================================
+// HELPER FUNCTIONS AND CONSTANTS
+// ====================================
+
+// Preset data for development/testing
+const presetListJSON = [
+    {
+        report: "United States",
+        partner: ["Germany", "Canada", "Mexico"],
+        hsCode: ["slipper", "boot", "sandal"],
+        rate: [7, 5, 6]
+    },
+    {
+        report: "Canada",
+        partner: ["Mexico", "United States", "Germany"],
+        hsCode: ["slipper", "boot", "sandal"],
+        rate: [6, 4, 8]
+    },
+];
+
+// Helper: normalize backend response into items shape used by UI
+const normalizeToItems = (data) => {
+    if (!data) return presetListJSON;
+    // If already an array of items in the expected shape
+    if (Array.isArray(data) && data.length && data[0].report) return data;
+    // If response is an object that contains items list
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.businessItems)) return data.businessItems;
+    // If response has a map of report -> partners, convert (best-effort)
+    if (typeof data === "object") {
+        const arr = [];
+        for (const key of Object.keys(data)) {
+            if (Array.isArray(data[key].partner)) {
+                arr.push({
+                    report: key,
+                    partner: data[key].partner,
+                    hsCode: data[key].hsCode || data[key].hs || [],
+                    rate: data[key].rate || []
+                });
+            }
+        }
+        if (arr.length) return arr;
+    }
+    return presetListJSON;
+};
 
 export function Business({onMenuClick}) {
     // ====================================
@@ -61,6 +106,7 @@ export function Business({onMenuClick}) {
     // auth / username resolution
     const { user } = useAuth?.() ?? {}; // gracefully handle if useAuth not available
     const username = user?.username || localStorage.getItem("username") || "demo";
+    const token = localStorage.getItem("authToken");
 
     // Confirmation dialog state
     const [deleteConfirm, setDeleteConfirm] = useState(null); // { reportingCountry, partnerIndex, partnerName, hsCode }
@@ -68,70 +114,29 @@ export function Business({onMenuClick}) {
     // Country data and user selections
     const [report, setReport] = useState(""); // Selected reporting country (importer)
     const [partner, setPartner] = useState(""); // Selected partner country (exporter)
-    const [tableData, setTableData] = useState([]); // State for the table data (unused but kept)
     const [list, setList] = useState([]); // List of countries from backend
     // Tariff calculation inputs
     const [hs, setHS] = useState(""); // HS Code / item description
-    const [cost, setCost] = useState(); // Item cost in USD - not currently used
 
     // local items state (normalized to same shape used in UI)
-    const presetListJSON = [
-        {
-            report: "United States",
-            partner: ["Germany", "Canada", "Mexico"],
-            hsCode: ["slipper", "boot", "sandal"],
-            rate: [7, 5, 6]
-        },
-        {
-            report: "Canada",
-            partner: ["Mexico", "United States", "Germany"],
-            hsCode: ["slipper", "boot", "sandal"],
-            rate: [6, 4, 8]
-        },
-    ];
     const [items, setItems] = useState(presetListJSON);
-
-    // Helper: normalize backend response into items shape used by UI
-    const normalizeToItems = (data) => {
-        if (!data) return presetListJSON;
-        // If already an array of items in the expected shape
-        if (Array.isArray(data) && data.length && data[0].report) return data;
-        // If response is an object that contains items list
-        if (Array.isArray(data.items)) return data.items;
-        if (Array.isArray(data.businessItems)) return data.businessItems;
-        // If response has a map of report -> partners, convert (best-effort)
-        if (typeof data === "object") {
-            const arr = [];
-            for (const key of Object.keys(data)) {
-                if (Array.isArray(data[key].partner)) {
-                    arr.push({
-                        report: key,
-                        partner: data[key].partner,
-                        hsCode: data[key].hsCode || data[key].hs || [],
-                        rate: data[key].rate || []
-                    });
-                }
-            }
-            if (arr.length) return arr;
-        }
-        return presetListJSON;
-    };
 
     // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
         if (!username) return;
         try {
-            const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`);
+            const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             const data = resp?.data;
             const normalized = normalizeToItems(data);
             setItems(normalized);
-            setTableData(normalized); // keep tableData in sync if used elsewhere
         } catch (error) {
             console.error("Error fetching business items:", error);
             // fallback: keep existing items (or use preset)
             // setItems(presetListJSON);
         }
-    }, [backendURL, username]);
+    }, [backendURL, username, token]);
 
     useEffect(() => {
         fetchBusinessItems();
@@ -216,7 +221,9 @@ export function Business({onMenuClick}) {
         };
 
         try {
-            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/items`, payload);
+            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/items`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             // refresh from server after successful add
             await fetchBusinessItems();
             toast({
@@ -296,8 +303,11 @@ export function Business({onMenuClick}) {
 
         try {
             // axios.delete with body requires { data: payload } as second arg
-            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/items`, { data: payload });
-            // refresh from server
+            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/items`, { 
+                data: payload,
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // refresh from server after successful delete
             await fetchBusinessItems();
             toast({
                 title: "Item Deleted",
@@ -663,7 +673,7 @@ export function Business({onMenuClick}) {
                             >
                                 <CardHeader>
                                     <CardTitle
-                                        className="flex items-center gap-2 text-red-500"
+                                        className="flex items-center gap-2"
                                         style={{ color: colors.error || '#ef4444' }}
                                     >
                                         <AlertCircle className="h-5 w-5" />
@@ -674,7 +684,10 @@ export function Business({onMenuClick}) {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <div 
+                                        className="p-3 rounded-lg"
+                                        style={{ backgroundColor: colors.muted + '20' }}
+                                    >
                                         <p className="text-sm" style={{ color: colors.foreground }}>
                                             <strong>Item:</strong> {deleteConfirm.hsCode}
                                         </p>
