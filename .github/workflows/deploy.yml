@@ -118,24 +118,27 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
         # Create deployment script
-        cat > deploy.sh << 'EOF'
+        cat > deploy.sh << EOF
         #!/bin/bash
         set -e
 
+        export ECR_REGISTRY=$ECR_REGISTRY
+        export TAG=$IMAGE_TAG
+
         # Stop existing containers
-        docker-compose -f docker-compose.prod.yml down || true
+        docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
 
         # Pull latest images
-        TAG=$IMAGE_TAG ECR_REGISTRY=$ECR_REGISTRY docker-compose --env-file .env.prod -f docker-compose.prod.yml pull
+        docker-compose --env-file .env.prod -f docker-compose.prod.yml pull
 
         # Start services
-        TAG=$IMAGE_TAG ECR_REGISTRY=$ECR_REGISTRY docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
+        docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
 
         # Clean up old images
         docker image prune -f
 
         # Save current version for rollback
-        echo $IMAGE_TAG > /opt/tariff/current_version.txt
+        echo \$TAG > /opt/tariff/current_version.txt
         EOF
 
         # Copy files to EC2
