@@ -142,9 +142,12 @@ jobs:
         echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key
         chmod 600 ec2_key
 
+        # Create .env.prod from secret
+        echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
+
         scp -i ec2_key -o StrictHostKeyChecking=no deploy.sh ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
         scp -i ec2_key -o StrictHostKeyChecking=no docker-compose.prod.yml ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
-        scp -i ec2_key -o StrictHostKeyChecking=no .env.prod ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/ || echo "No .env.prod file found"
+        scp -i ec2_key -o StrictHostKeyChecking=no .env.prod ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
 
         # Execute deployment on EC2
         ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
