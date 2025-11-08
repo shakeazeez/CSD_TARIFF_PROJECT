@@ -119,6 +119,6 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      - rust-router
     environment:
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
