@@ -46,6 +46,7 @@ import Dropdown from "../components/Dropdown.jsx"; // Custom dropdown component
 import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
 import { useToast } from "../hooks/use-toast";
+// import { data } from "react-router-dom";
 
 // ====================================
 // HELPER FUNCTIONS AND CONSTANTS
@@ -54,43 +55,93 @@ import { useToast } from "../hooks/use-toast";
 // Preset data for development/testing
 const presetListJSON = [
     {
-        report: "United States",
-        hsCode: ["slipper", "boot", "sandal"],
-        rate: [7, 5, 6]
+        reportingCountry: "United States",
+        item: "sugar"
     },
     {
-        report: "Canada",
-        hsCode: ["slipper", "boot", "sandal"],
-        rate: [6, 4, 8]
-    },
+        reportingCountry: "China",
+        item: "slippers"
+    }
 ];
-// default country of origin
-const _defaultOrigin = "Singapore";
 
+// default country of origin
+// key: userData
+// vaule: {"role":"BUSINESS","industry":null,"originCountry":"Singapore","tariffs":[],"historicalTariffId":{},"username":"testBusiness0001","pin":[]}
+
+const _defaultOrigin = localStorage.getItem("userData")
+    ? JSON.parse(localStorage.getItem("userData")).originCountry || "not found1"
+    : "not found2";
+    console.log("Default origin country:", _defaultOrigin);
 // Helper: normalize backend response into items shape used by UI
-const normalizeToItems = (data) => {
-    if (!data) return presetListJSON;
-    // If already an array of items in the expected shape
-    if (Array.isArray(data) && data.length && data[0].report) return data;
-    // If response is an object that contains items list
-    if (Array.isArray(data.items)) return data.items;
-    if (Array.isArray(data.businessItems)) return data.businessItems;
-    // If response has a map of report -> partners, convert (best-effort)
-    if (typeof data === "object") {
+const _normalizeToItems = (data) => {
+    // Helper to group simple item arrays into UI shape:
+    // result: [{ report: 'Country', partner: [...], hsCode: [...], rate: [...] }, ...]
+    const groupByReporting = (arr) => {
+        const out = [];
+        for (const entry of arr || []) {
+            const reporting = entry.reportingCountry || entry.report || _defaultOrigin;
+            let target = out.find((x) => x.report === reporting);
+            if (!target) {
+                target = { report: reporting, partner: [], hsCode: [], rate: [] };
+                out.push(target);
+            }
+            // push item / hsCode
+            if (typeof entry.item !== "undefined" && entry.item !== null) {
+                target.hsCode.push(entry.item);
+            } else if (typeof entry.hsCode === "string" || typeof entry.hsCode === "number") {
+                target.hsCode.push(entry.hsCode);
+            }
+            // push rate if present, else null placeholder
+            if (typeof entry.rate !== "undefined") target.rate.push(entry.rate);
+            else target.rate.push(null);
+            // optional partner
+            if (entry.partner && !target.partner.includes(entry.partner)) {
+                target.partner.push(entry.partner);
+            }
+        }
+        return out;
+    };
+
+    // No data -> use preset and normalize it
+    if (!data) return groupByReporting(presetListJSON);
+
+    // If array -> try to detect shape
+    if (Array.isArray(data) && data.length) {
+        // already in UI shape (report property)
+        if (data[0].report) return data;
+
+        // simple fetched tariffs list shape: [{ reportingCountry, item, rate? }, ...]
+        if (data[0].reportingCountry || data[0].item) {
+            return groupByReporting(data);
+        }
+
+        // some responses may already be a list of items under .items or .businessItems
+        if (Array.isArray(data.items)) return _normalizeToItems(data.items);
+        if (Array.isArray(data.businessItems)) return _normalizeToItems(data.businessItems);
+    }
+
+    // If object keyed by reporting country -> convert (legacy)
+    if (typeof data === "object" && data !== null) {
         const arr = [];
         for (const key of Object.keys(data)) {
-            if (Array.isArray(data[key].partner)) {
+            const val = data[key];
+            if (val && Array.isArray(val.partner)) {
                 arr.push({
                     report: key,
-                    partner: data[key].partner,
-                    hsCode: data[key].hsCode || data[key].hs || [],
-                    rate: data[key].rate || []
+                    partner: val.partner,
+                    hsCode: val.hsCode || val.hs || [],
+                    rate: val.rate || []
                 });
             }
         }
         if (arr.length) return arr;
+
+        // If object contains tariffs array (country-level payload), flatten and group
+        if (Array.isArray(data.tariffs)) return groupByReporting(data.tariffs);
     }
-    return presetListJSON;
+
+    // fallback -> normalize preset list
+    return groupByReporting(presetListJSON);
 };
 
 export function Business({onMenuClick}) {
@@ -128,9 +179,10 @@ export function Business({onMenuClick}) {
             const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const data = resp?.data;
-            const normalized = normalizeToItems(data);
+            // console.log("Backend response for business items:", resp);
+            const normalized = _normalizeToItems(resp.data);
             setItems(normalized);
+            console.log("Fetched business items:", normalized);
         } catch (error) {
             console.error("Error fetching business items:", error);
             // fallback: keep existing items (or use preset)
@@ -344,12 +396,8 @@ export function Business({onMenuClick}) {
     const newHandleAddItem = async () => {
         if (!report || !hs) return;
         const payload = {
-            information: [
-                {
-                    report,
-                    hsCode: hs 
-                }
-            ]
+            reportingCountry: report,
+            item: hs 
         };
         try {
             // to /business/{username}/items POST with body { information: [ { partner, hsCode } ] }
@@ -369,21 +417,19 @@ export function Business({onMenuClick}) {
 
         console.log("Add item:", payload);
     };
+    // example of data received: tariffs: [ { reportingCountry: 'China', item: 'sugar' }, ... ]
 
     // newHandleDelete
-    const newHandleDelete = async (reportingCountry, partnerIndex) => {
+    const newHandleDelete = async (reportingCountry, itemToDel) => {
         if (!reportingCountry) return;
         // delete from /business/{username}/entry DELETE with body { information: [ reporting, hsCode ] }
         try {
             const payload = {
-                information: [
-                    {
-                        report,
-                        hsCode: hs
-                    }
-                ]
+                reportingCountry: reportingCountry,
+                item: itemToDel
             };
-            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/entry`, { 
+            console.log("Delete payload:", payload);
+            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/entry`, {
                 data: payload,
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -398,8 +444,32 @@ export function Business({onMenuClick}) {
             console.error("Error deleting item:", error);
         }
 
-        console.log("Delete item at index:", reportingCountry, partnerIndex);
+        console.log("Delete item for country:", reportingCountry, itemToDel);
     }
+
+    // get tariff rate for item from backend
+    const _getTariffRate = async (reportingCountry, item) => {
+        let currentRate = 5; // default fallback
+        try {
+            const response = await axios.post(`${backendURL}/tariff/current`, {
+                reportingCountry: report,
+                partnerCountry: _defaultOrigin,
+                item: hs,
+                itemCost: 1000 // dummy cost, magic number
+            });
+            const fetched = response?.data;
+            const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
+            if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
+                currentRate = rateFromResp;
+            } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
+                currentRate = Number(rateFromResp);
+            }
+        } catch (err) {
+            console.warn("Could not fetch tariff rate, using fallback rate:", err);
+        }
+        return currentRate;
+    }
+
 
     return (
         <motion.div
@@ -480,7 +550,7 @@ export function Business({onMenuClick}) {
                                         className="w-full"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                {/* <div className="space-y-2">
                                     <Label
                                         htmlFor="partner-country"
                                         style={{ color: colors.foreground }}
@@ -496,7 +566,7 @@ export function Business({onMenuClick}) {
                                         placeholder="Select partner country"
                                         className="w-full"
                                     />
-                                </div>
+                                </div> */}
                             </div>
 
                             {/* HS Code and Cost */}
@@ -588,7 +658,7 @@ export function Business({onMenuClick}) {
                                                     Reporting Country (Importer)
                                                 </th>
                                                 <th scope="col" className="px-6 py-3">
-                                                    Item/Item Description
+                                                    Item / Description
                                                 </th>
                                                 <th scope="col" className="px-6 py-3">
                                                     Tariff Rate
@@ -598,67 +668,100 @@ export function Business({onMenuClick}) {
                                                 </th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
-                                            {items.map((entry, idx) => (
-                                                entry.hsCode.map((code, pIdx) => (
-                                                    <tr
-                                                        key={`${idx}-${pIdx}`}
-                                                        className="border-b hover:bg-opacity-50 transition-colors duration-200"
-                                                        style={{
-                                                            borderColor: colors.border,
-                                                            backgroundColor: 'transparent'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.target.closest('tr').style.backgroundColor = colors.hover + '20';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.target.closest('tr').style.backgroundColor = 'transparent';
-                                                        }}
-                                                    >
-                                                        <td
-                                                            className="px-6 py-4 font-medium"
-                                                            style={{ color: colors.foreground }}
+                                            {/** Render local `items` (existing shape: report, hsCode[], rate[] ) */}
+                                            {Array.isArray(items) && items.length > 0 && items.flatMap((entry, entryIdx) => {
+                                                const hsArr = Array.isArray(entry.hsCode) ? entry.hsCode : [];
+                                                const rateArr = Array.isArray(entry.rate) ? entry.rate : [];
+                                                return hsArr.map((code, codeIdx) => ({
+                                                    key: `local-${entryIdx}-${codeIdx}`,
+                                                    reportingCountry: entry.report || "",
+                                                    item: code || "",
+                                                    rate: rateArr[codeIdx] ?? null,
+                                                    source: "local",
+                                                    reportIndex: entryIdx,
+                                                    itemIndex: codeIdx
+                                                }));
+                                            }).map(row => (
+                                                <tr
+                                                    key={row.key}
+                                                    className="border-b hover:bg-opacity-50 transition-colors duration-200"
+                                                    style={{ borderColor: colors.border, backgroundColor: 'transparent' }}
+                                                >
+                                                    <td className="px-6 py-4 font-medium" style={{ color: colors.foreground }}>
+                                                        {row.reportingCountry}
+                                                    </td>
+                                                    <td className="px-6 py-4" style={{ color: colors.foreground }}>
+                                                        {row.item}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-semibold" style={{ color: colors.accent }}>
+                                                        {useEffect(() => {
+                                                            _getTariffRate(row.reportingCountry, row.item).then(rate => 
+                                                                row.rate = rate !== null ? `${rate}%` : "-"
+                                                            );
+                                                        }, [row.reportingCountry, row.item]), row.rate}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => newHandleDelete(row.reportingCountry, row.item)}
+                                                            className="transition-all duration-300 hover:scale-105 shadow-md"
+                                                            style={{
+                                                                backgroundColor: colors.error || '#ef4444',
+                                                                borderColor: colors.error || '#ef4444',
+                                                                color: 'white'
+                                                            }}
                                                         >
-                                                            {entry.report}
-                                                        </td>
-                                                        <td
-                                                            className="px-6 py-4"
-                                                            style={{ color: colors.foreground }}
+                                                            <Trash2 className="h-4 w-4 mr-1" />
+                                                            Delete
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+
+                                            {/** Render fetched list -> flatten all tariffs arrays.
+                                                Expected tariff shape per entry: { reportingCountry: 'China', item: 'sugar', rate?: number }
+                                                We show them after local items. Actions are disabled for remote-only tariffs (adjust if you have delete endpoint). */}
+                                            {Array.isArray(list) && list.length > 0 && list.flatMap((country, cIdx) => {
+                                                const tariffs = Array.isArray(country.tariffs) ? country.tariffs : [];
+                                                return tariffs.map((t, tIdx) => ({
+                                                    key: `fetched-${cIdx}-${tIdx}`,
+                                                    reportingCountry: t.reportingCountry || country.countryName || "",
+                                                    item: t.item || "",
+                                                    rate: t.rate ?? null,
+                                                    source: "fetched",
+                                                    countryIndex: cIdx,
+                                                    tariffIndex: tIdx
+                                                }));
+                                            }).map(row => (
+                                                <tr
+                                                    key={row.key}
+                                                    className="border-b hover:bg-opacity-50 transition-colors duration-200"
+                                                    style={{ borderColor: colors.border, backgroundColor: 'transparent' }}
+                                                >
+                                                    <td className="px-6 py-4 font-medium" style={{ color: colors.foreground }}>
+                                                        {row.reportingCountry}
+                                                    </td>
+                                                    <td className="px-6 py-4" style={{ color: colors.foreground }}>
+                                                        {row.item}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-semibold" style={{ color: colors.accent }}>
+                                                        {row.rate !== null ? `${row.rate}%` : "-"}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {/* no-op / disabled action for fetched entries by default */}
+                                                        <Button
+                                                            size="sm"
+                                                            disabled
+                                                            className="opacity-50"
+                                                            style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.muted }}
                                                         >
-                                                            {code}  {/* Changed from entry.hsCode[pIdx] to code */}
-                                                        </td>
-                                                        <td
-                                                            className="px-6 py-4 font-semibold"
-                                                            style={{ color: colors.accent }}
-                                                        >
-                                                            {entry.rate[pIdx]}%
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={() => newHandleDelete(entry.report, pIdx)}
-                                                                className="transition-all duration-300 hover:scale-105 shadow-md"
-                                                                style={{
-                                                                    backgroundColor: colors.error || '#ef4444',
-                                                                    borderColor: colors.error || '#ef4444',
-                                                                    color: 'white'
-                                                                }}
-                                                                onMouseEnter={(e) => {
-                                                                    e.target.style.backgroundColor = colors.error ? colors.error + 'cc' : '#dc2626';
-                                                                    e.target.style.transform = 'scale(1.05)';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.target.style.backgroundColor = colors.error || '#ef4444';
-                                                                    e.target.style.transform = 'scale(1)';
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 mr-1" />
-                                                                Delete
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                                            Fetched
+                                                        </Button>
+                                                    </td>
+                                                </tr>
                                             ))}
                                         </tbody>
                                     </table>
