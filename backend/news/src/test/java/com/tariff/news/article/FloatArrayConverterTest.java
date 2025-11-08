@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for FloatArrayConverter (pure JUnit, no Spring context).
+ * Unit tests for FloatArrayConverter 
  * - Verifies conversion from float[] to database String format (convertToDatabaseColumn)
  *   and back from String to float[] (convertToEntityAttribute).
  * - Covers edge cases: null/empty inputs, single/multiple elements, negative values,

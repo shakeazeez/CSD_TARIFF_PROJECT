@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -39,6 +40,7 @@ import org.mockito.ArgumentCaptor;
  * - Avoids real network I/O by mocking WebClient.
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("News Embedding Service Tests")
 public class NewsEmbeddingServiceTest {
 
     // ========================================
@@ -94,7 +96,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testGenerateQueryContext_Exception_ReturnsEmpty() {
+    void generateQueryContext_Exception_ReturnsEmpty() {
         // Make the POST call blow up so the method returns empty string
         when(webClient.post()).thenThrow(new RuntimeException("boom"));
         String out = ReflectionTestUtils.invokeMethod(newsEmbeddingService,
@@ -104,7 +106,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testProcessQuery_CandidateProcessingErrors_FallbackApiAnswer() throws Exception {
+    void processQuery_CandidateProcessingErrors_FallbackApiAnswer() throws Exception {
         // Arrange
         String query = "topic question";
         NewsEmbeddingService serviceSpy = spy(newsEmbeddingService);
@@ -137,25 +139,25 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testProcessQuery_OuterCatch_RethrowsRuntime() {
+    void processQuery_OuterCatch_RethrowsRuntime() {
         NewsEmbeddingService serviceSpy = spy(newsEmbeddingService);
         doThrow(new RuntimeException("embed fail")).when(serviceSpy).generateEmbedding(anyString());
         assertThrows(RuntimeException.class, () -> serviceSpy.processQuery("anything"));
     }
 
     @Test
-    void testSynthesizeAnswer_Exception_ReturnsEmpty() {
-        // Force web client to throw so synthesizeAnswer returns empty
+    void synthesizeAnswer_Exception_ReturnsOfflineFallback() {
+        // Force web client to throw so synthesizeAnswer returns fallback string
         when(webClient.post()).thenThrow(new RuntimeException("post error"));
         String out = ReflectionTestUtils.invokeMethod(newsEmbeddingService,
                 "synthesizeAnswer", "q", Collections.emptyList());
         assertNotNull(out);
-        assertEquals("", out);
+        // Service returns CHATBOT_OFFLINE on exception per implementation
+        assertEquals("CHATBOT_OFFLINE", out);
     }
 
     @Test
-    void testExtractTopic_ParseException_Rethrows() {
-        // Minimal happy webclient path
+    void extractTopic_ParseException_FallbackGeneralTopic() {
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri("https://api.openai.com/v1/chat/completions")).thenReturn(requestBodySpec);
         when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
@@ -163,15 +165,18 @@ public class NewsEmbeddingServiceTest {
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just("{}"));
 
-        // But parsing fails
+        // Force parsing failure so service uses fallback extraction
         try {
             when(objectMapper.readTree(anyString())).thenThrow(new RuntimeException("bad json"));
         } catch (Exception ignore) { /* Mockito signature declares checked exceptions */ }
-        assertThrows(RuntimeException.class, () -> newsEmbeddingService.extractTopic("x"));
+
+        // Query "x" has no meaningful words (>2 chars) so fallback returns "general news"
+        String topic = newsEmbeddingService.extractTopic("x");
+        assertEquals("general news", topic);
     }
 
     @Test
-    void testFetchArticles_HttpFailure_ReturnsEmpty() {
+    void fetchArticles_HttpFailure_ReturnsEmpty() {
         when(webClient.get()).thenThrow(new RuntimeException("http down"));
         List<NewsEmbeddingService.Article> list = newsEmbeddingService.fetchArticles("topic");
         assertNotNull(list);
@@ -179,7 +184,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testGenerateEmbedding_ParseException_Rethrows() {
+    void generateEmbedding_ParseException_Rethrows() {
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri("https://api.openai.com/v1/embeddings")).thenReturn(requestBodySpec);
         when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
@@ -194,7 +199,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testParseStringToFloatArray_InvalidNumbers_Zeroed() {
+    void parseStringToFloatArray_InvalidNumbers_Zeroed() {
         float[] arr = ReflectionTestUtils.invokeMethod(newsEmbeddingService,
                 "parseStringToFloatArray", "[1.0, notANum, 3.5]");
         assertNotNull(arr);
@@ -205,15 +210,16 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testFindArticlesSimilarToQuery_EmbeddingThrows_ReturnsEmpty() {
+    void findArticlesSimilarToQuery_EmbeddingThrows_ReturnsEmpty() {
         NewsEmbeddingService serviceSpy = spy(newsEmbeddingService);
         doThrow(new RuntimeException("embed fail")).when(serviceSpy).generateEmbedding(anyString());
         List<ArticleEmbedding> got = serviceSpy.findArticlesSimilarToQuery("q", 3);
         assertNotNull(got);
         assertTrue(got.isEmpty());
     }
+
     @Test
-    void testProcessQuery_PgvectorKnnFailure_FallbackToFullScan() throws Exception {
+    void processQuery_PgvectorKnnFailure_FallbackToFullScan() throws Exception {
         // Arrange
         String query = "trade tariffs impact";
 
@@ -258,7 +264,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testProcessQuery_DatabaseHit_ReturnsStoredArticles_SimpleUnit() throws Exception {
+    void processQuery_DatabaseHit_ReturnsStoredArticles_SimpleUnit() throws Exception {
         // Arrange
         String query = "trade tariffs impact";
 
@@ -289,7 +295,7 @@ public class NewsEmbeddingServiceTest {
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri("https://api.openai.com/v1/chat/completions")).thenReturn(requestBodySpec);
         when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
-    when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(String.class))
             .thenReturn(Mono.just(createMockChatResponse("Synthesized answer about trade tariffs")));
@@ -316,7 +322,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testProcessQuery_ApiFallback_SavesArticlesWithQueryContext_SimpleUnit() throws Exception {
+    void processQuery_ApiFallback_SavesArticlesWithQueryContext_SimpleUnit() throws Exception {
         // Arrange
         String query = "new trade policy";
 
@@ -377,7 +383,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testExtractTopic_TradeQuery_ReturnsSpecificTopic() throws Exception {
+    void extractTopic_TradeQuery_ReturnsSpecificTopic() throws Exception {
         // Arrange
         String query = "How do tariffs affect small businesses?";
         mockTopicExtraction(query, "tariffs business");
@@ -390,7 +396,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testExtractTopic_GeneralQuery_ReturnsGeneralTopic() throws Exception {
+    void extractTopic_GeneralQuery_ReturnsGeneralTopic() throws Exception {
         // Arrange
         String query = "climate change effects";
         mockTopicExtraction(query, "climate change effects");
@@ -403,7 +409,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testProcessQuery_ApiPath_ReadContextException_Ignored() throws Exception {
+    void processQuery_ApiPath_ReadContextException_Ignored() throws Exception {
         // Arrange
         String query = "new trade policy";
         NewsEmbeddingService serviceSpy = spy(newsEmbeddingService);
@@ -426,8 +432,8 @@ public class NewsEmbeddingServiceTest {
         // Clean content
         doReturn("Clean content long enough ".repeat(6)).when(serviceSpy).extractFullText(anyString());
 
-    // Chat completions used by generateQueryContext and synthesizeAnswer
-    mockSynthesisResponse("ctx or answer");
+        // Chat completions used by generateQueryContext and synthesizeAnswer
+        mockSynthesisResponse("ctx or answer");
 
         // findByUrl: two calls for saves (empty), then first DTO read throws, second read empty
         when(articleEmbeddingRepo.findByUrl(anyString()))
@@ -448,7 +454,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testProcessQuery_ApiPath_ReadContextSuccess_PropagatesToDTO() throws Exception {
+    void processQuery_ApiPath_ReadContextSuccess_PropagatesToDTO() throws Exception {
         // Arrange
         String query = "new trade policy";
         NewsEmbeddingService serviceSpy = spy(newsEmbeddingService);
@@ -499,26 +505,26 @@ public class NewsEmbeddingServiceTest {
     }
     
     @Test
-    void testCosineSimilarity_Guards_ReturnZero() {
-    // Arrange
-    List<Double> b = Arrays.asList(1.0, 2.0);
+    void cosineSimilarity_Guards_ReturnZero() {
+        // Arrange
+        List<Double> b = Arrays.asList(1.0, 2.0);
 
-    // Act
-    Double resNull = (Double) ReflectionTestUtils.invokeMethod(
-        newsEmbeddingService, "cosineSimilarity", new Object[]{null, b});
-    Double resSizeMismatch = (Double) ReflectionTestUtils.invokeMethod(
-        newsEmbeddingService, "cosineSimilarity", new Object[]{Arrays.asList(1.0), Arrays.asList(1.0, 2.0)});
-    Double resZeroNorm = (Double) ReflectionTestUtils.invokeMethod(
-        newsEmbeddingService, "cosineSimilarity", new Object[]{Arrays.asList(0.0, 0.0), Arrays.asList(1.0, 1.0)});
+        // Act
+        Double resNull = (Double) ReflectionTestUtils.invokeMethod(
+            newsEmbeddingService, "cosineSimilarity", new Object[]{null, b});
+        Double resSizeMismatch = (Double) ReflectionTestUtils.invokeMethod(
+            newsEmbeddingService, "cosineSimilarity", new Object[]{Arrays.asList(1.0), Arrays.asList(1.0, 2.0)});
+        Double resZeroNorm = (Double) ReflectionTestUtils.invokeMethod(
+            newsEmbeddingService, "cosineSimilarity", new Object[]{Arrays.asList(0.0, 0.0), Arrays.asList(1.0, 1.0)});
 
-    // Assert
-    assertEquals(0.0, resNull);
-    assertEquals(0.0, resSizeMismatch);
-    assertEquals(0.0, resZeroNorm);
+        // Assert
+        assertEquals(0.0, resNull);
+        assertEquals(0.0, resSizeMismatch);
+        assertEquals(0.0, resZeroNorm);
     }
     
     @Test
-    void testFloatArrayToList_NullInput_ReturnsEmptyList() {
+    void floatArrayToList_NullInput_ReturnsEmptyList() {
         // Arrange
         float[] array = null;
 
@@ -533,7 +539,7 @@ public class NewsEmbeddingServiceTest {
     }
     
     @Test
-    void testConvertFloatArrayToString_NullInput_ReturnsNull() {
+    void convertFloatArrayToString_NullInput_ReturnsNull() {
         // Arrange
         float[] array = null;
 
@@ -546,7 +552,7 @@ public class NewsEmbeddingServiceTest {
     }
     
     @Test
-    void testParseStringToFloatArray_NullAndEmptyContent_ReturnsEmptyArray() {
+    void parseStringToFloatArray_NullAndEmptyContent_ReturnsEmptyArray() {
         // Arrange
         String nullInput = null;
         String emptyArray = "[]";
@@ -565,7 +571,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testFetchArticles_ReturnsValidArticles() {
+    void fetchArticles_ReturnsValidArticles() {
         // Arrange
         String topic = "trade policy";
         mockNewsApiResponse();
@@ -581,7 +587,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testExtractFullText_ValidUrl_ReturnsCleanedText() throws IllegalArgumentException {
+    void extractFullText_ValidUrl_ReturnsCleanedText() throws IllegalArgumentException {
         // This test would require mocking Jsoup, which is complex
         // In a real scenario, you might want to use a test profile with a mock implementation
         
@@ -592,7 +598,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testExtractFullText_ShortContent_ThrowsIOException() throws Exception {
+    void extractFullText_ShortContent_ThrowsIOException() throws Exception {
         LocalServer server = null;
         try {
             server = startServer("<html><body>Hi</body></html>");
@@ -604,7 +610,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testExtractFullText_LongContent_Succeeds() throws Exception {
+    void extractFullText_LongContent_Succeeds() throws Exception {
         LocalServer server = null;
         try {
             String body = "<html><body>" + "content ".repeat(40) + "</body></html>"; // > 100 chars
@@ -619,7 +625,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testGenerateEmbedding_ValidText_ReturnsEmbedding() {
+    void generateEmbedding_ValidText_ReturnsEmbedding() {
         // Arrange
         String text = "sample text for embedding";
         List<Double> expectedEmbedding = createMockEmbedding();
@@ -633,7 +639,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testConvertStringToEmbedding_ValidString_ReturnsEmbedding() {
+    void convertStringToEmbedding_ValidString_ReturnsEmbedding() {
         // Arrange
         String embeddingStr = "[0.1,0.2,0.3]";
 
@@ -648,7 +654,20 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testConvertStringToEmbedding_InvalidString_ReturnsEmptyList() {
+    void convertStringToEmbedding_NullOrTooShort_ReturnsEmptyList() {
+        // Null input returns empty list
+        List<Double> resNull = newsEmbeddingService.convertStringToEmbedding(null);
+        assertNotNull(resNull);
+        assertTrue(resNull.isEmpty());
+
+        // Too short (e.g., "[]") returns empty list per early return branch
+        List<Double> resShort = newsEmbeddingService.convertStringToEmbedding("[]");
+        assertNotNull(resShort);
+        assertTrue(resShort.isEmpty());
+    }
+
+    @Test
+    void convertStringToEmbedding_InvalidString_ReturnsEmptyList() {
         // Arrange
         String embeddingStr = "invalid";
 
@@ -661,7 +680,31 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testFindSimilarArticles_ReturnsOrderedResults() {
+    void extractTopicFallback_LimitsToFourMeaningfulWords() {
+        // We want to exercise the loop: add words >2 chars, stop after 4 collected
+        String query = "alpha beta gamma delta epsilon zeta"; // 6 meaningful words
+        String topic = ReflectionTestUtils.invokeMethod(newsEmbeddingService, "extractTopicFallback", query);
+        assertEquals("alpha beta gamma delta", topic, "Should only take first four meaningful words");
+    }
+
+    @Test
+    void extractTopicFallback_SkipsStopWords_AndShortOnes() {
+        // Contains stopwords (the, and, or, in, to, of, a) and short tokens (x, at) mixed with meaningful words
+        String query = "the and or alpha in to of beta a x at gamma";
+        String topic = ReflectionTestUtils.invokeMethod(newsEmbeddingService, "extractTopicFallback", query);
+        // Stop words and short tokens removed -> first meaningful tokens alpha beta gamma
+        assertEquals("alpha beta gamma", topic);
+    }
+
+    @Test
+    void extractTopicFallback_AllStopOrShort_ReturnsGeneralNews() {
+        String query = "a an the in to of or on by at"; // all stop/short
+        String topic = ReflectionTestUtils.invokeMethod(newsEmbeddingService, "extractTopicFallback", query);
+        assertEquals("general news", topic);
+    }
+
+    @Test
+    void findSimilarArticles_ReturnsOrderedResults() {
         // Arrange
         String embeddingStr = "[0.1,0.2,0.3]";
         int limit = 5;
@@ -679,7 +722,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testFindArticlesSimilarToQuery_ValidQuery_ReturnsResults() {
+    void findArticlesSimilarToQuery_ValidQuery_ReturnsResults() {
         // Arrange
         String query = "trade policy";
         int limit = 3;
@@ -698,7 +741,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testFindArticlesByTopic_ValidTopic_ReturnsResults() {
+    void findArticlesByTopic_ValidTopic_ReturnsResults() {
         // Arrange
         String topic = "trade";
         List<ArticleEmbedding> expectedArticles = createMockStoredArticles();
@@ -714,7 +757,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testGetAllArticles_ReturnsAllStoredArticles() {
+    void getAllArticles_ReturnsAllStoredArticles() {
         // Arrange
         List<ArticleEmbedding> expectedArticles = createMockStoredArticles();
         
@@ -729,21 +772,21 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testHasMinimalRelevance_Match() {
+    void hasMinimalRelevance_Match() {
         boolean match = ReflectionTestUtils.invokeMethod(newsEmbeddingService,
                 "hasMinimalRelevance", "US trade policy updates", "trade policy");
         assertTrue(match);
     }
 
     @Test
-    void testHasMinimalRelevance_NoMatch() {
+    void hasMinimalRelevance_NoMatch() {
         boolean match = ReflectionTestUtils.invokeMethod(newsEmbeddingService,
                 "hasMinimalRelevance", "Sports event highlights", "trade policy");
         assertFalse(match);
     }
 
     @Test
-    void testSaveArticleEmbedding_UpdateExisting_WithQueryEmbedding() throws Exception {
+    void saveArticleEmbedding_UpdateExisting_WithQueryEmbedding() throws Exception {
         // Arrange
         String title = "Existing Title";
         String url = "https://example.com/existing";
@@ -761,7 +804,7 @@ public class NewsEmbeddingServiceTest {
         when(articleEmbeddingRepo.findByUrl(url)).thenReturn(Collections.singletonList(existing));
 
         // generateQueryContext + queryEmbedding via mocks
-    mockSynthesisResponse("QCTX");
+        mockSynthesisResponse("QCTX");
 
         // queryEmbedding
         doReturn(Arrays.asList(0.5, 0.5)).when(serviceSpy).generateEmbedding(anyString());
@@ -783,7 +826,7 @@ public class NewsEmbeddingServiceTest {
     }
 
     @Test
-    void testSaveArticleEmbedding_CreateNew_WithQueryEmbedding() throws Exception {
+    void saveArticleEmbedding_CreateNew_WithQueryEmbedding() throws Exception {
         // Arrange
         String title = "New Title";
         String url = "https://example.com/new";
@@ -798,7 +841,7 @@ public class NewsEmbeddingServiceTest {
         when(articleEmbeddingRepo.findByUrl(url)).thenReturn(Collections.emptyList());
 
         // generateQueryContext + queryEmbedding via mocks
-    mockSynthesisResponse("QCTX2");
+        mockSynthesisResponse("QCTX2");
 
         doReturn(Arrays.asList(0.7, 0.3)).when(serviceSpy).generateEmbedding(anyString());
 
@@ -875,12 +918,6 @@ public class NewsEmbeddingServiceTest {
             articles.add(article);
         }
         
-        return articles;
-    }
-
-    private List<ArticleEmbedding> createLowSimilarityArticles() {
-        List<ArticleEmbedding> articles = createMockStoredArticles();
-        // These will have low cosine similarity due to the mock implementation
         return articles;
     }
 
@@ -1014,20 +1051,6 @@ public class NewsEmbeddingServiceTest {
             article2.put("title", "Economic Impact Analysis");
             article2.put("url", "https://example.com/article2");
             
-            return root;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String createEmptyNewsApiResponse() {
-        return "{\"data\":[]}";
-    }
-
-    private JsonNode createEmptyNewsApiJsonResponse() {
-        try {
-            ObjectNode root = realObjectMapper.createObjectNode();
-            root.putArray("data");
             return root;
         } catch (Exception e) {
             throw new RuntimeException(e);

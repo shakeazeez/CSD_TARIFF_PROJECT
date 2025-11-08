@@ -19,9 +19,9 @@ import static org.hamcrest.Matchers.*;
  * Integration tests for ChatHistoryController using SpringBootTest (RANDOM_PORT) with REST Assured.
  * - Uses in-memory H2 via Spring Data JPA (ChatHistoryRepo) and non-destructive seeding in @BeforeEach.
  * - Asserts HTTP status, content type, and JSON payloads; adds simple repository checks after requests.
- * - Authorization behaviour is validated via path parameters and service logic.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DisplayName("Chat History Controller Integration Tests")
 @ActiveProfiles("test")
 class ChatHistoryControllerIntegrationTest {
 
@@ -59,7 +59,7 @@ class ChatHistoryControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/history/{username} returns user conversations")
-    void testGetHistoryForUser_ReturnsConversations() {
+    void getHistoryForUser_ReturnsConversations() {
         given()
             .accept(ContentType.JSON)
         .when()
@@ -74,7 +74,7 @@ class ChatHistoryControllerIntegrationTest {
             .body("[0].messages[0].query", is("What is the tariff?"))
             .body("[0].messages[0].response", is("Tariff is a tax on imports"));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = historyRepo.findAll();
         assert all.stream().anyMatch(h -> "itest_user".equals(h.getUsername()));
         assert all.stream().anyMatch(h -> "policy".equals(h.getTopic()));
@@ -82,7 +82,7 @@ class ChatHistoryControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/history/{username}?topic=... filters by topic")
-    void testGetHistoryWithTopicFilter_ReturnsFiltered() {
+    void getHistoryWithTopicFilter_ReturnsFiltered() {
         given()
             .accept(ContentType.JSON)
             .queryParam("topic", "policy")
@@ -101,7 +101,7 @@ class ChatHistoryControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/history/{username}?topic= (empty) uses findByUser")
-    void testGetHistoryWithEmptyTopic_UsesFindByUser() {
+    void getHistoryWithEmptyTopic_UsesFindByUser() {
         given()
             .accept(ContentType.JSON)
             .queryParam("topic", "")
@@ -119,7 +119,7 @@ class ChatHistoryControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/history/{username} invalid messages JSON maps to empty messages array")
-    void testGetHistory_InvalidMessages_ReturnsEmptyMessages() {
+    void getHistory_InvalidMessages_ReturnsEmptyMessages() {
         // Seed an entry with invalid messages JSON
         ChatHistory bad = new ChatHistory();
         bad.setUsername("bad_user");
@@ -136,14 +136,14 @@ class ChatHistoryControllerIntegrationTest {
             .contentType(containsString("application/json"))
             .body("[0].messages", hasSize(0));
 
-    // Verify database state
-    var all = historyRepo.findAll();
-    assert all.stream().anyMatch(h -> "bad_user".equals(h.getUsername()));
+        // Verify database state
+        var all = historyRepo.findAll();
+        assert all.stream().anyMatch(h -> "bad_user".equals(h.getUsername()));
     }
 
     @Test
     @DisplayName("POST /news/history/{username} returns 200")
-    void testPostSaveHistory_ReturnsOk() {
+    void saveHistory_ReturnsOk() {
         given()
             .contentType(ContentType.JSON)
             .accept(ContentType.JSON)
@@ -160,7 +160,7 @@ class ChatHistoryControllerIntegrationTest {
 
     @Test
     @DisplayName("DELETE /news/history/{username}/{id} success (no principal) returns 204")
-    void testDeleteHistory_NoPrincipal_Success() {
+    void deleteHistory_NoPrincipal_Success() {
         ChatHistory owned = new ChatHistory();
         owned.setUsername("pathUser");
         owned.setTopic("t");
@@ -173,14 +173,14 @@ class ChatHistoryControllerIntegrationTest {
         .then()
             .statusCode(204);
 
-    // Verify database state (record removed)
-    Long id = owned.getId();
-    assert historyRepo.findById(id).isEmpty();
+        // Verify database state (record removed)
+        Long id = owned.getId();
+        assert historyRepo.findById(id).isEmpty();
     }
 
     @Test
     @DisplayName("DELETE /news/history/{username}/{id} forbidden returns 403")
-    void testDeleteHistory_Forbidden_Returns403() {
+    void deleteHistory_Forbidden_Returns403() {
         ChatHistory owned = new ChatHistory();
         owned.setUsername("owner1");
         owned.setTopic("t");
@@ -193,14 +193,14 @@ class ChatHistoryControllerIntegrationTest {
         .then()
             .statusCode(403);
 
-    // Verify database state (record still present)
-    Long id = owned.getId();
-    assert historyRepo.findById(id).isPresent();
+        // Verify database state (record still present)
+        Long id = owned.getId();
+        assert historyRepo.findById(id).isPresent();
     }
 
     @Test
     @DisplayName("DELETE /news/history/{username}/{id} not found returns 404")
-    void testDeleteHistory_NotFound_Returns404() {
+    void deleteHistory_NotFound_Returns404() {
         given()
         .when()
             .delete("/news/history/{username}/{id}", "someone", 999999)

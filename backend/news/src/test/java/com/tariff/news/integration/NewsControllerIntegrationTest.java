@@ -15,7 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.annotation.Import;
-import com.tariff.news.config.NewsTestServiceConfig;
+
+import com.tariff.news.config.NewsEmbeddingServiceTestConfig;
 
 import java.util.Arrays;
 
@@ -25,15 +26,15 @@ import static org.hamcrest.Matchers.*;
 /**
  * Integration tests for NewsController using SpringBootTest (RANDOM_PORT) with REST Assured.
  * - Uses in-memory H2 via Spring Data JPA repositories (ArticleEmbeddingRepo).
- * - Seeds minimal ArticleEmbedding records in @BeforeEach (non-destructive; no deletes).
- * - Imports NewsTestServiceConfig to replace remote/network calls with deterministic, network-free behavior.
+ * - Seeds minimal ArticleEmbedding records in @BeforeEach
+ * - Imports NewsEmbeddingServiceTestConfig to replace remote/network calls with deterministic, network-free behavior.
  * - Verifies endpoints
  * - Asserts HTTP status, content type, and JSON payloads end-to-end (no mocks at the HTTP layer).
- * - Adds light repository assertions after requests to validate database state when helpful.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DisplayName("News Controller Integration Tests")
 @ActiveProfiles("test")
-@Import(NewsTestServiceConfig.class)
+@Import(NewsEmbeddingServiceTestConfig.class)
 class NewsControllerIntegrationTest {
 
     @LocalServerPort
@@ -53,7 +54,7 @@ class NewsControllerIntegrationTest {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = port;
 
-        // Seed minimal, isolated test data (non-destructive: no deletes)
+        // Seed minimal, isolated test data
         String tradeUrl = "https://itest.example.com/trade";
         var existingTrade = articleRepo.findByUrl(tradeUrl);
         if (existingTrade.isEmpty()) {
@@ -98,7 +99,29 @@ class NewsControllerIntegrationTest {
             .body("articles.size()", is(1))
             .body("conversationId", nullValue());
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state 
+        var all = articleRepo.findAll();
+        java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
+        assert all.size() >= 2;
+        assert urls.contains("https://itest.example.com/trade");
+        assert urls.contains("https://itest.example.com/econ");
+    }
+
+    @Test
+    @DisplayName("POST /news/process rewrites CHATBOT_OFFLINE to friendly message")
+    void processQuery_offlineAnswer_rewritesMessage() {
+        given()
+            .accept(ContentType.JSON)
+            .contentType("application/x-www-form-urlencoded")
+            .formParam("query", "hello OFFLINE")
+        .when()
+            .post("/news/process")
+        .then()
+            .statusCode(200)
+            .body("synthesizedAnswer", is("The chat bot is currently offline. Please try again later."))
+            .body("articles.size()", greaterThanOrEqualTo(1));
+
+        // Verify database state remains intact
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -119,7 +142,7 @@ class NewsControllerIntegrationTest {
             .statusCode(200)
             .body("synthesizedAnswer", containsString("I couldn't find specific articles on that topic."));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state 
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -139,7 +162,7 @@ class NewsControllerIntegrationTest {
         .then()
             .statusCode(500);
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -163,7 +186,7 @@ class NewsControllerIntegrationTest {
             .body("conversationId", nullValue())
             .body("synthesizedAnswer", containsString("I couldn't find specific articles on that topic."));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -194,7 +217,7 @@ class NewsControllerIntegrationTest {
             .body("conversationId", notNullValue())
             .body("synthesizedAnswer", containsString("I couldn't find specific articles on that topic."));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -204,7 +227,7 @@ class NewsControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/articles returns all articles")
-    void testGetAllArticles_ReturnsArticlesList() {
+    void getAllArticles_ReturnsArticlesList() {
         given()
             .accept(ContentType.JSON)
         .when()
@@ -216,7 +239,7 @@ class NewsControllerIntegrationTest {
             .body("title", hasItems("Trade Policy Update", "Economic Outlook"))
             .body("url", hasItems("https://itest.example.com/trade", "https://itest.example.com/econ"));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -226,7 +249,7 @@ class NewsControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/search/topic/{topic} returns only matching topic articles")
-    void testFindArticlesByTopic_ReturnsTopicArticles() {
+    void findArticlesByTopic_ReturnsTopicArticles() {
         given()
             .accept(ContentType.JSON)
         .when()
@@ -239,7 +262,7 @@ class NewsControllerIntegrationTest {
             .body("[0].url", is("https://itest.example.com/trade"))
             .body("[0].topic", is("trade"));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -249,7 +272,7 @@ class NewsControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/search/query returns articles matching the query")
-    void testFindArticlesByQuery_ReturnsMatchingArticles() {
+    void findArticlesByQuery_ReturnsMatchingArticles() {
         given()
             .accept(ContentType.JSON)
             .queryParam("query", "trade policy")
@@ -264,7 +287,7 @@ class NewsControllerIntegrationTest {
             .body("[0].title", anyOf(is("Trade Policy Update"), notNullValue()))
             .body("[0].topic", anyOf(is("trade"), notNullValue()));
 
-        // Verify database state (simple, non-destructive check)
+        // Verify database state
         var all = articleRepo.findAll();
         java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
         assert all.size() >= 2;
@@ -275,7 +298,7 @@ class NewsControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /news/search/similar returns ordered similar articles")
-    void testFindSimilarArticles_ReturnsSimilarArticles() {
+    void findSimilarArticles_ReturnsSimilarArticles() {
         String queryEmbedding = Arrays.toString(new double[]{0.1, 0.2, 0.3});
 
         given()
@@ -292,11 +315,11 @@ class NewsControllerIntegrationTest {
             .body("[0].url", is("https://itest.example.com/trade"))
             .body("[1].url", is("https://itest.example.com/econ"));
 
-    // Verify database state (simple, non-destructive check)
-    var all = articleRepo.findAll();
-    java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
-    assert all.size() >= 2;
-    assert urls.contains("https://itest.example.com/trade");
-    assert urls.contains("https://itest.example.com/econ");
+        // Verify database state
+        var all = articleRepo.findAll();
+        java.util.List<String> urls = all.stream().map(ArticleEmbedding::getUrl).toList();
+        assert all.size() >= 2;
+        assert urls.contains("https://itest.example.com/trade");
+        assert urls.contains("https://itest.example.com/econ");
     }
 }

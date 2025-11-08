@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Testing all methods with various scenarios for branch coverage
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("ChatHistory Service Tests")
 class ChatHistoryServiceTest {
 
     @Mock
