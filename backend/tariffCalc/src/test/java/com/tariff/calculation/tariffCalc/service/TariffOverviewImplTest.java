@@ -247,6 +247,9 @@ public class TariffOverviewImplTest {
         );
 
         setupMockRepositoryCalls(queryDTO, existingTariffs);
+        // Ensure first tariff is recent (<1 year) and remains earliest among the two
+        existingTariffs.get(0).setLocalDate(LocalDate.now());
+        existingTariffs.get(1).setLocalDate(LocalDate.now().plusDays(1));
 
         // Act
         TariffOverviewResponseDTO result = tariffOverviewImpl.getTariffOverview(queryDTO);
@@ -372,7 +375,8 @@ public class TariffOverviewImplTest {
                 .thenReturn(Optional.of(mockItem));
 
         // Use 2 tariffs to avoid API call (since size > 1)
-        List<Tariff> existingTariffs = Arrays.asList(mockTariff, createMockTariff(2, 3.0, LocalDate.of(2023, 2, 1)));
+        // Put the recent tariff first to avoid API call via Period check
+        List<Tariff> existingTariffs = Arrays.asList(createMockTariff(2, 3.0, LocalDate.now()), mockTariff);
         when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(
                 mockReportingCountry, mockPartnerCountry, mockItem)).thenReturn(existingTariffs);
 
@@ -396,7 +400,7 @@ public class TariffOverviewImplTest {
                 "China", "India", "slipper", 0.0);
 
         // Use 2 tariffs to avoid API call (since size > 1)
-        List<Tariff> existingTariffs = Arrays.asList(mockTariff, createMockTariff(2, 3.0, LocalDate.of(2023, 2, 1)));
+        List<Tariff> existingTariffs = Arrays.asList(createMockTariff(2, 3.0, LocalDate.now()), mockTariff);
         setupMockRepositoryCalls(queryDTO, existingTariffs);
 
         // Act
@@ -416,7 +420,7 @@ public class TariffOverviewImplTest {
                 "China", "India", "slipper", -100.0);
 
         // Use 2 tariffs to avoid API call (since size > 1)
-        List<Tariff> existingTariffs = Arrays.asList(mockTariff, createMockTariff(2, 3.0, LocalDate.of(2023, 2, 1)));
+        List<Tariff> existingTariffs = Arrays.asList(createMockTariff(2, 3.0, LocalDate.now()), mockTariff);
         setupMockRepositoryCalls(queryDTO, existingTariffs);
 
         // Act
@@ -436,8 +440,8 @@ public class TariffOverviewImplTest {
                 "China", "India", "slipper", 1000.0);
 
         List<Tariff> existingTariffs = Arrays.asList(
-                createMockTariff(1, 5.0, LocalDate.of(2023, 6, 1)), // Later date
-                createMockTariff(2, 6.0, LocalDate.of(2023, 1, 1))  // Earlier date
+                createMockTariff(1, 5.0, LocalDate.now().minusDays(10)), // Later date
+                createMockTariff(2, 6.0, LocalDate.now().minusDays(30))  // Earlier date
         );
 
         setupMockRepositoryCalls(queryDTO, existingTariffs);
@@ -448,8 +452,8 @@ public class TariffOverviewImplTest {
         // Assert
         assertEquals(2, result.tariffData().size());
         // Should be sorted by date (earlier first)
-        assertEquals(LocalDate.of(2023, 1, 1), result.tariffData().get(0).startPeriod());
-        assertEquals(LocalDate.of(2023, 6, 1), result.tariffData().get(1).startPeriod());
+        assertEquals(LocalDate.now().minusDays(30), result.tariffData().get(0).startPeriod());
+        assertEquals(LocalDate.now().minusDays(10), result.tariffData().get(1).startPeriod());
     }
 
         @Test

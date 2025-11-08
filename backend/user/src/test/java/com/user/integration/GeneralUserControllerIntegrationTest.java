@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
  
 
 import com.user.history.History;
@@ -149,5 +150,190 @@ class GeneralUserControllerIntegrationTest {
             .get("/user/{username}/history", "nobody")
         .then()
             .statusCode(400);
+    }
+
+    @Test
+    @DisplayName("GET /user/{username}/csv/ returns full history (>5 entries)")
+    void getHistoryDownload_returnsAllEntries() {
+        User u = persistUser("csvuser");
+        // seed 7 entries with descending counters so order deterministic
+        persistHistory(u, 201, 70);
+        persistHistory(u, 202, 60);
+        persistHistory(u, 203, 50);
+        persistHistory(u, 204, 40);
+        persistHistory(u, 205, 30);
+        persistHistory(u, 206, 20);
+        persistHistory(u, 207, 10);
+
+        LinkedHashMap<String, Object> body =
+            given()
+            .when()
+                .get("/user/{username}/csv/", "csvuser")
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<LinkedHashMap<String, Object>>() {});
+
+        assert body.size() == 7 : "Expected all 7 history rows";
+        // ordering should be by counter descending -> keys 201..205 then 206 then 207
+        assert new ArrayList<>(body.keySet()).equals(Arrays.asList("201","202","203","204","205","206","207")) : "Unexpected ordering in csv history";
+    }
+
+    @Test
+    @DisplayName("POST /user/{username}/pinned-tariffs/{tariffId} pins up to 3 tariffs and blocks 4th")
+    void addPinnedTariff_limitsToThree() {
+    persistUser("pinuser");
+
+        // Pin three distinct tariffs
+        List<Integer> first =
+            given()
+            .when()
+                .post("/user/{username}/pinned-tariffs/{tariffId}", "pinuser", 900)
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<List<Integer>>() {});
+        assert first.size() == 1 && first.contains(900) : "First pin failed";
+
+        List<Integer> second =
+            given()
+            .when()
+                .post("/user/{username}/pinned-tariffs/{tariffId}", "pinuser", 901)
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<List<Integer>>() {});
+        assert second.size() == 2 && second.containsAll(Arrays.asList(900,901)) : "Second pin failed";
+
+        List<Integer> third =
+            given()
+            .when()
+                .post("/user/{username}/pinned-tariffs/{tariffId}", "pinuser", 902)
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<List<Integer>>() {});
+        assert third.size() == 3 && third.containsAll(Arrays.asList(900,901,902)) : "Third pin failed";
+
+        // Attempt to pin a 4th should yield 409 and not alter list
+        given()
+        .when()
+            .post("/user/{username}/pinned-tariffs/{tariffId}", "pinuser", 903)
+        .then()
+            .statusCode(409);
+
+        // Verify still 3 via GET /user/{username}
+        com.user.dto.UserInfoDTO info =
+            given()
+            .when()
+                .get("/user/{username}", "pinuser")
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(com.user.dto.UserInfoDTO.class);
+        assert info.pinnedTariffs().size() == 3 : "Pinned list size changed after 409 attempt";
+    }
+
+    @Test
+    @DisplayName("POST /user/{username}/pinned-tariffs/{tariffId} ignores duplicate pin")
+    void addPinnedTariff_duplicateIgnored() {
+        persistUser("dupuser");
+        List<Integer> list =
+            given()
+            .when()
+                .post("/user/{username}/pinned-tariffs/{tariffId}", "dupuser", 500)
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<List<Integer>>() {});
+        assert list.size() == 1 : "Initial pin should create one entry";
+
+        List<Integer> duplicate =
+            given()
+            .when()
+                .post("/user/{username}/pinned-tariffs/{tariffId}", "dupuser", 500)
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<List<Integer>>() {});
+        assert duplicate.size() == 1 && duplicate.get(0) == 500 : "Duplicate pin should not add another entry";
+    }
+
+    @Test
+    @DisplayName("POST /user/{username}/unpinned-tariffs/{tariffId} removes pinned tariff")
+    void removePinnedTariff_removesSuccessfully() {
+        persistUser("unpinuser");
+        // Pin two tariffs
+        given().when().post("/user/{username}/pinned-tariffs/{tariffId}", "unpinuser", 700).then().statusCode(200);
+        given().when().post("/user/{username}/pinned-tariffs/{tariffId}", "unpinuser", 701).then().statusCode(200);
+
+        List<Integer> afterRemoval =
+            given()
+            .when()
+                .post("/user/{username}/unpinned-tariffs/{tariffId}", "unpinuser", 700)
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(new TypeRef<List<Integer>>() {});
+        assert afterRemoval.size() == 1 && afterRemoval.contains(701) : "Removal did not work as expected";
+    }
+
+    @Test
+    @DisplayName("GET /user/{username} returns pinned tariffs DTO")
+    void getPinnedTariffs_success() {
+        persistUser("getpinuser");
+        given().when().post("/user/{username}/pinned-tariffs/{tariffId}", "getpinuser", 111).then().statusCode(200);
+        given().when().post("/user/{username}/pinned-tariffs/{tariffId}", "getpinuser", 222).then().statusCode(200);
+
+        com.user.dto.UserInfoDTO info =
+            given()
+            .when()
+                .get("/user/{username}", "getpinuser")
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(com.user.dto.UserInfoDTO.class);
+        assert info.pinnedTariffs().size() == 2 : "Pinned tariffs count mismatch";
+        assert info.pinnedTariffs().containsAll(Arrays.asList(111, 222)) : "Pinned tariffs IDs mismatch";
+    }
+
+    @Test
+    @DisplayName("GET /user/{username}/csv/ unknown user returns 400 (exception caught)")
+    void getHistoryDownload_unknownUserReturns400() {
+        given()
+        .when()
+            .get("/user/{username}/csv/", "unknown_csv")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @DisplayName("POST /user/{username}/pinned-tariffs/{tariffId} unknown user returns 400 (exception caught)")
+    void addPinnedTariff_unknownUserReturns400() {
+        given()
+        .when()
+            .post("/user/{username}/pinned-tariffs/{tariffId}", "nouser_pin", 123)
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @DisplayName("POST /user/{username}/unpinned-tariffs/{tariffId} unknown user returns 400 (exception caught)")
+    void removePinnedTariff_unknownUserReturns400() {
+        given()
+        .when()
+            .post("/user/{username}/unpinned-tariffs/{tariffId}", "nouser_unpin", 123)
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @DisplayName("GET /user/{username} unknown user returns 404 (exception caught)")
+    void getPinnedTariff_unknownUserReturns404() {
+        given()
+        .when()
+            .get("/user/{username}", "nouser_info")
+        .then()
+            .statusCode(404);
     }
 }
