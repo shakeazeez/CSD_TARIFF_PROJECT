@@ -22,6 +22,8 @@ services:
       NEWS_URL: ${NEWS_URL}
       USER_URL: ${USER_URL}
       JAVA_OPTS: -Xmx768m -Xms256m
+    volumes:
+      - ./.env.prod:/app/.env:ro
     deploy:
       resources:
         limits:
@@ -37,9 +39,9 @@ services:
     environment:
         RUST_DATABASE_URL: ${RUST_DATABASE_URL}
         FRONTEND_URL: ${FRONTEND_URL}
-        TARIFF_URL: ${TARIFF_URL}
-        USER_URL: ${USER_URL}
-        NEWS_URL: ${NEWS_URL}
+        TARIFF_URL: http://backend:8081
+        USER_URL: http://backend:8082
+        NEWS_URL: http://backend:8083
         RUST_LOG: info
     deploy:
       resources:
