@@ -20,12 +20,25 @@ import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.HistoricalTariffData;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffOverviewResponseDTO;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.WitsDTO;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffDataSet;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffSeries;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.dataSets.TariffSeriesData;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.structure.Dimension;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.structure.Observation;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.structure.StartPeriod;
+import com.tariff.calculation.tariffCalc.dto.historicalTariffApiDto.structure.Structure;
 
 import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
 import com.tariff.calculation.tariffCalc.tariff.Tariff;
 import com.tariff.calculation.tariffCalc.tariff.TariffRepo;
 
+/**
+ * Integration-style unit tests for TariffOverviewImpl focusing on tariff overview retrieval,
+ * repository-driven shortcuts, API loading & fallback partner=000 logic, date sorting, zero/negative cost
+ * calculations, and validation error scenarios.
+ */
 @ExtendWith(MockitoExtension.class)
 public class TariffOverviewImplTest {
 
@@ -90,6 +103,64 @@ public class TariffOverviewImplTest {
         mockTariff.setPercentageRate(5.0);
         mockTariff.setDescription("Test tariff");
         mockTariff.setLocalDate(LocalDate.of(2023, 1, 1));
+    }
+
+        @Test
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        void testLoadTariffsFromApi_PadsCountryNumbersAndBuildsUri() {
+        // Arrange
+        // Force single-digit and two-digit numbers so while-loops execute
+        mockReportingCountry.setCountryNumber(7);   // -> 007
+        mockPartnerCountry.setCountryNumber(9);     // -> 009
+        mockItem.setItemCode(123);                  // -> 000123 via String.format("%06d")
+
+        TariffCalculationQueryDTO queryDTO = new TariffCalculationQueryDTO(
+                "China", "India", "slipper", 100.0);
+
+        when(countryRepo.findByCountryName("China")).thenReturn(Optional.of(mockReportingCountry));
+        when(countryRepo.findByCountryName("India")).thenReturn(Optional.of(mockPartnerCountry));
+        when(itemRepo.findByItemNameAndCountry("slipper", mockReportingCountry)).thenReturn(Optional.of(mockItem));
+        // size <= 1 to trigger API call path
+        when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(mockReportingCountry, mockPartnerCountry, mockItem))
+                .thenReturn(new ArrayList<>());
+
+        // Build minimal WitsDTO with one observation so method can complete
+        Map<String, java.util.List<Object>> observations = new java.util.LinkedHashMap<>();
+        observations.put("0", java.util.List.of(10.0));
+        TariffSeriesData seriesData = new TariffSeriesData(observations);
+        TariffSeries series = new TariffSeries();
+        series.setSeriesData("0:0:0:0:0", seriesData);
+        TariffDataSet dataSet = new TariffDataSet(series);
+        Observation observation = new Observation(java.util.List.of(new StartPeriod("2001-01-01T00:00:00")));
+        Dimension dimension = new Dimension(java.util.List.of(observation));
+        Structure structure = new Structure(dimension);
+        WitsDTO witsDTO = new WitsDTO(java.util.List.of(dataSet), structure);
+
+        // Mock RestClient chain and capture the URI
+        RestClient.RequestHeadersUriSpec requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        final java.util.List<String> capturedUris = new java.util.ArrayList<>();
+        when(requestSpec.uri(anyString())).thenAnswer(inv -> {
+            String uri = inv.getArgument(0);
+            capturedUris.add(uri);
+            return (RestClient.RequestHeadersUriSpec) requestSpec;
+        });
+
+        RestClient.ResponseSpec spec = mock(RestClient.ResponseSpec.class);
+        when(requestSpec.retrieve()).thenReturn(spec);
+        when(spec.onStatus(any(), any())).thenReturn(spec);
+        when(spec.body(WitsDTO.class)).thenReturn(witsDTO);
+
+        // Act
+        TariffOverviewResponseDTO result = tariffOverviewImpl.getTariffOverview(queryDTO);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(capturedUris.isEmpty(), "Expected to capture at least one URI call");
+        String uri = capturedUris.get(0);
+        assertTrue(uri.contains("/reporter/007/partner/009/product/000123/"),
+                "URI should contain zero-padded reporter, partner and product: " + uri);
     }
 
     @Test
@@ -211,7 +282,6 @@ public class TariffOverviewImplTest {
 
         List<Tariff> emptyTariffs = new ArrayList<>();
         setupMockRepositoryCalls(queryDTO, emptyTariffs);
-        setupMockApiCall();
 
         // Act & Assert - API call would throw exception due to complex mocking,
         // but we verify the behavior up to the API call attempt
@@ -382,6 +452,115 @@ public class TariffOverviewImplTest {
         assertEquals(LocalDate.of(2023, 6, 1), result.tariffData().get(1).startPeriod());
     }
 
+        @Test
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        void testGetTariffOverview_ApiLoadParsesTariffs() {
+        // Arrange: force API path by returning 0 existing tariffs
+        TariffCalculationQueryDTO queryDTO = new TariffCalculationQueryDTO(
+                "China", "India", "slipper", 100.0);
+
+        when(countryRepo.findByCountryName("China")).thenReturn(Optional.of(mockReportingCountry));
+        when(countryRepo.findByCountryName("India")).thenReturn(Optional.of(mockPartnerCountry));
+        when(itemRepo.findByItemNameAndCountry("slipper", mockReportingCountry)).thenReturn(Optional.of(mockItem));
+        when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(mockReportingCountry, mockPartnerCountry, mockItem))
+                .thenReturn(new ArrayList<>()); // size <= 1 triggers API load
+
+        // Build WitsDTO with two observations (rates 30.29 and 29.5 for 1990 & 1991)
+        Map<String, List<Object>> observations = new LinkedHashMap<>();
+        observations.put("0", List.of(30.29));
+        observations.put("1", List.of(29.5));
+        TariffSeriesData seriesData = new TariffSeriesData(observations);
+        TariffSeries series = new TariffSeries();
+        series.setSeriesData("0:0:0:0:0", seriesData);
+        TariffDataSet dataSet = new TariffDataSet(series);
+        Observation observation = new Observation(List.of(
+                new StartPeriod("1990-01-01T00:00:00"),
+                new StartPeriod("1991-01-01T00:00:00")));
+        Dimension dimension = new Dimension(List.of(observation));
+        Structure structure = new Structure(dimension);
+        WitsDTO witsDTO = new WitsDTO(List.of(dataSet), structure);
+
+        // Mock RestClient chain
+        RestClient.RequestHeadersUriSpec requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+        when(requestSpec.uri(anyString())).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+        RestClient.ResponseSpec spec = mock(RestClient.ResponseSpec.class);
+        when(requestSpec.retrieve()).thenReturn(spec);
+        when(spec.onStatus(any(), any())).thenReturn(spec);
+        when(spec.body(WitsDTO.class)).thenReturn(witsDTO);
+
+        // Act
+        TariffOverviewResponseDTO result = tariffOverviewImpl.getTariffOverview(queryDTO);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.tariffData().size());
+        // Sorted by date ascending
+        assertEquals(LocalDate.of(1990, 1, 1), result.tariffData().get(0).startPeriod());
+        assertEquals(30.29, result.tariffData().get(0).tariffRate());
+        assertEquals(30.29, result.tariffData().get(0).tariffAmount()); // 30.29% of 100
+        assertEquals(LocalDate.of(1991, 1, 1), result.tariffData().get(1).startPeriod());
+        assertEquals(29.5, result.tariffData().get(1).tariffRate());
+
+        // Verify saves invoked for each observation
+        verify(tariffRepo, times(2)).save(any(Tariff.class));
+    }
+
+        @Test
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        void testGetTariffOverview_ApiFallbackPartner000() {
+        // Arrange: trigger fallback by first API throwing IllegalArgumentException
+        TariffCalculationQueryDTO queryDTO = new TariffCalculationQueryDTO(
+                "China", "India", "slipper", 50.0);
+
+        when(countryRepo.findByCountryName("China")).thenReturn(Optional.of(mockReportingCountry));
+        when(countryRepo.findByCountryName("India")).thenReturn(Optional.of(mockPartnerCountry));
+        when(itemRepo.findByItemNameAndCountry("slipper", mockReportingCountry)).thenReturn(Optional.of(mockItem));
+        when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(mockReportingCountry, mockPartnerCountry, mockItem))
+                .thenReturn(new ArrayList<>()); // force API path
+
+        // First call chain (throws)
+        RestClient.RequestHeadersUriSpec firstSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        RestClient.ResponseSpec firstResp = mock(RestClient.ResponseSpec.class);
+        // Second call chain (success)
+        RestClient.RequestHeadersUriSpec secondSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        RestClient.ResponseSpec secondResp = mock(RestClient.ResponseSpec.class);
+
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) firstSpec, (RestClient.RequestHeadersUriSpec) secondSpec);
+        when(firstSpec.uri(anyString())).thenReturn((RestClient.RequestHeadersUriSpec) firstSpec);
+        when(firstSpec.retrieve()).thenReturn(firstResp);
+        when(firstResp.onStatus(any(), any())).thenReturn(firstResp);
+        when(firstResp.body(WitsDTO.class)).thenThrow(new IllegalArgumentException("Dont have for this specific combination"));
+
+        // Successful fallback WitsDTO (one observation)
+        Map<String, List<Object>> observations = new LinkedHashMap<>();
+        observations.put("0", List.of(10.0));
+        TariffSeriesData seriesData = new TariffSeriesData(observations);
+        TariffSeries series = new TariffSeries();
+        series.setSeriesData("0:0:0:0:0", seriesData);
+        TariffDataSet dataSet = new TariffDataSet(series);
+        Observation observation = new Observation(List.of(new StartPeriod("2000-01-01T00:00:00")));
+        Dimension dimension = new Dimension(List.of(observation));
+        Structure structure = new Structure(dimension);
+        WitsDTO fallbackDto = new WitsDTO(List.of(dataSet), structure);
+
+        when(secondSpec.uri(anyString())).thenReturn((RestClient.RequestHeadersUriSpec) secondSpec);
+        when(secondSpec.retrieve()).thenReturn(secondResp);
+        when(secondResp.onStatus(any(), any())).thenReturn(secondResp);
+        when(secondResp.body(WitsDTO.class)).thenReturn(fallbackDto);
+
+        // Act
+        TariffOverviewResponseDTO result = tariffOverviewImpl.getTariffOverview(queryDTO);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.tariffData().size());
+        assertEquals(LocalDate.of(2000, 1, 1), result.tariffData().get(0).startPeriod());
+        assertEquals(10.0, result.tariffData().get(0).tariffRate());
+        assertEquals(5.0, result.tariffData().get(0).tariffAmount()); // 10% of 50
+        verify(tariffRepo, times(1)).save(any(Tariff.class));
+    }
+
     // Helper methods
     private Tariff createMockTariff(Integer id, Double rate, LocalDate date) {
         Tariff tariff = new Tariff();
@@ -402,13 +581,5 @@ public class TariffOverviewImplTest {
                 .thenReturn(Optional.of(mockItem));
         when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(
                 mockReportingCountry, mockPartnerCountry, mockItem)).thenReturn(existingTariffs);
-    }
-
-    private void setupMockApiCall() {
-        // Note: Complex RestClient mocking is difficult due to generics
-        // In a real scenario, we would either:
-        // 1. Use integration tests for full API testing
-        // 2. Extract API logic to a separate service for easier mocking
-        // 3. Use TestRestTemplate or WebTestClient for integration testing
     }
 }

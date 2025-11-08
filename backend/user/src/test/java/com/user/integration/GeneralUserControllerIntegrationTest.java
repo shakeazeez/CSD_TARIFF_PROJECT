@@ -1,7 +1,6 @@
 package com.user.integration;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

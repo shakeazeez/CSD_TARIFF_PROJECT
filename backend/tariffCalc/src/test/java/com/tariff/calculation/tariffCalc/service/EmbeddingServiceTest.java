@@ -12,17 +12,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import com.tariff.calculation.tariffCalc.category.Category;
 import com.tariff.calculation.tariffCalc.category.CategoryRepo;
 
+/**
+ * Unit tests for EmbeddingService covering embedding retrieval, JSON parsing,
+ * similarity scoring, category matching fallback logic, and repository interactions.
+ */
 @ExtendWith(MockitoExtension.class)
 public class EmbeddingServiceTest {
 
     @Mock
     private CategoryRepo categoryRepo;
-
-
 
     private EmbeddingService embeddingService;
 
@@ -43,6 +47,110 @@ public class EmbeddingServiceTest {
         mockClothingCategory.setName("Clothing");
         mockClothingCategory.setDesc("Apparel and fashion items");
         mockClothingCategory.setEmbedding(createMockEmbedding(0.3f));
+    }
+
+    @Test
+    void testGetEmbedding_ValidJsonResponse_ParsesEmbedding() throws Exception {
+        // Arrange
+        ReflectionTestUtils.setField(embeddingService, "openaiApiKey", "test-key");
+
+        // Build a fake JSON response matching OpenAI embedding shape
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"data\":[{\"embedding\":[");
+        // produce 5 float values for brevity
+        for (int i = 0; i < 5; i++) {
+            sb.append(i * 0.01);
+            if (i < 4) sb.append(',');
+        }
+        sb.append("]}]} ");
+        String jsonResponse = sb.toString();
+
+        // Spy service so we can stub webClient interaction by overriding getEmbedding call internals
+        EmbeddingService spyService = spy(embeddingService);
+
+        // Stub webClient.post() chain by intercepting getEmbedding network portion via doReturn on private method not exposed.
+        // Instead, we mock the WebClient at field level using reflection to return our jsonResponse when .block() is called.
+        WebClient mockClient = mock(WebClient.class);
+        WebClient.RequestBodyUriSpec postSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(mockClient.post()).thenReturn(postSpec);
+        when(postSpec.uri(anyString())).thenReturn(postSpec);
+        when(postSpec.header(anyString(), anyString())).thenReturn(postSpec);
+        when(postSpec.header(anyString(), anyString())).thenReturn(postSpec);
+            doReturn((WebClient.RequestHeadersSpec<?>) postSpec).when(postSpec).bodyValue(any());
+            when(postSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(eq(String.class))).thenReturn(Mono.just(jsonResponse.trim()));
+
+        ReflectionTestUtils.setField(spyService, "webClient", mockClient);
+
+        // Act
+        float[] embedding = spyService.getEmbedding("phone");
+
+        // Assert
+        assertNotNull(embedding);
+        assertEquals(5, embedding.length);
+        assertEquals(0.00f, embedding[0], 1e-6);
+        assertEquals(0.04f, embedding[4], 1e-6);
+    }
+
+    @Test
+    void testGetEmbedding_InvalidEmptyResponse_FallbackUsed() {
+        // Arrange
+        ReflectionTestUtils.setField(embeddingService, "openaiApiKey", "test-key");
+        EmbeddingService spyService = spy(embeddingService);
+        WebClient mockClient = mock(WebClient.class);
+        WebClient.RequestBodyUriSpec postSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+        when(mockClient.post()).thenReturn(postSpec);
+        when(postSpec.uri(anyString())).thenReturn(postSpec);
+        when(postSpec.header(anyString(), anyString())).thenReturn(postSpec);
+        when(postSpec.header(anyString(), anyString())).thenReturn(postSpec);
+        doReturn((WebClient.RequestHeadersSpec<?>) postSpec).when(postSpec).bodyValue(any());
+        when(postSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(eq(String.class))).thenReturn(Mono.just(""));
+        ReflectionTestUtils.setField(spyService, "webClient", mockClient);
+
+        // Act
+        float[] result = spyService.getEmbedding("laptop");
+
+        // Assert
+        assertNotNull(result);
+        // Fallback embedding has variation in first 100 dims; check that at least one differs from base 0.001
+        boolean varied = false;
+        for (int i = 0; i < 100; i++) {
+            if (result[i] > 0.001f) { varied = true; break; }
+        }
+        assertTrue(varied, "Expected hash-based variation from fallback embedding");
+    }
+
+    @Test
+    void testGetEmbedding_MalformedJson_ExceptionFallback() {
+        // Arrange
+        ReflectionTestUtils.setField(embeddingService, "openaiApiKey", "test-key");
+        EmbeddingService spyService = spy(embeddingService);
+        WebClient mockClient = mock(WebClient.class);
+        WebClient.RequestBodyUriSpec postSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+        when(mockClient.post()).thenReturn(postSpec);
+        when(postSpec.uri(anyString())).thenReturn(postSpec);
+        when(postSpec.header(anyString(), anyString())).thenReturn(postSpec);
+        when(postSpec.header(anyString(), anyString())).thenReturn(postSpec);
+        doReturn((WebClient.RequestHeadersSpec<?>) postSpec).when(postSpec).bodyValue(any());
+        when(postSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(eq(String.class))).thenReturn(Mono.just("{not valid json"));
+        ReflectionTestUtils.setField(spyService, "webClient", mockClient);
+
+        // Act
+        float[] result = spyService.getEmbedding("tablet");
+
+        // Assert
+        assertNotNull(result);
+        boolean varied = false;
+        for (int i = 0; i < 100; i++) {
+            if (result[i] > 0.001f) { varied = true; break; }
+        }
+        assertTrue(varied, "Fallback embedding should be used on malformed JSON");
     }
 
     @Test
