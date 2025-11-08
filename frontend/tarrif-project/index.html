@@ -25,6 +25,21 @@
     
     <!-- Page title that appears in browser tab -->
     <title>TariffCalc - Global Tariff Calculator</title>
+    
+    <!-- Temporary fix for Cloudflare beacon integrity issue -->
+    <script>
+      // Remove integrity attribute from Cloudflare beacon to prevent hash mismatch errors
+      document.addEventListener('DOMContentLoaded', function() {
+        // Wait a bit for Cloudflare script to be injected
+        setTimeout(function() {
+          const cfScript = document.querySelector('script[src*="cloudflareinsights.com"]');
+          if (cfScript) {
+            cfScript.removeAttribute('integrity');
+            console.log('Cloudflare beacon integrity attribute removed');
+          }
+        }, 100);
+      });
+    </script>
   </head>
   <body>
     <!-- React app mounting point - all React components will render inside this div -->
