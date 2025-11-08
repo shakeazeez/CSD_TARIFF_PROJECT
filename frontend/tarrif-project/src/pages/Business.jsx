@@ -65,7 +65,7 @@ const presetListJSON = [
     },
 ];
 // default country of origin
-const defaultOrigin = "Singapore";
+const _defaultOrigin = "Singapore";
 
 // Helper: normalize backend response into items shape used by UI
 const normalizeToItems = (data) => {
@@ -480,7 +480,7 @@ export function Business({onMenuClick}) {
                                         className="w-full"
                                     />
                                 </div>
-                                {/* <div className="space-y-2">
+                                <div className="space-y-2">
                                     <Label
                                         htmlFor="partner-country"
                                         style={{ color: colors.foreground }}
@@ -496,7 +496,7 @@ export function Business({onMenuClick}) {
                                         placeholder="Select partner country"
                                         className="w-full"
                                     />
-                                </div> */}
+                                </div>
                             </div>
 
                             {/* HS Code and Cost */}

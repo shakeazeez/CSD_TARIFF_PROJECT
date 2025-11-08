@@ -175,6 +175,19 @@ export function Login(){
                 setCountries(response.data);
             } catch (error) {
                 console.error("Error fetching countries:", error);
+                const fallbackCountries = [
+                    { countryName: "United States" },
+                    { countryName: "China" },
+                    { countryName: "Singapore" },
+                    { countryName: "Malaysia" },
+                    { countryName: "Japan" },
+                    { countryName: "South Korea" },
+                    { countryName: "Germany" },
+                    { countryName: "United Kingdom" },
+                    { countryName: "France" },
+                    { countryName: "Canada" }
+                ];
+                setCountries(fallbackCountries);
             }
         };
         fetchCountries();
@@ -224,7 +237,7 @@ export function Login(){
     };
 
     // Handle multiselect changes
-    const handleMultiSelectChange = (name, value) => {
+    const _handleMultiSelectChange = (name, value) => {
         setForm({...form, [name]: value});
     };
 
@@ -240,8 +253,8 @@ export function Login(){
         // Role-specific validation
         if (isSignUp && role === 'Business') {
             if (!form.originCountry) return "Please enter your origin country";
-            if (!form.destinationCountries || form.destinationCountries.length === 0) return "Please enter destination countries";
-            if (!form.itemsSold) return "Please enter items sold";
+            // if (!form.destinationCountries || form.destinationCountries.length === 0) return "Please enter destination countries";
+            // if (!form.itemsSold) return "Please enter items sold";
         }
         if (isSignUp && role === 'Bank') {
             if (!form.industry) return "Please select your industry";
@@ -321,10 +334,12 @@ export function Login(){
                     // backend expects itemsSold, destinationCountries, originCountry
                     roleExtras = {
                         role: normalizedRole,
-                        itemsSold: form.itemsSold ? form.itemsSold.split(',').map(item => item.trim()) : [],
-                        destinationCountries: form.destinationCountries || [],
+                        tariffs: [], // to satisfy backend DTO
+                        // itemsSold: form.itemsSold ? form.itemsSold.split(',').map(item => item.trim()) : [],
+                        // destinationCountries: form.destinationCountries || [],
                         originCountry: form.originCountry || ''
                     };
+                    // console.log('Business role extras:', roleExtras);
                 } else if (normalizedRole === 'Bank') {
                     // backend expects industry and originCountry for banks
                     roleExtras = {
@@ -861,7 +876,7 @@ export function Login(){
                                             className="w-full"
                                         />
                                     </div>
-                                    <div className="space-y-2">
+                                    {/* <div className="space-y-2">
                                         <Label
                                             htmlFor="destinationCountries"
                                             className="text-sm font-medium transition-colors duration-300"
@@ -875,8 +890,8 @@ export function Login(){
                                             onChange={(value) => handleMultiSelectChange('destinationCountries', value)}
                                             title="Select destination countries"
                                         />
-                                    </div>
-                                    <div className="space-y-2">
+                                    </div> */}
+                                    {/* <div className="space-y-2">
                                         <Label
                                             htmlFor="itemsSold"
                                             className="text-sm font-medium transition-colors duration-300"
@@ -899,7 +914,7 @@ export function Login(){
                                             }}
                                             disabled={isLoading}
                                         />
-                                    </div>
+                                    </div> */}
                                 </motion.div>
                             )}
 
