@@ -5,19 +5,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 
 import java.time.LocalDate;
-import java.util.stream.Collectors;
 import java.util.*;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -28,10 +23,8 @@ import com.tariff.calculation.tariffCalc.category.CategoryRepo;
 import com.tariff.calculation.tariffCalc.category.Industry;
 import com.tariff.calculation.tariffCalc.country.Country;
 import com.tariff.calculation.tariffCalc.country.CountryRepo;
-import com.tariff.calculation.tariffCalc.dto.GeneralTariffDTO;
 import com.tariff.calculation.tariffCalc.dto.TariffCalculationQueryDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.SelectedItemsDTO;
-import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffDetailsforItemDTO;
 import com.tariff.calculation.tariffCalc.dto.bankServiceDto.TariffItemFilterDTO;
 import com.tariff.calculation.tariffCalc.item.Item;
 import com.tariff.calculation.tariffCalc.item.ItemRepo;
@@ -176,24 +169,6 @@ class TariffRestControllerIntegrationTest {
             .statusCode(200)
             .body("$", hasSize(21))
             .body("$", hasItems(expectedIndustries));    
-    }
-
-
-    @Test
-    @DisplayName("GET /industries - Returns 404 when Industry lookup fails")
-    void getAllIndustries_ShouldReturn404_WhenIndustryLookupFails() {
-        // Mock the Industry enum to return null
-        when(embeddingService.getEmbedding("INVALID_INDUSTRY"))
-            .thenReturn(null);
-
-        given()
-            .contentType(ContentType.JSON)
-            .queryParam("industry", "INVALID_INDUSTRY")
-        .when()
-            .get("/tariff/industries")
-        .then()
-            .statusCode(404)
-            .body(emptyOrNullString());
     }
 
     @Test

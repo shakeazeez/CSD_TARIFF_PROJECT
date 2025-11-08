@@ -1,7 +1,6 @@
 package com.user.integration;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -27,6 +26,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
 /**
  * Integration tests for BusinessController.
@@ -142,5 +142,86 @@ class BusinessControllerIntegrationTest {
             .get("/business/{username}", "notbiz")
         .then()
             .statusCode(403);
+    }
+
+    @Test
+    @DisplayName("POST /business/{username}/entry adds new tariff record")
+    void addTariffRecord_success() {
+    preloadBusiness("entrybiz");
+        // Add a new tariff (not in initial set)
+        given()
+            .contentType(ContentType.JSON)
+            .body(new BusinessTariffDTO("JP", "sprockets"))
+        .when()
+            .post("/business/{username}/entry", "entrybiz")
+        .then()
+            .statusCode(200);
+
+        // Verify via GET
+        BusinessInfoDTO dto =
+            given()
+            .when()
+                .get("/business/{username}", "entrybiz")
+            .then()
+                .statusCode(200)
+                .extract()
+                .as(BusinessInfoDTO.class);
+        assert dto.tariffs().size() == 3 : "Expected 3 tariff records after addition";
+        List<String> items = dto.tariffs().stream().map(BusinessTariffDTO::item).toList();
+        assert items.contains("sprockets") : "New tariff item not present";
+    }
+
+    @Test
+    @DisplayName("DELETE /business/{username}/entry removes existing tariff record")
+    void deleteTariffRecord_success() {
+    preloadBusiness("deletebiz");
+        // First add a record to be deleted
+        given().contentType(ContentType.JSON).body(new BusinessTariffDTO("JP", "widgets2"))
+        .when().post("/business/{username}/entry", "deletebiz").then().statusCode(200);
+
+        // Confirm present
+        BusinessInfoDTO before =
+            given().when().get("/business/{username}", "deletebiz").then().statusCode(200).extract().as(BusinessInfoDTO.class);
+        assert before.tariffs().size() == 3 : "Precondition failed: expected 3 tariffs before delete";
+
+        // Delete
+        given().contentType(ContentType.JSON).body(new BusinessTariffDTO("JP", "widgets2"))
+        .when().delete("/business/{username}/entry", "deletebiz")
+        .then().statusCode(200);
+
+        // Verify removal
+        BusinessInfoDTO after =
+            given().when().get("/business/{username}", "deletebiz").then().statusCode(200).extract().as(BusinessInfoDTO.class);
+        assert after.tariffs().size() == 2 : "Expected 2 tariffs after deletion";
+        List<String> items = after.tariffs().stream().map(BusinessTariffDTO::item).toList();
+        assert !items.contains("widgets2") : "Deleted item still present";
+    }
+
+    @Test
+    @DisplayName("POST /business/{username}/entry non-business user returns 403")
+    void addTariffRecord_forbiddenForNonBusiness() {
+        com.user.user.User plain = new com.user.user.User();
+        plain.setUsername("notbiz2");
+        plain.setHashedPassword("pw");
+        plain.setRole(Role.MEMBER);
+        userRepo.save(plain);
+
+        given().contentType(ContentType.JSON).body(new BusinessTariffDTO("DE", "bolts"))
+        .when().post("/business/{username}/entry", "notbiz2")
+        .then().statusCode(403);
+    }
+
+    @Test
+    @DisplayName("DELETE /business/{username}/entry non-business user returns 403")
+    void deleteTariffRecord_forbiddenForNonBusiness() {
+        com.user.user.User plain = new com.user.user.User();
+        plain.setUsername("notbiz3");
+        plain.setHashedPassword("pw");
+        plain.setRole(Role.MEMBER);
+        userRepo.save(plain);
+
+        given().contentType(ContentType.JSON).body(new BusinessTariffDTO("DE", "bolts"))
+        .when().delete("/business/{username}/entry", "notbiz3")
+        .then().statusCode(403);
     }
 }
