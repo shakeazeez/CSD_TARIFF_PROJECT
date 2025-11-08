@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   tariffCalc:
-    image: ${ECR_REGISTRY}/goattariff/backend:${TAG:-latest}
+    image: ${ECR_REGISTRY}/goattariff/tariffcalc:${TAG:-latest}
     command: java -jar tariffCalc.jar
     ports:
       - "8081:8081"
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
 
   user:
-    image: ${ECR_REGISTRY}/goattariff/backend:${TAG:-latest}
+    image: ${ECR_REGISTRY}/goattariff/user:${TAG:-latest}
     command: java -jar user.jar
     ports:
       - "8082:8082"
@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
 
   news:
-    image: ${ECR_REGISTRY}/goattariff/backend:${TAG:-latest}
+    image: ${ECR_REGISTRY}/goattariff/news:${TAG:-latest}
     command: java -jar news.jar
     ports:
       - "8083:8083"
@@ -91,7 +91,7 @@ services:
           memory: 512MB
     restart: unless-stopped
 
-  rust-router:
+  router:
     image: ${ECR_REGISTRY}/goattariff/router:${TAG:-latest}
     ports:
       - "8080:8080"
@@ -119,6 +119,6 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - rust-router
+      - router
     environment:
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
