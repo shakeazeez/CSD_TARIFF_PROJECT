@@ -340,6 +340,65 @@ export function Business({onMenuClick}) {
         }
     };
 
+    // new handleAdd
+    const newHandleAddItem = async () => {
+        const payload = {
+            information: [
+                {
+                    report,
+                    hsCode: hs 
+                }
+            ]
+        };
+        try {
+            // to /business/{username}/items POST with body { information: [ { partner, hsCode } ] }
+            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/entry`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // refresh from server after successful add
+            await fetchBusinessItems();
+            toast({
+                title: "Item Added",
+                description: `Successfully added ${hs} for partner ${partner}`,
+                variant: "default",
+            });
+        } catch (error) {
+            console.error("Error adding item:", error);
+        }
+
+        console.log("Add item:", payload);
+    };
+
+    // newHandleDelete
+    const newHandleDelete = async (reportingCountry, partnerIndex) => {
+        // delete from /business/{username}/entry DELETE with body { information: [ reporting, hsCode ] }
+        try {
+            const payload = {
+                information: [
+                    {
+                        report,
+                        hsCode: hs
+                    }
+                ]
+            };
+            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/entry`, { 
+                data: payload,
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // refresh from server after successful delete
+            await fetchBusinessItems();
+            toast({
+                title: "Item Deleted",
+                description: `Successfully deleted item with id ${id}`,
+                variant: "default",
+            });
+        } catch (error) {
+            console.error("Error deleting item:", error);
+        }
+
+        console.log("Delete item at index:", reportingCountry, partnerIndex);
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -462,7 +521,7 @@ export function Business({onMenuClick}) {
                                 </div>
                                 <div className="flex items-end">
                                     <Button
-                                        onClick={handleAddItem}
+                                        onClick={newHandleAddItem}
                                         className="w-full h-10 transition-all duration-200 hover:scale-[1.02] shadow-md"
                                         style={{
                                             backgroundColor: colors.accent,
@@ -584,7 +643,7 @@ export function Business({onMenuClick}) {
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
-                                                                onClick={() => handleDelete(entry.report, pIdx)}
+                                                                onClick={() => newHandleDelete(entry.report, pIdx)}
                                                                 className="transition-all duration-300 hover:scale-105 shadow-md"
                                                                 style={{
                                                                     backgroundColor: colors.error || '#ef4444',
