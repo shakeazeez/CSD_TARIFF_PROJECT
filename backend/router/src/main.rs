@@ -48,7 +48,7 @@ async fn main() {
             .allowed_origin(
                 &env::var("FRONTEND_URL").unwrap_or_else(|_| {
                     println!("Defaulting");
-                    "0.0.0.1:80".to_string()
+                    "0.0.0.0:80".to_string()
                 }),
             )
             .allow_any_header()

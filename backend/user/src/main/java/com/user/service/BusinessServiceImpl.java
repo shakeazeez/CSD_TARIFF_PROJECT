@@ -57,7 +57,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         throw new IllegalAccessError("The user is not a business user");
     }
-
+    
     @Transactional
     public void deleteTariffRecord(BusinessTariffDTO tariff, String username) {
         User user = userRepo.findByUsername(username).orElseThrow(() -> {
