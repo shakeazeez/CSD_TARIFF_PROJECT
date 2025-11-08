@@ -55,17 +55,17 @@ import { useToast } from "../hooks/use-toast";
 const presetListJSON = [
     {
         report: "United States",
-        partner: ["Germany", "Canada", "Mexico"],
         hsCode: ["slipper", "boot", "sandal"],
         rate: [7, 5, 6]
     },
     {
         report: "Canada",
-        partner: ["Mexico", "United States", "Germany"],
         hsCode: ["slipper", "boot", "sandal"],
         rate: [6, 4, 8]
     },
 ];
+// default country of origin
+const defaultOrigin = "Singapore";
 
 // Helper: normalize backend response into items shape used by UI
 const normalizeToItems = (data) => {
@@ -342,6 +342,7 @@ export function Business({onMenuClick}) {
 
     // new handleAdd
     const newHandleAddItem = async () => {
+        if (!report || !hs) return;
         const payload = {
             information: [
                 {
@@ -371,6 +372,7 @@ export function Business({onMenuClick}) {
 
     // newHandleDelete
     const newHandleDelete = async (reportingCountry, partnerIndex) => {
+        if (!reportingCountry) return;
         // delete from /business/{username}/entry DELETE with body { information: [ reporting, hsCode ] }
         try {
             const payload = {
@@ -478,7 +480,7 @@ export function Business({onMenuClick}) {
                                         className="w-full"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                {/* <div className="space-y-2">
                                     <Label
                                         htmlFor="partner-country"
                                         style={{ color: colors.foreground }}
@@ -494,7 +496,7 @@ export function Business({onMenuClick}) {
                                         placeholder="Select partner country"
                                         className="w-full"
                                     />
-                                </div>
+                                </div> */}
                             </div>
 
                             {/* HS Code and Cost */}
@@ -573,6 +575,7 @@ export function Business({onMenuClick}) {
                             <CardContent>
                                 <div className="overflow-x-auto relative">
                                     <table className="w-full text-sm text-left">
+                                        {/* Table Header */}
                                         <thead
                                             className="text-xs uppercase"
                                             style={{
@@ -583,9 +586,6 @@ export function Business({onMenuClick}) {
                                             <tr>
                                                 <th scope="col" className="px-6 py-3 rounded-tl-lg">
                                                     Reporting Country (Importer)
-                                                </th>
-                                                <th scope="col" className="px-6 py-3">
-                                                    Partner Country (Exporter)
                                                 </th>
                                                 <th scope="col" className="px-6 py-3">
                                                     Item/Item Description
@@ -600,7 +600,7 @@ export function Business({onMenuClick}) {
                                         </thead>
                                         <tbody>
                                             {items.map((entry, idx) => (
-                                                entry.partner.map((partnerCountry, pIdx) => (
+                                                entry.hsCode.map((code, pIdx) => (
                                                     <tr
                                                         key={`${idx}-${pIdx}`}
                                                         className="border-b hover:bg-opacity-50 transition-colors duration-200"
@@ -625,13 +625,7 @@ export function Business({onMenuClick}) {
                                                             className="px-6 py-4"
                                                             style={{ color: colors.foreground }}
                                                         >
-                                                            {partnerCountry}
-                                                        </td>
-                                                        <td
-                                                            className="px-6 py-4"
-                                                            style={{ color: colors.foreground }}
-                                                        >
-                                                            {entry.hsCode[pIdx]}
+                                                            {code}  {/* Changed from entry.hsCode[pIdx] to code */}
                                                         </td>
                                                         <td
                                                             className="px-6 py-4 font-semibold"
