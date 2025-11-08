@@ -7,16 +7,12 @@ import java.util.Set;
 
 import com.user.enums.Role;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.ManyToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,19 +39,19 @@ public class BusinessUser extends User {
     // private Set<String> destinationCountries;
     
     
-    @ManyToOne
+    @ManyToMany
     @JoinTable(name = "tariff_data_relationship",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "tariff_id")
     )
-    private List<BusinessDetails> tariffData;
+    private Set<BusinessDetails> tariffData;
 
     @Column(name = "origin_country")
     private String originCountry;
 
     public BusinessUser(String username, String hashedPassword,
             Role role,
-            List<BusinessDetails> tariffData,
+            Set<BusinessDetails> tariffData,
             String originCountry) {
         super(username, hashedPassword, role);
         this.tariffData = tariffData;

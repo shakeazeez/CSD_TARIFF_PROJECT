@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BusinessDetailsRepo extends JpaRepository<BusinessDetails, Integer> {
     
-    public Optional<BusinessDetails> findByItemAndReportingCountry (String item, String reportingCountry);
+    public Optional<BusinessDetails> findByReportingCountryAndItemIgnoreCase (String reportingCountry, String item);
     
 }

@@ -43,7 +43,7 @@ public class BusinessController {
         }
     }
 
-    @PostMapping("/{username}/items")
+    @PostMapping("/{username}/entry")
 	public ResponseEntity<?> addItemsSold(@PathVariable String username, @RequestBody BusinessTariffDTO information) {
 	    try {
 			businessService.addTariffRecord(information, username);
@@ -54,7 +54,7 @@ public class BusinessController {
 		} 
 	}
 	
-    @DeleteMapping("/{username}/items")
+    @DeleteMapping("/{username}/entry")
 	public ResponseEntity<?> deleteItemsSold(@PathVariable String username, @RequestBody BusinessTariffDTO information) {
 	    try {
 			businessService.deleteTariffRecord(information, username);

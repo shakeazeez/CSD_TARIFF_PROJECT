@@ -2,8 +2,11 @@ package com.user.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.user.dto.CreateUserDTO;
 import com.user.dto.TokenDTO;
@@ -56,14 +59,15 @@ public class AuthUserServiceImpl implements AuthUserService {
                 break;
             }
             case "BUSINESS": {
+                log.info(createUserDTO.toString());
                 if (createUserDTO.tariffs() == null || createUserDTO.originCountry() == null) {
                     throw new IllegalArgumentException("Not enough parameters valid for bank user");
                 }
-                List<BusinessDetails> tariffs = new ArrayList<>();
-                createUserDTO.tariffs().forEach(a -> {
-                    tariffs.add(businessDetailsRepo.findByItemAndReportingCountry(a.item(), a.reportingCountry())
-                        .orElse(businessDetailsRepo.save(new BusinessDetails(a.reportingCountry(), a.item()))));
-                });
+                
+                Set<BusinessDetails> tariffs = createUserDTO.tariffs().stream().map(a ->
+                    businessDetailsRepo.findByReportingCountryAndItemIgnoreCase(a.reportingCountry(), a.item())
+                        .orElseGet(() -> businessDetailsRepo.save(new BusinessDetails(a.reportingCountry(), a.item())))
+                ).collect(Collectors.toCollection(HashSet::new));
 
                 log.info(createUserDTO.toString());
                 creation = new BusinessUser(createUserDTO.username(), passwordHash,

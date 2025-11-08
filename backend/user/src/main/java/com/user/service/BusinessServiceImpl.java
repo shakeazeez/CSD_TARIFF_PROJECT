@@ -5,12 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.user.dto.BusinessInfoDTO;
 import com.user.dto.BusinessTariffDTO;
-import com.user.dto.ModifyTariffDTO;
 import com.user.history.History;
 import com.user.history.HistoryRepo;
 import com.user.user.BusinessDetails;
@@ -48,9 +46,9 @@ public class BusinessServiceImpl implements BusinessService {
         log.info("Class of user " + user.getClass());
         if (user instanceof BusinessUser bUser) {
             BusinessDetails tariffRecord = businessDetailsRepo
-                    .findByItemAndReportingCountry(tariff.item(), tariff.reportingCountry())
-                    .orElse(businessDetailsRepo.save(new BusinessDetails(tariff.reportingCountry(), tariff.item())));
-                    
+                    .findByReportingCountryAndItemIgnoreCase(tariff.reportingCountry(), tariff.item())
+                    .orElseGet(() -> businessDetailsRepo.save(new BusinessDetails(tariff.reportingCountry(), tariff.item())));
+            
             bUser.getTariffData().add(tariffRecord);
             log.info("No problem adding");
             userRepo.save(bUser);
@@ -68,8 +66,8 @@ public class BusinessServiceImpl implements BusinessService {
 
         if (user instanceof BusinessUser bUser) {
             BusinessDetails tariffRecord = businessDetailsRepo
-                    .findByItemAndReportingCountry(tariff.item(), tariff.reportingCountry())
-                    .orElse(businessDetailsRepo.save(new BusinessDetails(tariff.reportingCountry(), tariff.item())));
+                    .findByReportingCountryAndItemIgnoreCase(tariff.reportingCountry(), tariff.item())
+                    .orElseGet(() -> businessDetailsRepo.save(new BusinessDetails(tariff.reportingCountry(), tariff.item())));
             bUser.getTariffData().remove(tariffRecord);
             userRepo.save(bUser);
             return;
@@ -93,12 +91,15 @@ public class BusinessServiceImpl implements BusinessService {
                 History temp = history.get(i);
                 store.put(temp.getCounter(), temp.getLocalDate());
             }
-        
-            List<
+
+            List<BusinessTariffDTO> tariff = bUser.getTariffData().stream()
+                    .map(a -> new BusinessTariffDTO(a.getReportingCountry(), a.getItem()))
+                    .collect(Collectors.toCollection(ArrayList::new));
+
             return new BusinessInfoDTO(
                     // query origin is reporting
                     bUser.getOriginCountry(),
-                    bUser.
+                    tariff,
                     store);
 
         }
