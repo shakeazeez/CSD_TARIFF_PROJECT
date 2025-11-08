@@ -116,6 +116,16 @@ jobs:
       env:
         IMAGE_TAG: ${{ steps.version.outputs.tag }}
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        RUST_DATABASE_URL: ${{ secrets.RUST_DATABASE_URL }}
+        THE_NEWS_API_KEY: ${{ secrets.THE_NEWS_API_KEY }}
+        MOACH_API_KEY: ${{ secrets.MOACH_API_KEY }}
+        SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
+        FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
+        VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
       run: |
         # Validate required secrets
         if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
@@ -205,6 +215,22 @@ jobs:
           export AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'
           export AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'
           export AWS_REGION='${AWS_REGION}'
+          export DATABASE_URL='${DATABASE_URL}'
+          export DB_USERNAME='${DB_USERNAME}'
+          export DB_PASSWORD='${DB_PASSWORD}'
+          export RUST_DATABASE_URL='${RUST_DATABASE_URL}'
+          export THE_NEWS_API_KEY='${THE_NEWS_API_KEY}'
+          export MOACH_API_KEY='${MOACH_API_KEY}'
+          export SIGNING_SECRET='${SIGNING_SECRET}'
+          export FRONTEND_URL='${FRONTEND_URL}'
+          export OPEN_AI_KEY='${OPEN_AI_KEY}'
+          export VITE_BACKEND_URL='${VITE_BACKEND_URL}'
+          
+          # Append dynamic vars to .env.prod
+          echo "ECR_REGISTRY=$ECR_REGISTRY" >> .env.prod
+          echo "TAG=$TAG" >> .env.prod
+          echo "AWS_REGION=$AWS_REGION" >> .env.prod
+          
           chmod +x deploy.sh
           ./deploy.sh
         EOF
