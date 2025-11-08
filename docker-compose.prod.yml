@@ -24,6 +24,12 @@ services:
       JAVA_OPTS: -Xmx768m -Xms256m
     volumes:
       - ./.env.prod:/app/.env:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     deploy:
       resources:
         limits:
@@ -44,7 +50,8 @@ services:
         NEWS_URL: http://backend:8083
         RUST_LOG: info
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     deploy:
       resources:
         limits:
