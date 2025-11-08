@@ -185,7 +185,7 @@ export function Business({onMenuClick}) {
             : [];
 
     // Add item: POST to /business/{username}/items
-    const handleAddItem = async () => {
+    const _handleAddItem = async () => {
         if (!report || !partner || !hs) return;
 
         // fetch current rate from tariff service first (best-effort)
@@ -267,7 +267,7 @@ export function Business({onMenuClick}) {
     };
 
     // Delete an item: call DELETE /business/{username}/items with body { information: [...] }
-    const handleDelete = async (reportingCountry, partnerIndex) => {
+    const _handleDelete = async (reportingCountry, partnerIndex) => {
         // find the item details from current state
         const entry = items.find(it => it.report === reportingCountry);
         if (!entry) return;
@@ -389,7 +389,7 @@ export function Business({onMenuClick}) {
             await fetchBusinessItems();
             toast({
                 title: "Item Deleted",
-                description: `Successfully deleted item with id ${id}`,
+                // description: `Successfully deleted item with id ${_id}`,
                 variant: "default",
             });
         } catch (error) {

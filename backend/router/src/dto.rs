@@ -11,7 +11,7 @@ pub struct LoginDTO {
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct BusinessDetailsDTO {
-    #[serde(rename = "reportingCountry")]
+    #[serde(rename = "reporting3Country")]
     pub reporting_country: String,
     #[serde(rename = "item")]
     pub item_name: String
