@@ -129,16 +129,26 @@ jobs:
         export AWS_REGION=$AWS_REGION
 
         # Save current version for rollback
-        PREVIOUS_VERSION=\$(cat /opt/tariff/current_version.txt 2>/dev/null || echo "V1")
+        mkdir -p /opt/tariff
+        PREVIOUS_VERSION=\$(cat /opt/tariff/current_version.txt 2>/dev/null || echo "none")
 
         # Rollback function
         rollback() {
-            echo "Deployment failed, rolling back to \$PREVIOUS_VERSION"
-            export TAG=\$PREVIOUS_VERSION
-            docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
-            docker-compose --env-file .env.prod -f docker-compose.prod.yml pull || true
-            docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d || true
-            echo \$PREVIOUS_VERSION > /opt/tariff/current_version.txt
+            echo "Deployment failed"
+            if [ "\$PREVIOUS_VERSION" != "none" ]; then
+                echo "Rolling back to \$PREVIOUS_VERSION"
+                export TAG=\$PREVIOUS_VERSION
+                docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
+                if docker-compose --env-file .env.prod -f docker-compose.prod.yml pull 2>/dev/null; then
+                    docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d || true
+                    echo \$PREVIOUS_VERSION > /opt/tariff/current_version.txt
+                    echo "Rollback completed"
+                else
+                    echo "Previous version \$PREVIOUS_VERSION not available, cannot rollback"
+                fi
+            else
+                echo "No previous version available for rollback"
+            fi
             exit 1
         }
 
@@ -164,6 +174,7 @@ jobs:
         docker image prune -f
 
         # Update version file only on successful deployment
+        mkdir -p /opt/tariff
         echo \$TAG > /opt/tariff/current_version.txt
         echo "Deployment completed successfully"
         EOF
