@@ -207,7 +207,7 @@ export function Business({onMenuClick}) {
             }));
 
             setItems(itemsWithRates);
-            console.log("Fetched business items with rates:", itemsWithRates);
+            // console.log("Fetched business items with rates:", itemsWithRates);
         } catch (error) {
             console.error("Error fetching business items:", error);
         }
