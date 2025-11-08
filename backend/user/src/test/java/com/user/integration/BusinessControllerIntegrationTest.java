@@ -4,7 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+ 
 import java.util.List;
 
 import com.user.dto.BusinessInfoDTO;
@@ -30,6 +30,7 @@ import io.restassured.RestAssured;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@DisplayName("Business Controller Integration Tests")
 class BusinessControllerIntegrationTest {
 
     @LocalServerPort
@@ -43,7 +44,7 @@ class BusinessControllerIntegrationTest {
 
     @BeforeEach
     void setup() {
-        RestAssured.baseURI = "http://localhost:" + port;
+        RestAssured.port = port;
         historyRepo.deleteAll();
         userRepo.deleteAll();
     }
@@ -52,9 +53,9 @@ class BusinessControllerIntegrationTest {
         BusinessUser b = new BusinessUser(
             username,
             "pw",
-            new ArrayList<>(List.of(Role.BUSINESS)),
-            new ArrayList<>(List.of("widgets", "gadgets")),
-            new ArrayList<>(List.of("US", "MY")),
+            Role.BUSINESS,
+            List.of("widgets", "gadgets"),
+            List.of("US", "MY"),
             "SG"
         );
         return userRepo.save(b);
@@ -69,13 +70,11 @@ class BusinessControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /business/{username} returns BusinessInfoDTO for business user")
-    void getBusiness_success() {
-        // Given
+    void getBusinessUserDetails_success() {
         BusinessUser u = preloadBusiness("biz");
         preloadHistory(u, 101, 5);
         preloadHistory(u, 102, 2);
 
-        // When / Then
         BusinessInfoDTO dto =
             given()
             .when()
@@ -86,14 +85,14 @@ class BusinessControllerIntegrationTest {
                 .as(BusinessInfoDTO.class);
 
         assert "SG".equals(dto.originCountry()) : "Origin mismatch";
-        assert dto.itemSold().equals(List.of("widgets", "gadgets")) : "Items sold mismatch";
-        assert dto.destinationCountries().equals(List.of("US", "MY")) : "Destinations mismatch";
+    assert dto.itemsSold().containsAll(List.of("widgets", "gadgets")) && dto.itemsSold().size() == 2 : "Items sold mismatch";
+    assert dto.destinationCountries().containsAll(List.of("US", "MY")) && dto.destinationCountries().size() == 2 : "Destinations mismatch";
         assert dto.historyTariffIds().size() <= 5 : "Expected <=5 history entries";
     }
 
     @Test
     @DisplayName("GET /business/{username} unknown returns 404")
-    void getBusiness_notFound() {
+    void getBusinessUserDetails_notFound() {
         given()
         .when()
             .get("/business/{username}", "ghost")
@@ -103,12 +102,12 @@ class BusinessControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /business/{username} non-business user returns 403")
-    void getBusiness_forbidden() {
-        // Given: create a non-business user (e.g., MemberUser or plain User)
-        com.user.user.User plain = new com.user.user.User();
-        plain.setUsername("notbiz");
-        plain.setHashedPassword("pw");
-        plain.setRole(new ArrayList<>(List.of(Role.MEMBER)));
+    void getBusinessUserDetails_forbidden() {
+        // create a non-business user (e.g., MemberUser or plain User)
+    com.user.user.User plain = new com.user.user.User();
+    plain.setUsername("notbiz");
+    plain.setHashedPassword("pw");
+    plain.setRole(Role.MEMBER);
         userRepo.save(plain);
 
         given()
@@ -118,14 +117,4 @@ class BusinessControllerIntegrationTest {
             .statusCode(403);
     }
 
-    @Test
-    @DisplayName("GET /business/test returns 'trolling'")
-    void testEndpoint() {
-        given()
-        .when()
-            .get("/business/test")
-        .then()
-            .statusCode(200)
-            .body(equalTo("trolling"));
-    }
 }

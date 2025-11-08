@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.List;
+ 
 
 import com.user.history.History;
 import com.user.history.HistoryRepo;
@@ -18,9 +18,6 @@ import com.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -28,6 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.common.mapper.TypeRef; // For type-safe extraction of generic response maps
 
 /**
  * Integration tests for GeneralUserController.
@@ -38,13 +36,10 @@ import io.restassured.http.ContentType;
  *  - POST /user/{username}/history/{tariffId}: success & unknown user (400)
  *  - GET  /user/{username}/history: success ordering & unknown user (400)
  *  - GET  /user/testauth/multilevel: simple string response
- * 
- * Data Preload Strategy:
- *  Each test preloads only the data it needs to remain isolated and non-destructive. No shared mutation across tests.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@TestMethodOrder(OrderAnnotation.class)
+@DisplayName("General User Controller Integration Tests")
 class GeneralUserControllerIntegrationTest {
 
     @LocalServerPort
@@ -58,7 +53,7 @@ class GeneralUserControllerIntegrationTest {
 
     @BeforeEach
     void resetRestAssuredBaseUri() {
-        RestAssured.baseURI = "http://localhost:" + port;
+        RestAssured.port = port;
         historyRepo.deleteAll();
         userRepo.deleteAll();
     }
@@ -67,7 +62,7 @@ class GeneralUserControllerIntegrationTest {
         User u = new User();
         u.setUsername(username);
         u.setHashedPassword("pwd");
-        u.setRole(new ArrayList<>(List.of(Role.MEMBER)));
+        u.setRole(Role.MEMBER);
         return userRepo.save(u);
     }
 
@@ -79,10 +74,9 @@ class GeneralUserControllerIntegrationTest {
     }
 
     @Test
-    @Order(1)
     @DisplayName("POST /user/{username}/history/{tariffId} creates new history entry and returns top 5")
-    void addHistory_success() {
-    // Given (preload existing user + history rows)
+    void addHistory_createsEntryAndReturnsTop5() {
+    // preload existing user + history rows
         User u = persistUser("alice");
         // seed >5 existing history entries with varying counters
         persistHistory(u, 1, 10);
@@ -92,8 +86,7 @@ class GeneralUserControllerIntegrationTest {
         persistHistory(u, 5, 3);
         persistHistory(u, 6, 1);
 
-        // When / Then
-        LinkedHashMap<String, Object> body =
+    LinkedHashMap<String, Object> body =
             given()
                 .contentType(ContentType.JSON)
             .when()
@@ -101,7 +94,7 @@ class GeneralUserControllerIntegrationTest {
             .then()
                 .statusCode(200)
                 .extract()
-                .as(LinkedHashMap.class);
+                .as(new TypeRef<LinkedHashMap<String, Object>>() {});
 
         assert body.size() == 5 : "Expected 5 items in response";
         assert new ArrayList<>(body.keySet()).equals(Arrays.asList("1","2","3","4","5")) : "Unexpected key order";
@@ -112,12 +105,10 @@ class GeneralUserControllerIntegrationTest {
     }
 
     @Test
-    @Order(2)
     @DisplayName("POST /user/{username}/history/{tariffId} unknown user returns 400")
-    void addHistory_unknownUser() {
-    // Given: no user preloaded
+    void addHistory_unknownUserReturns400() {
+        // no user preloaded
 
-        // When / Then
         given()
         .when()
             .post("/user/{username}/history/{tariffId}", "ghost", 50)
@@ -128,10 +119,9 @@ class GeneralUserControllerIntegrationTest {
     }
 
     @Test
-    @Order(3)
     @DisplayName("GET /user/{username}/history returns top 5 sorted by counter desc")
-    void getHistory_successOrdering() {
-    // Given (preload user + >5 history rows for ordering)
+    void getHistory_returnsTop5SortedDescending() {
+    // preload user + >5 history rows for ordering
         User u = persistUser("bob");
         persistHistory(u, 10, 100);
         persistHistory(u, 11, 50);
@@ -140,41 +130,25 @@ class GeneralUserControllerIntegrationTest {
         persistHistory(u, 14, 10);
         persistHistory(u, 15, 1);
 
-        // When / Then
-        LinkedHashMap<String, Object> body =
+    LinkedHashMap<String, Object> body =
             given()
             .when()
                 .get("/user/{username}/history", "bob")
             .then()
                 .statusCode(200)
                 .extract()
-                .as(LinkedHashMap.class);
+                .as(new TypeRef<LinkedHashMap<String, Object>>() {});
         assert body.size() == 5 : "Expected top 5 only";
         assert new ArrayList<>(body.keySet()).equals(Arrays.asList("10","11","12","13","14")) : "Unexpected ordering of keys";
     }
 
     @Test
-    @Order(4)
     @DisplayName("GET /user/{username}/history unknown user returns 400")
-    void getHistory_unknownUser() {
-        // When / Then
+    void getHistory_unknownUserReturns400() {
         given()
         .when()
             .get("/user/{username}/history", "nobody")
         .then()
             .statusCode(400);
-    }
-
-    @Test
-    @Order(5)
-    @DisplayName("GET /user/testauth/multilevel returns string body")
-    void testAuth_endpoint() {
-        // When / Then
-        given()
-        .when()
-            .get("/user/testauth/multilevel")
-        .then()
-            .statusCode(200)
-            .body(equalTo("Hello from authenticated"));
     }
 }

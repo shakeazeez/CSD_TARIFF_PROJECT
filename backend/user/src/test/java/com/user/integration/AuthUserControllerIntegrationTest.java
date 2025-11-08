@@ -3,11 +3,10 @@ package com.user.integration;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-import java.util.ArrayList;
-
 import com.user.dto.CreateUserDTO;
 import com.user.enums.Role;
 import com.user.user.User;
+import com.user.history.HistoryRepo;
 import com.user.user.UserRepo;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +27,7 @@ import io.restassured.http.ContentType;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@DisplayName("Auth User Controller Integration Tests")
 class AuthUserControllerIntegrationTest {
 
     @LocalServerPort
@@ -36,22 +36,25 @@ class AuthUserControllerIntegrationTest {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private HistoryRepo historyRepo;
+
     @BeforeEach
     void setup() {
-        RestAssured.baseURI = "http://localhost:" + port;
+        RestAssured.port = port;
+
+        historyRepo.deleteAll();
         userRepo.deleteAll();
     }
 
     @Test
     @DisplayName("POST /auth/register registers MEMBER user and returns TokenDTO")
     @org.springframework.transaction.annotation.Transactional
-    void register_success_member() {
-        // Given (no preloaded user)
+    void registerUser_memberSuccess() {
         CreateUserDTO payload = new CreateUserDTO(
             "newuser", "pw", "MEMBER", null, null, null, null
         );
 
-        // When / Then
         given()
             .contentType(ContentType.JSON)
             .body(payload)
@@ -67,25 +70,24 @@ class AuthUserControllerIntegrationTest {
         assert userRepo.count() == 1 : "Expected exactly 1 user";
         var created = userRepo.findByUsername("newuser");
         assert created.isPresent() : "Expected created user to be present";
-        // Access role collection within transactional context to avoid LazyInitializationException
-        assert !created.get().getRole().isEmpty() : "Expected role collection to be non-empty";
+    
+        assert created.get().getRole() == Role.MEMBER : "Expected role MEMBER";
     }
 
     @Test
     @DisplayName("POST /auth/register with existing username returns 409")
-    void register_duplicate_conflict() {
-        // Given (preload existing user with same username)
+    void registerUser_duplicateConflict() {
+        // preload existing user with same username
         User existing = new User();
         existing.setUsername("dup");
         existing.setHashedPassword("x");
-        existing.setRole(new ArrayList<>(java.util.List.of(Role.MEMBER)));
+        existing.setRole(Role.MEMBER);
         userRepo.save(existing);
 
         CreateUserDTO payload = new CreateUserDTO(
             "dup", "pw", "MEMBER", null, null, null, null
         );
 
-        // When / Then
         given()
             .contentType(ContentType.JSON)
             .body(payload)
@@ -101,13 +103,13 @@ class AuthUserControllerIntegrationTest {
 
     @Test
     @DisplayName("POST /auth/register with null role triggers generic exception path -> 400")
-    void register_nullRole_genericBadRequest() {
-        // Given: payload with null role causes NullPointerException in service (role.toUpperCase())
+    void registerUser_nullRoleReturns400() {
+        // payload with null role causes NullPointerException in service (role.toUpperCase())
         CreateUserDTO payload = new CreateUserDTO(
             "boomUser", "pw", null, null, null, null, null
         );
 
-        // When / Then (controller catches Exception and returns 400)
+        // controller catches Exception and returns 400
         given()
             .contentType(ContentType.JSON)
             .body(payload)

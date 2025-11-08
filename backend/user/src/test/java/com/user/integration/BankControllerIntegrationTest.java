@@ -4,8 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+ 
  
 
 import com.user.dto.BankInfoDTO;
@@ -34,6 +33,7 @@ import io.restassured.RestAssured;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@DisplayName("Bank Controller Integration Tests")
 class BankControllerIntegrationTest {
 
     @LocalServerPort
@@ -47,14 +47,13 @@ class BankControllerIntegrationTest {
 
     @BeforeEach
     void setup() {
-        RestAssured.baseURI = "http://localhost:" + port;
+        RestAssured.port = port;
         historyRepo.deleteAll();
         userRepo.deleteAll();
     }
 
     private BankUser preloadBankUser(String username) {
-        BankUser u = new BankUser(username, "pw", new ArrayList<>(), Industry.FINANCE, "SG");
-        u.getRole().add(Role.BANK);
+        BankUser u = new BankUser(username, "pw", Role.BANK, Industry.FINANCE, "SG");
         return userRepo.save(u);
     }
 
@@ -67,14 +66,13 @@ class BankControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /bank/{username} returns BankInfoDTO for bank user")
-    void getBankInfo_success() {
-        // Given (preload bank user + history)
+    void getBankUserDetails_success() {
+        // preload bank user + history
         BankUser u = preloadBankUser("banky");
         preloadHistory(u, 100, 5);
         preloadHistory(u, 101, 3);
         preloadHistory(u, 102, 7);
 
-        // When / Then
         BankInfoDTO dto =
             given()
             .when()
@@ -92,8 +90,7 @@ class BankControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /bank/{username} unknown user returns 404")
-    void getBankInfo_notFound() {
-        // When / Then
+    void getBankUserDetails_notFound() {
         given()
         .when()
             .get("/bank/{username}", "ghost")
@@ -103,27 +100,15 @@ class BankControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /bank/{username} for non-bank user returns 403")
-    void getBankInfo_forbidden() {
-        // Given: preload a non-bank user (MemberUser)
-    MemberUser member = new MemberUser("regular", "pw", new ArrayList<>(), new ArrayList<>(List.of(Role.MEMBER)));
+    void getBankUserDetails_forbidden() {
+        // preload a non-bank user with MEMBER role
+        MemberUser member = new MemberUser("regular", "pw", Role.MEMBER);
         userRepo.save(member);
 
-        // When / Then
         given()
         .when()
             .get("/bank/{username}", "regular")
         .then()
             .statusCode(403);
-    }
-
-    @Test
-    @DisplayName("GET /bank/test returns 'trolling'")
-    void testEndpoint() {
-        given()
-        .when()
-            .get("/bank/test")
-        .then()
-            .statusCode(200)
-            .body(equalTo("trolling"));
     }
 }

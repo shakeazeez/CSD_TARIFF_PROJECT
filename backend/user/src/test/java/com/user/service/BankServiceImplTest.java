@@ -7,12 +7,12 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +28,7 @@ import com.user.user.User;
 import com.user.user.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("BankServiceService Unit Tests")
 class BankServiceImplTest {
 
     @Mock

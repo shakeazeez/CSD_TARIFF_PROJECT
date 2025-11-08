@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UserService Unit Tests")
 class UserServiceImplTest {
 
 	@Mock
@@ -40,6 +41,7 @@ class UserServiceImplTest {
 		user = new User();
 		user.setId(1);
 		user.setUsername("alice");
+		user.setPinnedTariffId(new ArrayList<>());
 	}
 
 	// addHistory
@@ -152,7 +154,7 @@ class UserServiceImplTest {
 
 		// Act + Assert
 		assertThrows(IllegalArgumentException.class,
-				() -> userService.retrieveHistory("ghost"));
+				() -> userService.retrieveHistory("ghost", 5));
 
 		verify(userRepo).findByUsername("ghost");
 		verifyNoMoreInteractions(userRepo, historyRepo);
@@ -173,7 +175,7 @@ class UserServiceImplTest {
 		when(historyRepo.findByUser(user)).thenReturn(list);
 
 		// Act
-		Map<Integer, LocalDate> result = userService.retrieveHistory("alice");
+		Map<Integer, LocalDate> result = userService.retrieveHistory("alice", 5);
 
 		// Assert
 		List<Integer> expectedOrder = Arrays.asList(10, 11, 12, 13, 14);
@@ -203,6 +205,101 @@ class UserServiceImplTest {
 		assertEquals("b", users.get(1).getUsername());
 		verify(userRepo).findAll();
 		verifyNoMoreInteractions(userRepo, historyRepo);
+	}
+
+	@Test
+	@DisplayName("addPinnedTariff: throws when user not found")
+	void addPinnedTariff_userNotFound_throws() {
+		when(userRepo.findByUsername("ghost")).thenReturn(Optional.empty());
+
+		assertThrows(IllegalArgumentException.class,
+				() -> userService.addPinnedTariff("ghost", 10));
+
+		verify(userRepo).findByUsername("ghost");
+		verifyNoMoreInteractions(userRepo);
+	}
+
+	@Test
+	@DisplayName("addPinnedTariff: adds when not present and under limit; saves user")
+	void addPinnedTariff_addsAndSaves() {
+		user.getPinnedTariffId().addAll(Arrays.asList(1, 2));
+		when(userRepo.findByUsername("alice")).thenReturn(Optional.of(user));
+
+		var result = userService.addPinnedTariff("alice", 3);
+
+		assertEquals(Arrays.asList(1, 2, 3), result);
+		verify(userRepo).findByUsername("alice");
+		verify(userRepo).save(user);
+		verifyNoMoreInteractions(userRepo);
+	}
+
+	@Test
+	@DisplayName("addPinnedTariff: duplicate does not save or change list")
+	void addPinnedTariff_duplicate_noop() {
+		user.getPinnedTariffId().addAll(Arrays.asList(1, 2));
+		when(userRepo.findByUsername("alice")).thenReturn(Optional.of(user));
+
+		var result = userService.addPinnedTariff("alice", 2);
+
+		assertEquals(Arrays.asList(1, 2), result);
+		verify(userRepo).findByUsername("alice");
+		verify(userRepo, never()).save(any(User.class));
+		verifyNoMoreInteractions(userRepo);
+	}
+
+	@Test
+	@DisplayName("addPinnedTariff: limit reached (>=3) throws IllegalStateException")
+	void addPinnedTariff_limitReached_throws() {
+		user.getPinnedTariffId().addAll(Arrays.asList(1, 2, 3));
+		when(userRepo.findByUsername("alice")).thenReturn(Optional.of(user));
+
+		IllegalStateException ex = assertThrows(IllegalStateException.class,
+				() -> userService.addPinnedTariff("alice", 4));
+		assertEquals("Cannot pin more than 3 tariffs", ex.getMessage());
+
+		verify(userRepo).findByUsername("alice");
+		verify(userRepo, never()).save(any(User.class));
+		verifyNoMoreInteractions(userRepo);
+	}
+
+	@Test
+	@DisplayName("removePinnedTariff: throws when user not found")
+	void removePinnedTariff_userNotFound_throws() {
+		when(userRepo.findByUsername("ghost")).thenReturn(Optional.empty());
+
+		assertThrows(IllegalArgumentException.class,
+				() -> userService.removePinnedTariff("ghost", 10));
+
+		verify(userRepo).findByUsername("ghost");
+		verifyNoMoreInteractions(userRepo);
+	}
+
+	@Test
+	@DisplayName("removePinnedTariff: removes when present and saves")
+	void removePinnedTariff_removesAndSaves() {
+		user.getPinnedTariffId().addAll(Arrays.asList(1, 2, 3));
+		when(userRepo.findByUsername("alice")).thenReturn(Optional.of(user));
+
+		var result = userService.removePinnedTariff("alice", 2);
+
+		assertEquals(Arrays.asList(1, 3), result);
+		verify(userRepo).findByUsername("alice");
+		verify(userRepo).save(user);
+		verifyNoMoreInteractions(userRepo);
+	}
+
+	@Test
+	@DisplayName("removePinnedTariff: missing id is a no-op and does not save")
+	void removePinnedTariff_missing_noop() {
+		user.getPinnedTariffId().addAll(Arrays.asList(1, 3));
+		when(userRepo.findByUsername("alice")).thenReturn(Optional.of(user));
+
+		var result = userService.removePinnedTariff("alice", 2);
+
+		assertEquals(Arrays.asList(1, 3), result);
+		verify(userRepo).findByUsername("alice");
+		verify(userRepo, never()).save(any(User.class));
+		verifyNoMoreInteractions(userRepo);
 	}
 
 	// Helpers

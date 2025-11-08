@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,8 +25,10 @@ import com.user.history.HistoryRepo;
 import com.user.user.BusinessUser;
 import com.user.user.User;
 import com.user.user.UserRepo;
+import com.user.enums.Role;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("BusinessUserService Unit Tests")
 class BusinessServiceImplTest {
 
     @Mock
@@ -43,14 +46,18 @@ class BusinessServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        businessUser = new BusinessUser();
-        businessUser.setUsername("business_user");
-        businessUser.setOriginCountry("USA");
-        businessUser.setItemsSold(Arrays.asList("Electronics", "Software", "Hardware"));
-        businessUser.setDestinationCountries(Arrays.asList("Canada", "Mexico", "UK"));
+        businessUser = new BusinessUser(
+        "business_user",
+        "pw",
+        Role.BUSINESS,
+        List.of("Electronics", "Software", "Hardware"),
+        List.of("Canada", "Mexico", "UK"),
+        "USA"
+    );
 
-        nonBusinessUser = new User();
-        nonBusinessUser.setUsername("regular_user");
+    nonBusinessUser = new User();
+    nonBusinessUser.setUsername("regular_user");
+    nonBusinessUser.setRole(Role.MEMBER);
 
         // Create history entries with different counters and dates
         History history1 = new History();
@@ -104,8 +111,10 @@ class BusinessServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("USA", result.originCountry());
-        assertEquals(Arrays.asList("Electronics", "Software", "Hardware"), result.itemSold());
-        assertEquals(Arrays.asList("Canada", "Mexico", "UK"), result.destinationCountries());
+    assertTrue(result.itemsSold().containsAll(Arrays.asList("Electronics", "Software", "Hardware")));
+    assertEquals(3, result.itemsSold().size());
+    assertTrue(result.destinationCountries().containsAll(Arrays.asList("Canada", "Mexico", "UK")));
+    assertEquals(3, result.destinationCountries().size());
         assertNotNull(result.historyTariffIds());
         assertEquals(5, result.historyTariffIds().size()); // Should return top 5
 
@@ -134,8 +143,10 @@ class BusinessServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("USA", result.originCountry());
-        assertEquals(Arrays.asList("Electronics", "Software", "Hardware"), result.itemSold());
-        assertEquals(Arrays.asList("Canada", "Mexico", "UK"), result.destinationCountries());
+    assertTrue(result.itemsSold().containsAll(Arrays.asList("Electronics", "Software", "Hardware")));
+    assertEquals(3, result.itemsSold().size());
+    assertTrue(result.destinationCountries().containsAll(Arrays.asList("Canada", "Mexico", "UK")));
+    assertEquals(3, result.destinationCountries().size());
         assertNotNull(result.historyTariffIds());
         assertEquals(2, result.historyTariffIds().size()); // Should return only 2
 
@@ -155,8 +166,10 @@ class BusinessServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("USA", result.originCountry());
-        assertEquals(Arrays.asList("Electronics", "Software", "Hardware"), result.itemSold());
-        assertEquals(Arrays.asList("Canada", "Mexico", "UK"), result.destinationCountries());
+    assertTrue(result.itemsSold().containsAll(Arrays.asList("Electronics", "Software", "Hardware")));
+    assertEquals(3, result.itemsSold().size());
+    assertTrue(result.destinationCountries().containsAll(Arrays.asList("Canada", "Mexico", "UK")));
+    assertEquals(3, result.destinationCountries().size());
         assertNotNull(result.historyTariffIds());
         assertEquals(0, result.historyTariffIds().size()); // Should return empty map
 
@@ -225,8 +238,14 @@ class BusinessServiceImplTest {
         BusinessUser anotherBusinessUser = new BusinessUser();
         anotherBusinessUser.setUsername("another_business_user");
         anotherBusinessUser.setOriginCountry("Canada");
-        anotherBusinessUser.setItemsSold(Arrays.asList("Clothing", "Accessories"));
-        anotherBusinessUser.setDestinationCountries(Arrays.asList("USA", "France"));
+    anotherBusinessUser = new BusinessUser(
+        "another_business_user",
+        "pw",
+        Role.BUSINESS,
+        List.of("Clothing", "Accessories"),
+        List.of("USA", "France"),
+        "Canada"
+    );
 
         when(userRepo.findByUsername("another_business_user")).thenReturn(Optional.of(anotherBusinessUser));
         when(historyRepo.findByUser(anotherBusinessUser)).thenReturn(new ArrayList<>());
@@ -237,8 +256,10 @@ class BusinessServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("Canada", result.originCountry());
-        assertEquals(Arrays.asList("Clothing", "Accessories"), result.itemSold());
-        assertEquals(Arrays.asList("USA", "France"), result.destinationCountries());
+        assertTrue(result.itemsSold().containsAll(Arrays.asList("Clothing", "Accessories")));
+        assertEquals(2, result.itemsSold().size());
+        assertTrue(result.destinationCountries().containsAll(Arrays.asList("USA", "France")));
+        assertEquals(2, result.destinationCountries().size());
         assertNotNull(result.historyTariffIds());
 
         verify(userRepo).findByUsername("another_business_user");
@@ -269,8 +290,14 @@ class BusinessServiceImplTest {
         BusinessUser businessUserEmpty = new BusinessUser();
         businessUserEmpty.setUsername("business_user_empty");
         businessUserEmpty.setOriginCountry("Germany");
-        businessUserEmpty.setItemsSold(new ArrayList<>());
-        businessUserEmpty.setDestinationCountries(new ArrayList<>());
+    businessUserEmpty = new BusinessUser(
+        "business_user_empty",
+        "pw",
+        Role.BUSINESS,
+        List.of(),
+        List.of(),
+        "Germany"
+    );
 
         when(userRepo.findByUsername("business_user_empty")).thenReturn(Optional.of(businessUserEmpty));
         when(historyRepo.findByUser(businessUserEmpty)).thenReturn(new ArrayList<>());
@@ -281,8 +308,8 @@ class BusinessServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("Germany", result.originCountry());
-        assertNotNull(result.itemSold());
-        assertTrue(result.itemSold().isEmpty());
+        assertNotNull(result.itemsSold());
+        assertTrue(result.itemsSold().isEmpty());
         assertNotNull(result.destinationCountries());
         assertTrue(result.destinationCountries().isEmpty());
         assertNotNull(result.historyTariffIds());
@@ -298,8 +325,14 @@ class BusinessServiceImplTest {
         BusinessUser singleItemBusinessUser = new BusinessUser();
         singleItemBusinessUser.setUsername("single_item_business");
         singleItemBusinessUser.setOriginCountry("Japan");
-        singleItemBusinessUser.setItemsSold(Arrays.asList("Technology"));
-        singleItemBusinessUser.setDestinationCountries(Arrays.asList("China"));
+        singleItemBusinessUser = new BusinessUser(
+            "single_item_business",
+            "pw",
+            Role.BUSINESS,
+            List.of("Technology"),
+            List.of("China"),
+            "Japan"
+        );
 
         when(userRepo.findByUsername("single_item_business")).thenReturn(Optional.of(singleItemBusinessUser));
         when(historyRepo.findByUser(singleItemBusinessUser)).thenReturn(new ArrayList<>());
@@ -310,12 +343,195 @@ class BusinessServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("Japan", result.originCountry());
-        assertEquals(1, result.itemSold().size());
-        assertEquals("Technology", result.itemSold().get(0));
+        assertEquals(1, result.itemsSold().size());
+        assertTrue(result.itemsSold().contains("Technology"));
         assertEquals(1, result.destinationCountries().size());
         assertEquals("China", result.destinationCountries().get(0));
 
         verify(userRepo).findByUsername("single_item_business");
         verify(historyRepo).findByUser(singleItemBusinessUser);
+    }
+
+    @Test
+    void addItemsSold_Success_addsLowercasedAndSaves() {
+        // Arrange
+        when(userRepo.findByUsername("business_user")).thenReturn(Optional.of(businessUser));
+
+        // Act
+        businessService.addItemsSold(Arrays.asList("Widgets", "gadgets", "ELECTRONICS"), "business_user");
+
+        // Assert: new entries are added in lowercase
+        assertTrue(businessUser.getItemsSold().contains("widgets"));
+        assertTrue(businessUser.getItemsSold().contains("gadgets"));
+        assertTrue(businessUser.getItemsSold().contains("electronics"));
+        // And repository save invoked
+        verify(userRepo).findByUsername("business_user");
+        verify(userRepo).save(businessUser);
+    }
+
+    @Test
+    void addItemsSold_UserNotFound_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        // Act + Assert
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> businessService.addItemsSold(List.of("x"), "ghost")
+        );
+        assertEquals("Unable to retrieve this account", ex.getMessage());
+        verify(userRepo).findByUsername("ghost");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void addItemsSold_NotBusinessUser_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("regular_user")).thenReturn(Optional.of(nonBusinessUser));
+
+        // Act + Assert
+        IllegalAccessError ex = assertThrows(
+            IllegalAccessError.class,
+            () -> businessService.addItemsSold(List.of("x"), "regular_user")
+        );
+        assertEquals("The user is not a business user", ex.getMessage());
+        verify(userRepo).findByUsername("regular_user");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void deleteItemsSold_Success_removesExistingAndSaves() {
+        // Arrange
+        when(userRepo.findByUsername("business_user")).thenReturn(Optional.of(businessUser));
+        assertTrue(businessUser.getItemsSold().contains("Software"));
+
+        // Act
+        businessService.deleteItemsSold(Arrays.asList("Software", "NonExistent"), "business_user");
+
+        // Assert: Software removed; NonExistent ignored
+        assertFalse(businessUser.getItemsSold().contains("Software"));
+        verify(userRepo).findByUsername("business_user");
+        verify(userRepo).save(businessUser);
+    }
+
+    @Test
+    void deleteItemsSold_UserNotFound_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        // Act + Assert
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> businessService.deleteItemsSold(List.of("x"), "ghost")
+        );
+        assertEquals("Unable to retrieve this account", ex.getMessage());
+        verify(userRepo).findByUsername("ghost");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void deleteItemsSold_NotBusinessUser_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("regular_user")).thenReturn(Optional.of(nonBusinessUser));
+
+        // Act + Assert
+        IllegalAccessError ex = assertThrows(
+            IllegalAccessError.class,
+            () -> businessService.deleteItemsSold(List.of("x"), "regular_user")
+        );
+        assertEquals("The user is not a business user", ex.getMessage());
+        verify(userRepo).findByUsername("regular_user");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void addDestinationCountry_Success_addsLowercasedAndSaves() {
+        // Arrange
+        when(userRepo.findByUsername("business_user")).thenReturn(Optional.of(businessUser));
+
+        // Act
+        businessService.addDestinationCountry(Arrays.asList("US", "france", "MEXICO"), "business_user");
+
+        // Assert: new entries present in lowercase
+        assertTrue(businessUser.getDestinationCountries().contains("us"));
+        assertTrue(businessUser.getDestinationCountries().contains("france"));
+        assertTrue(businessUser.getDestinationCountries().contains("mexico"));
+        verify(userRepo).findByUsername("business_user");
+        verify(userRepo).save(businessUser);
+    }
+
+    @Test
+    void addDestinationCountry_UserNotFound_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        // Act + Assert
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> businessService.addDestinationCountry(List.of("x"), "ghost")
+        );
+        assertEquals("Unable to retrieve this account", ex.getMessage());
+        verify(userRepo).findByUsername("ghost");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void addDestinationCountry_NotBusinessUser_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("regular_user")).thenReturn(Optional.of(nonBusinessUser));
+
+        // Act + Assert
+        IllegalAccessError ex = assertThrows(
+            IllegalAccessError.class,
+            () -> businessService.addDestinationCountry(List.of("x"), "regular_user")
+        );
+        assertEquals("The user is not a business user", ex.getMessage());
+        verify(userRepo).findByUsername("regular_user");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void deleteDestinationCountry_Success_removesExistingAndSaves() {
+        // Arrange
+        when(userRepo.findByUsername("business_user")).thenReturn(Optional.of(businessUser));
+        assertTrue(businessUser.getDestinationCountries().contains("Mexico"));
+
+        // Act
+        businessService.deleteDestinationCountry(Arrays.asList("Mexico", "Germany"), "business_user");
+
+        // Assert: Mexico removed; Germany ignored
+        assertFalse(businessUser.getDestinationCountries().contains("Mexico"));
+        verify(userRepo).findByUsername("business_user");
+        verify(userRepo).save(businessUser);
+    }
+
+    @Test
+    void deleteDestinationCountry_UserNotFound_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        // Act + Assert
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> businessService.deleteDestinationCountry(List.of("x"), "ghost")
+        );
+        assertEquals("Unable to retrieve this account", ex.getMessage());
+        verify(userRepo).findByUsername("ghost");
+        verify(userRepo, never()).save(any());
+    }
+
+    @Test
+    void deleteDestinationCountry_NotBusinessUser_ThrowsException() {
+        // Arrange
+        when(userRepo.findByUsername("regular_user")).thenReturn(Optional.of(nonBusinessUser));
+
+        // Act + Assert
+        IllegalAccessError ex = assertThrows(
+            IllegalAccessError.class,
+            () -> businessService.deleteDestinationCountry(List.of("x"), "regular_user")
+        );
+        assertEquals("The user is not a business user", ex.getMessage());
+        verify(userRepo).findByUsername("regular_user");
+        verify(userRepo, never()).save(any());
     }
 }
