@@ -8,6 +8,5 @@ public record CreateUserDTO (
     String role, 
     String industry,
     String originCountry,
-    List<String> destinationCountries,
-    List<String> itemsSold
+    List<BusinessTariffDTO> tariffs
 ) {}

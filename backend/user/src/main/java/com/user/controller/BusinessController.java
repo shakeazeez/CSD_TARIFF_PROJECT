@@ -1,7 +1,7 @@
 package com.user.controller;
 
 import com.user.dto.BusinessInfoDTO;
-import com.user.dto.ReceiveListDTO;
+import com.user.dto.BusinessTariffDTO;
 import com.user.service.BusinessService;
 
 import java.util.List;
@@ -44,9 +44,9 @@ public class BusinessController {
     }
 
     @PostMapping("/{username}/items")
-	public ResponseEntity<?> addItemsSold(@PathVariable String username, @RequestBody ReceiveListDTO items) {
+	public ResponseEntity<?> addItemsSold(@PathVariable String username, @RequestBody BusinessTariffDTO information) {
 	    try {
-			businessService.addItemsSold(items.information(), username);
+			businessService.addTariffRecord(information, username);
 			return ResponseEntity.ok().build();
 		} catch (IllegalAccessError e) {
 		    log.info(e.getMessage());
@@ -55,31 +55,9 @@ public class BusinessController {
 	}
 	
     @DeleteMapping("/{username}/items")
-	public ResponseEntity<?> deleteItemsSold(@PathVariable String username, @RequestBody ReceiveListDTO items) {
+	public ResponseEntity<?> deleteItemsSold(@PathVariable String username, @RequestBody BusinessTariffDTO information) {
 	    try {
-			businessService.deleteItemsSold(items.information(), username);
-			return ResponseEntity.ok().build();
-		} catch (IllegalAccessError e) {
-		    log.info(e.getMessage());
-			return ResponseEntity.status(403).build();
-		} 
-	}
-	
-    @PostMapping("/{username}/countries")
-	public ResponseEntity<?> addCountriesSoldTo(@PathVariable String username, @RequestBody ReceiveListDTO countries) {
-	    try {
-			businessService.addDestinationCountry(countries.information(), username);
-			return ResponseEntity.ok().build();
-		} catch (IllegalAccessError e) {
-		    log.info(e.getMessage());
-			return ResponseEntity.status(403).build();
-		} 
-	}
-	
-    @DeleteMapping("/{username}/countries")
-	public ResponseEntity<?> deleteCountriesSoldTo(@PathVariable String username, @RequestBody ReceiveListDTO countries) {
-	    try {
-			businessService.deleteDestinationCountry(countries.information(), username);
+			businessService.deleteTariffRecord(information, username);
 			return ResponseEntity.ok().build();
 		} catch (IllegalAccessError e) {
 		    log.info(e.getMessage());

@@ -6,8 +6,7 @@ import java.util.Map;
 
 public record BusinessInfoDTO (
     String originCountry,
-    List<String> itemsSold,
-    List<String> destinationCountries,
+    List<BusinessTariffDTO> tariffs,
     Map<Integer, LocalDate> historyTariffIds
 )
 {}

@@ -2,6 +2,7 @@ package com.user.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 import com.user.dto.CreateUserDTO;
@@ -10,6 +11,8 @@ import com.user.enums.Industry;
 import com.user.enums.Role;
 import com.user.user.User;
 import com.user.user.BankUser;
+import com.user.user.BusinessDetails;
+import com.user.user.BusinessDetailsRepo;
 import com.user.user.BusinessUser;
 import com.user.user.MemberUser;
 import com.user.user.UserRepo;
@@ -22,10 +25,12 @@ import org.springframework.stereotype.Service;
 public class AuthUserServiceImpl implements AuthUserService {
 
     private final UserRepo generalUserRepo;
+    private final BusinessDetailsRepo businessDetailsRepo;
     private final Logger log = LoggerFactory.getLogger(AuthUserServiceImpl.class);
 
-    public AuthUserServiceImpl(UserRepo generalUserRepo) {
+    public AuthUserServiceImpl(UserRepo generalUserRepo, BusinessDetailsRepo businessDetailsRepo) {
         this.generalUserRepo = generalUserRepo;
+        this.businessDetailsRepo = businessDetailsRepo;
     }
 
     public TokenDTO createUser(CreateUserDTO createUserDTO) {
@@ -51,14 +56,19 @@ public class AuthUserServiceImpl implements AuthUserService {
                 break;
             }
             case "BUSINESS": {
-                if (createUserDTO.itemsSold() == null || createUserDTO.destinationCountries() == null
-                        || createUserDTO.originCountry() == null) {
+                if (createUserDTO.tariffs() == null || createUserDTO.originCountry() == null) {
                     throw new IllegalArgumentException("Not enough parameters valid for bank user");
                 }
+                List<BusinessDetails> tariffs = new ArrayList<>();
+                createUserDTO.tariffs().forEach(a -> {
+                    tariffs.add(businessDetailsRepo.findByItemAndReportingCountry(a.item(), a.reportingCountry())
+                        .orElse(businessDetailsRepo.save(new BusinessDetails(a.reportingCountry(), a.item()))));
+                });
+
                 log.info(createUserDTO.toString());
                 creation = new BusinessUser(createUserDTO.username(), passwordHash,
                         Role.valueOf(createUserDTO.role().toUpperCase()),
-                        createUserDTO.itemsSold(), createUserDTO.destinationCountries(), createUserDTO.originCountry());
+                        tariffs, createUserDTO.originCountry());
                 break;
             }
             case "ADMIN": {
@@ -97,8 +107,7 @@ public class AuthUserServiceImpl implements AuthUserService {
                 return new TokenDTO(
                         createUserDTO.username(),
                         null,
-                        createUserDTO.itemsSold(),
-                        createUserDTO.destinationCountries(),
+                        createUserDTO.tariffs(),
                         createUserDTO.originCountry(),
                         new HashMap<>());
             }
