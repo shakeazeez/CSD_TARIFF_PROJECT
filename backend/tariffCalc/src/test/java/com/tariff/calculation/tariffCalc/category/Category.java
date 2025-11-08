@@ -1,9 +1,5 @@
 package com.tariff.calculation.tariffCalc.category;
 
-import org.hibernate.annotations.ColumnTransformer;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

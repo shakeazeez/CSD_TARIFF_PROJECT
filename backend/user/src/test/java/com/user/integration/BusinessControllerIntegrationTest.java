@@ -1,7 +1,6 @@
 package com.user.integration;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 
 import java.time.LocalDate;
  
