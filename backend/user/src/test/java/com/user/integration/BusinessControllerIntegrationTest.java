@@ -4,12 +4,16 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 import java.time.LocalDate;
- 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.user.dto.BusinessInfoDTO;
+import com.user.dto.BusinessTariffDTO;
 import com.user.history.History;
 import com.user.history.HistoryRepo;
+import com.user.user.BusinessDetails;
+import com.user.user.BusinessDetailsRepo;
 import com.user.user.BusinessUser;
 import com.user.user.UserRepo;
 import com.user.enums.Role;
@@ -42,20 +46,31 @@ class BusinessControllerIntegrationTest {
     @Autowired
     private HistoryRepo historyRepo;
 
+    @Autowired
+    private BusinessDetailsRepo businessDetailsRepo;
+
     @BeforeEach
     void setup() {
         RestAssured.port = port;
         historyRepo.deleteAll();
         userRepo.deleteAll();
+        businessDetailsRepo.deleteAll();
     }
 
     private BusinessUser preloadBusiness(String username) {
+        // Create and save BusinessDetails first
+        BusinessDetails detail1 = new BusinessDetails("US", "widgets");
+        BusinessDetails detail2 = new BusinessDetails("MY", "gadgets");
+        
+        detail1 = businessDetailsRepo.save(detail1);
+        detail2 = businessDetailsRepo.save(detail2);
+
+        // Create BusinessUser with the new structure
         BusinessUser b = new BusinessUser(
             username,
             "pw",
             Role.BUSINESS,
-            List.of("widgets", "gadgets"),
-            List.of("US", "MY"),
+            new HashSet<>(Set.of(detail1, detail2)),
             "SG"
         );
         return userRepo.save(b);
@@ -85,8 +100,20 @@ class BusinessControllerIntegrationTest {
                 .as(BusinessInfoDTO.class);
 
         assert "SG".equals(dto.originCountry()) : "Origin mismatch";
-    assert dto.itemsSold().containsAll(List.of("widgets", "gadgets")) && dto.itemsSold().size() == 2 : "Items sold mismatch";
-    assert dto.destinationCountries().containsAll(List.of("US", "MY")) && dto.destinationCountries().size() == 2 : "Destinations mismatch";
+        
+        // Check tariffs instead of separate itemsSold and destinationCountries
+        assert dto.tariffs() != null : "Tariffs should not be null";
+        assert dto.tariffs().size() == 2 : "Expected 2 tariff records";
+        
+        List<String> reportingCountries = dto.tariffs().stream()
+                .map(BusinessTariffDTO::reportingCountry)
+                .toList();
+        List<String> items = dto.tariffs().stream()
+                .map(BusinessTariffDTO::item)
+                .toList();
+        
+        assert reportingCountries.containsAll(List.of("US", "MY")) && reportingCountries.size() == 2 : "Reporting countries mismatch";
+        assert items.containsAll(List.of("widgets", "gadgets")) && items.size() == 2 : "Items mismatch";
         assert dto.historyTariffIds().size() <= 5 : "Expected <=5 history entries";
     }
 
@@ -104,10 +131,10 @@ class BusinessControllerIntegrationTest {
     @DisplayName("GET /business/{username} non-business user returns 403")
     void getBusinessUserDetails_forbidden() {
         // create a non-business user (e.g., MemberUser or plain User)
-    com.user.user.User plain = new com.user.user.User();
-    plain.setUsername("notbiz");
-    plain.setHashedPassword("pw");
-    plain.setRole(Role.MEMBER);
+        com.user.user.User plain = new com.user.user.User();
+        plain.setUsername("notbiz");
+        plain.setHashedPassword("pw");
+        plain.setRole(Role.MEMBER);
         userRepo.save(plain);
 
         given()
@@ -116,5 +143,4 @@ class BusinessControllerIntegrationTest {
         .then()
             .statusCode(403);
     }
-
 }

@@ -16,10 +16,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.user.dto.BusinessTariffDTO;
 import com.user.dto.CreateUserDTO;
 import com.user.dto.TokenDTO;
 import com.user.enums.Role;
 import com.user.user.BankUser;
+import com.user.user.BusinessDetailsRepo;
 import com.user.user.BusinessUser;
 import com.user.user.User;
 import com.user.user.UserRepo;
@@ -31,7 +33,10 @@ class AuthUserServiceImplTest {
     @Mock
     private UserRepo generalUserRepo;
 
-    @InjectMocks
+    @Mock
+    private BusinessDetailsRepo businessDetailsRepo;
+    
+    @InjectMocks    
     private AuthUserServiceImpl authUserService;
 
     private CreateUserDTO memberUserDTO;
@@ -42,46 +47,38 @@ class AuthUserServiceImplTest {
     @BeforeEach
     void setUp() {
         memberUserDTO = new CreateUserDTO(
-            "member_user",
-            "password123",
-            "MEMBER",
-            null,
-            null,
-            null,
-            null
-        );
+                "member_user",
+                "password123",
+                "MEMBER",
+                null,
+                null,
+                null);
 
         bankUserDTO = new CreateUserDTO(
-            "bank_user",
-            "password123",
-            "BANK",
-            "TECHNOLOGY",
-            "USA",
-            null,
-            null
-        );
+                "bank_user",
+                "password123",
+                "BANK",
+                "TECHNOLOGY",
+                "USA",
+                null);
 
-        List<String> itemsSold = Arrays.asList("Electronics", "Software");
-        List<String> destinationCountries = Arrays.asList("Canada", "Mexico");
+        List<BusinessTariffDTO> tariffs = Arrays.asList(new BusinessTariffDTO("Canada", "coffee mug"),
+                new BusinessTariffDTO("Mexico", "software"));
         businessUserDTO = new CreateUserDTO(
-            "business_user",
-            "password123",
-            "BUSINESS",
-            null,
-            "USA",
-            destinationCountries,
-            itemsSold
-        );
+                "business_user",
+                "password123",
+                "BUSINESS",
+                null,
+                "USA",
+                tariffs);
 
         adminUserDTO = new CreateUserDTO(
-            "admin_user",
-            "password123",
-            "ADMIN",
-            null,
-            null,
-            null,
-            null
-        );
+                "admin_user",
+                "password123",
+                "ADMIN",
+                null,
+                null,
+                null);
     }
 
     @Test
@@ -138,8 +135,8 @@ class AuthUserServiceImplTest {
         assertNotNull(result);
         assertEquals("business_user", result.getUsername());
         assertNull(result.getToken());
-        assertEquals(Arrays.asList("Electronics", "Software"), result.getItemsSold());
-        assertEquals(Arrays.asList("Canada", "Mexico"), result.getDestinationCountries());
+        assertEquals(Arrays.asList(new BusinessTariffDTO("Canada", "coffee mug"),
+                new BusinessTariffDTO("Mexico", "software")), result.getTariffs());
         assertEquals("USA", result.getOriginCountry());
         assertNotNull(result.getHistoricalTariffId());
         assertTrue(result.getHistoricalTariffId().isEmpty());
@@ -176,9 +173,8 @@ class AuthUserServiceImplTest {
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(memberUserDTO)
-        );
+                IllegalArgumentException.class,
+                () -> authUserService.createUser(memberUserDTO));
 
         assertEquals("User with that username already exists", exception.getMessage());
         verify(generalUserRepo).findByUsername("member_user");
@@ -189,21 +185,18 @@ class AuthUserServiceImplTest {
     void createUser_BankUser_MissingIndustry_ThrowsException() {
         // Arrange
         CreateUserDTO invalidBankUserDTO = new CreateUserDTO(
-            "bank_user",
-            "password123",
-            "BANK",
-            null, // Missing industry
-            "USA",
-            null,
-            null
-        );
+                "bank_user",
+                "password123",
+                "BANK",
+                null, // Missing industry
+                "USA",
+                null);
         when(generalUserRepo.findByUsername("bank_user")).thenReturn(Optional.empty());
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(invalidBankUserDTO)
-        );
+                IllegalArgumentException.class,
+                () -> authUserService.createUser(invalidBankUserDTO));
 
         assertEquals("Not enough parameters valid for bank user", exception.getMessage());
         verify(generalUserRepo).findByUsername("bank_user");
@@ -214,21 +207,18 @@ class AuthUserServiceImplTest {
     void createUser_BankUser_MissingOriginCountry_ThrowsException() {
         // Arrange
         CreateUserDTO invalidBankUserDTO = new CreateUserDTO(
-            "bank_user",
-            "password123",
-            "BANK",
-            "TECHNOLOGY",
-            null, // Missing origin country
-            null,
-            null
-        );
+                "bank_user",
+                "password123",
+                "BANK",
+                "TECHNOLOGY",
+                null, // Missing origin country
+                null);
         when(generalUserRepo.findByUsername("bank_user")).thenReturn(Optional.empty());
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(invalidBankUserDTO)
-        );
+                IllegalArgumentException.class,
+                () -> authUserService.createUser(invalidBankUserDTO));
 
         assertEquals("Not enough parameters valid for bank user", exception.getMessage());
         verify(generalUserRepo).findByUsername("bank_user");
@@ -236,49 +226,22 @@ class AuthUserServiceImplTest {
     }
 
     @Test
-    void createUser_BusinessUser_MissingItemsSold_ThrowsException() {
+    void createUser_BusinessUser_MissingTariffsSold_ThrowsException() {
         // Arrange
         CreateUserDTO invalidBusinessUserDTO = new CreateUserDTO(
-            "business_user",
-            "password123",
-            "BUSINESS",
-            null,
-            "USA",
-            Arrays.asList("Canada", "Mexico"),
-            null // Missing items sold
+                "business_user",
+                "password123",
+                "BUSINESS",
+                null,
+                "USA",
+                null // Missing items sold
         );
         when(generalUserRepo.findByUsername("business_user")).thenReturn(Optional.empty());
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(invalidBusinessUserDTO)
-        );
-
-        assertEquals("Not enough parameters valid for bank user", exception.getMessage());
-        verify(generalUserRepo).findByUsername("business_user");
-        verify(generalUserRepo, never()).save(any());
-    }
-
-    @Test
-    void createUser_BusinessUser_MissingDestinationCountries_ThrowsException() {
-        // Arrange
-        CreateUserDTO invalidBusinessUserDTO = new CreateUserDTO(
-            "business_user",
-            "password123",
-            "BUSINESS",
-            null,
-            "USA",
-            null, // Missing destination countries
-            Arrays.asList("Electronics", "Software")
-        );
-        when(generalUserRepo.findByUsername("business_user")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(invalidBusinessUserDTO)
-        );
+                IllegalArgumentException.class,
+                () -> authUserService.createUser(invalidBusinessUserDTO));
 
         assertEquals("Not enough parameters valid for bank user", exception.getMessage());
         verify(generalUserRepo).findByUsername("business_user");
@@ -289,21 +252,19 @@ class AuthUserServiceImplTest {
     void createUser_BusinessUser_MissingOriginCountry_ThrowsException() {
         // Arrange
         CreateUserDTO invalidBusinessUserDTO = new CreateUserDTO(
-            "business_user",
-            "password123",
-            "BUSINESS",
-            null,
-            null, // Missing origin country
-            Arrays.asList("Canada", "Mexico"),
-            Arrays.asList("Electronics", "Software")
-        );
+                "business_user",
+                "password123",
+                "BUSINESS",
+                null,
+                null, // Missing origin country
+                Arrays.asList(new BusinessTariffDTO("Canada", "coffee mug"),
+                        new BusinessTariffDTO("Mexico", "software")));
         when(generalUserRepo.findByUsername("business_user")).thenReturn(Optional.empty());
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(invalidBusinessUserDTO)
-        );
+                IllegalArgumentException.class,
+                () -> authUserService.createUser(invalidBusinessUserDTO));
 
         assertEquals("Not enough parameters valid for bank user", exception.getMessage());
         verify(generalUserRepo).findByUsername("business_user");
@@ -314,21 +275,18 @@ class AuthUserServiceImplTest {
     void createUser_InvalidRole_ThrowsException() {
         // Arrange
         CreateUserDTO invalidRoleDTO = new CreateUserDTO(
-            "invalid_user",
-            "password123",
-            "INVALID_ROLE",
-            null,
-            null,
-            null,
-            null
-        );
+                "invalid_user",
+                "password123",
+                "INVALID_ROLE",
+                null,
+                null,
+                null);
         when(generalUserRepo.findByUsername("invalid_user")).thenReturn(Optional.empty());
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> authUserService.createUser(invalidRoleDTO)
-        );
+                IllegalArgumentException.class,
+                () -> authUserService.createUser(invalidRoleDTO));
 
         assertEquals("User type not available", exception.getMessage());
         verify(generalUserRepo).findByUsername("invalid_user");
@@ -339,14 +297,12 @@ class AuthUserServiceImplTest {
     void createUser_CaseInsensitiveRole_Success() {
         // Arrange
         CreateUserDTO lowerCaseRoleDTO = new CreateUserDTO(
-            "member_user",
-            "password123",
-            "member", // lowercase role
-            null,
-            null,
-            null,
-            null
-        );
+                "member_user",
+                "password123",
+                "member", // lowercase role
+                null,
+                null,
+                null);
         when(generalUserRepo.findByUsername("member_user")).thenReturn(Optional.empty());
 
         // Act
@@ -355,21 +311,19 @@ class AuthUserServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals("member_user", result.getUsername());
-    verify(generalUserRepo).save(any(User.class));
+        verify(generalUserRepo).save(any(User.class));
     }
 
     @Test
     void createUser_CaseInsensitiveIndustry_Success() {
         // Arrange
         CreateUserDTO lowerCaseIndustryDTO = new CreateUserDTO(
-            "bank_user",
-            "password123",
-            "BANK",
-            "technology", // lowercase industry
-            "USA",
-            null,
-            null
-        );
+                "bank_user",
+                "password123",
+                "BANK",
+                "technology", // lowercase industry
+                "USA",
+                null);
         when(generalUserRepo.findByUsername("bank_user")).thenReturn(Optional.empty());
 
         // Act

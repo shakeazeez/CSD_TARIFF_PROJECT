@@ -52,7 +52,7 @@ class AuthUserControllerIntegrationTest {
     @org.springframework.transaction.annotation.Transactional
     void registerUser_memberSuccess() {
         CreateUserDTO payload = new CreateUserDTO(
-            "newuser", "pw", "MEMBER", null, null, null, null
+            "newuser", "pw", "MEMBER", null, null, null
         );
 
         given()
@@ -85,7 +85,7 @@ class AuthUserControllerIntegrationTest {
         userRepo.save(existing);
 
         CreateUserDTO payload = new CreateUserDTO(
-            "dup", "pw", "MEMBER", null, null, null, null
+            "dup", "pw", "MEMBER", null, null, null
         );
 
         given()
@@ -106,7 +106,7 @@ class AuthUserControllerIntegrationTest {
     void registerUser_nullRoleReturns400() {
         // payload with null role causes NullPointerException in service (role.toUpperCase())
         CreateUserDTO payload = new CreateUserDTO(
-            "boomUser", "pw", null, null, null, null, null
+            "boomUser", "pw", null, null, null, null
         );
 
         // controller catches Exception and returns 400
