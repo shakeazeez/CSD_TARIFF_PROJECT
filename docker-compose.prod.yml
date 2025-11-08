@@ -1,11 +1,70 @@
 version: '3.8'
 
 services:
-  backend:
+  tariffCalc:
     image: ${ECR_REGISTRY}/goattariff/backend:${TAG:-latest}
+    command: java -jar tariffCalc.jar
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: ${DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      MOACH_API_KEY: ${MOACH_API_KEY}
+      SIGNING_SECRET: ${SIGNING_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPEN_AI_KEY: ${OPEN_AI_KEY}
+      TARIFF_URL: ${TARIFF_URL}
+      NEWS_URL: ${NEWS_URL}
+      USER_URL: ${USER_URL}
+      JAVA_OPTS: -Xmx768m -Xms256m
+    volumes:
+      - ./.env.prod:/app/.env:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+        reservations:
+          memory: 512MB
+    restart: unless-stopped
+
+  user:
+    image: ${ECR_REGISTRY}/goattariff/backend:${TAG:-latest}
+    command: java -jar user.jar
     ports:
       - "8082:8082"
-      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: ${DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      MOACH_API_KEY: ${MOACH_API_KEY}
+      SIGNING_SECRET: ${SIGNING_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPEN_AI_KEY: ${OPEN_AI_KEY}
+      TARIFF_URL: ${TARIFF_URL}
+      NEWS_URL: ${NEWS_URL}
+      USER_URL: ${USER_URL}
+      JAVA_OPTS: -Xmx768m -Xms256m
+    volumes:
+      - ./.env.prod:/app/.env:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+        reservations:
+          memory: 512MB
+    restart: unless-stopped
+
+  news:
+    image: ${ECR_REGISTRY}/goattariff/backend:${TAG:-latest}
+    command: java -jar news.jar
+    ports:
       - "8083:8083"
     environment:
       SPRING_DATASOURCE_URL: ${DATABASE_URL}
@@ -39,10 +98,14 @@ services:
     environment:
         RUST_DATABASE_URL: ${RUST_DATABASE_URL}
         FRONTEND_URL: ${FRONTEND_URL}
-        TARIFF_URL: http://backend:8081
-        USER_URL: http://backend:8082
-        NEWS_URL: http://backend:8083
+        TARIFF_URL: http://tariffCalc:8081
+        USER_URL: http://user:8082
+        NEWS_URL: http://news:8083
         RUST_LOG: info
+    depends_on:
+      - tariffCalc
+      - user
+      - news
     deploy:
       resources:
         limits:
