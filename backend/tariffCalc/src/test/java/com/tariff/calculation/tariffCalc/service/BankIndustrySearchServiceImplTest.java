@@ -275,7 +275,7 @@ class BankIndustrySearchServiceImplTest {
 
     @Nested
     @DisplayName("getTariffDetailsForItem() Tests")
-    class getTariffDetailsForItemTests {
+    class GetTariffDetailsForItemTests {
 
         @Test
         @DisplayName("Should return tariff details when valid item and data exist")
