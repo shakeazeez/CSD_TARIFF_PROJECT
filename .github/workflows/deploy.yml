@@ -159,7 +159,7 @@ jobs:
             if [ "$PREVIOUS_VERSION" != "none" ]; then
                 echo "Rolling back to $PREVIOUS_VERSION"
                 export TAG=$PREVIOUS_VERSION
-                docker-compose --env-file .env.prod -f docker-compose.prod.yml down
+                docker-compose --env-file .env.prod -f docker-compose.prod.yml down --remove-orphans
                 if docker-compose --env-file .env.prod -f docker-compose.prod.yml pull 2>/dev/null; then
                     docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
                     echo $PREVIOUS_VERSION > /home/ubuntu/tariff/current_version.txt
@@ -180,7 +180,7 @@ jobs:
         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
         # Stop only containers related to this project (safer than stopping all)
-        docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
+        docker-compose --env-file .env.prod -f docker-compose.prod.yml down --remove-orphans || true
 
         # Remove orphaned containers from this project
         docker container prune -f || true
