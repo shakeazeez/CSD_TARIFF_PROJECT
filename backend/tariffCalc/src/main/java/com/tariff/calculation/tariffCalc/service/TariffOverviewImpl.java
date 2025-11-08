@@ -2,7 +2,6 @@ package com.tariff.calculation.tariffCalc.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -201,12 +200,6 @@ public class TariffOverviewImpl implements TariffOverviewService {
         // else {
             // log.info("6. Using existing tariffs from database, skipping API call\n");
         // }
-        Period timeDiff = Period.between(tariffList.get(0).getLocalDate(), LocalDate.now()); 
-        if (timeDiff.getYears() >= 1 && timeDiff.getYears() <= 5) {
-            log.info("Attempting to load....");
-            // log.info("6. Attempting to load from API because tariffList.size() = {}\n", tariffList.size());
-            tariffList.addAll(loadTariffsFromApi(reportingCountry, partnerCountry, item));
-        }
         
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
                 .map(tariff -> new HistoricalTariffData(
