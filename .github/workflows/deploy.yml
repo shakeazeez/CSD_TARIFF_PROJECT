@@ -191,7 +191,22 @@ jobs:
         # Start services
         docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
 
-        # Clean up old images
+        # Clean up old images, keeping 2 most recent per repository
+        echo "Cleaning up old images, keeping 2 most recent per repository..."
+        
+        # Function to keep 2 most recent images for a repo
+        keep_recent_images() {
+            local repo=$1
+            # List images sorted by creation time (newest first), skip first 2, delete the rest
+            docker images $repo --format "table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}" | tail -n +2 | sort -k2 -r | tail -n +3 | awk '{print $1}' | xargs -r docker rmi || true
+        }
+        
+        # Keep 2 for each service
+        keep_recent_images "$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND"
+        keep_recent_images "$ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND"
+        keep_recent_images "$ECR_REGISTRY/$ECR_REPOSITORY_ROUTER"
+        
+        # Also prune dangling images
         docker image prune -f
 
         # Update version file only on successful deployment
@@ -214,6 +229,9 @@ jobs:
         # Execute deployment on EC2 with environment variables
         ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
           export ECR_REGISTRY='${ECR_REGISTRY}'
+          export ECR_REPOSITORY_BACKEND='goattariff/backend'
+          export ECR_REPOSITORY_ROUTER='goattariff/router'
+          export ECR_REPOSITORY_FRONTEND='goattariff/frontend'
           export TAG='${IMAGE_TAG}'
           export AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'
           export AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'
