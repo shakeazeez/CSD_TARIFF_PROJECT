@@ -104,6 +104,7 @@ pub async fn login(
             };
             let status = response.status();
             let body = response.text().await.unwrap();
+            println!("{body:?}");
             // println!("Failed due to some reason {}", status);
             if status.is_success() {
                 let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();

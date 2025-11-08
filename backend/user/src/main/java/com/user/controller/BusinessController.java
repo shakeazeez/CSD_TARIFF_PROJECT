@@ -32,6 +32,7 @@ public class BusinessController {
     public ResponseEntity<?> getBusinessUserDetails(@PathVariable String username) {
         try {
             BusinessInfoDTO businessInfoDTO = businessService.getBusinessDetails(username);
+            log.info(businessInfoDTO.toString());
             return ResponseEntity.ok(businessInfoDTO);
 
         } catch (IllegalAccessError e) {
@@ -45,6 +46,7 @@ public class BusinessController {
 
     @PostMapping("/{username}/entry")
 	public ResponseEntity<?> addItemsSold(@PathVariable String username, @RequestBody BusinessTariffDTO information) {
+	    log.info(information.toString());
 	    try {
 			businessService.addTariffRecord(information, username);
 			return ResponseEntity.ok().build();
@@ -56,6 +58,7 @@ public class BusinessController {
 	
     @DeleteMapping("/{username}/entry")
 	public ResponseEntity<?> deleteItemsSold(@PathVariable String username, @RequestBody BusinessTariffDTO information) {
+	    log.info(information.toString());
 	    try {
 			businessService.deleteTariffRecord(information, username);
 			return ResponseEntity.ok().build();

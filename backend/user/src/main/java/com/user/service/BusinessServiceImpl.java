@@ -45,6 +45,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         log.info("Class of user " + user.getClass());
         if (user instanceof BusinessUser bUser) {
+            bUser.getTariffData().size();
             BusinessDetails tariffRecord = businessDetailsRepo
                     .findByReportingCountryAndItemIgnoreCase(tariff.reportingCountry(), tariff.item())
                     .orElseGet(() -> businessDetailsRepo.save(new BusinessDetails(tariff.reportingCountry(), tariff.item())));
@@ -65,6 +66,7 @@ public class BusinessServiceImpl implements BusinessService {
         });
 
         if (user instanceof BusinessUser bUser) {
+            bUser.getTariffData().size();
             BusinessDetails tariffRecord = businessDetailsRepo
                     .findByReportingCountryAndItemIgnoreCase(tariff.reportingCountry(), tariff.item())
                     .orElseGet(() -> businessDetailsRepo.save(new BusinessDetails(tariff.reportingCountry(), tariff.item())));
@@ -91,6 +93,8 @@ public class BusinessServiceImpl implements BusinessService {
                 History temp = history.get(i);
                 store.put(temp.getCounter(), temp.getLocalDate());
             }
+            
+            log.info(bUser.getTariffData().toString());
 
             List<BusinessTariffDTO> tariff = bUser.getTariffData().stream()
                     .map(a -> new BusinessTariffDTO(a.getReportingCountry(), a.getItem()))

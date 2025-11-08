@@ -39,7 +39,6 @@ pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
     let mut validation = Validation::new(jsonwebtoken::Algorithm::HS512);
     validation.required_spec_claims = HashSet::new();
     validation.validate_aud = false;
-
     let secret = DecodingKey::from_secret(env::var("SIGNING_SECRET").unwrap().as_bytes());
 
     jsonwebtoken::decode::<Claims>(&token, &secret, &validation)

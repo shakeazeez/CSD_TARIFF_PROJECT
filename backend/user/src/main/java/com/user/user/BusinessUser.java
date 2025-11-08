@@ -54,7 +54,7 @@ public class BusinessUser extends User {
             Set<BusinessDetails> tariffData,
             String originCountry) {
         super(username, hashedPassword, role);
-        this.tariffData = tariffData;
+        this.tariffData = new HashSet<>();
         // System.out.println(itemsSold.toString());
         this.originCountry = originCountry;
     }
