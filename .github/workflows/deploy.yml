@@ -128,8 +128,28 @@ jobs:
         export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
         export AWS_REGION=$AWS_REGION
 
+        # Save current version for rollback
+        PREVIOUS_VERSION=\$(cat /opt/tariff/current_version.txt 2>/dev/null || echo "V1")
+
+        # Rollback function
+        rollback() {
+            echo "Deployment failed, rolling back to \$PREVIOUS_VERSION"
+            export TAG=\$PREVIOUS_VERSION
+            docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
+            docker-compose --env-file .env.prod -f docker-compose.prod.yml pull || true
+            docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d || true
+            echo \$PREVIOUS_VERSION > /opt/tariff/current_version.txt
+            exit 1
+        }
+
+        # Set trap for automatic rollback on error
+        trap rollback ERR
+
         # Login to ECR
-        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+        aws ecr get-login-password --region \$AWS_REGION | docker login --username AWS --password-stdin \$ECR_REGISTRY
+
+        # Stop and remove all existing containers to avoid port conflicts
+        docker stop \$(docker ps -q) && docker rm \$(docker ps -aq) || true
 
         # Stop existing containers
         docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
@@ -143,8 +163,9 @@ jobs:
         # Clean up old images
         docker image prune -f
 
-        # Save current version for rollback
+        # Update version file only on successful deployment
         echo \$TAG > /opt/tariff/current_version.txt
+        echo "Deployment completed successfully"
         EOF
 
         # Copy files to EC2
