@@ -18,8 +18,9 @@ services:
       DATABASE_PASSWORD: ${DB_PASSWORD}
       DB_PASSWORD: ${DB_PASSWORD}
       OPEN_AI_KEY: ${OPEN_AI_KEY}
-      TARIFF_URL: http://backend:8081
-      NEWS_URL: http://backend:8083
+      TARIFF_URL: ${TARIFF_URL}
+      NEWS_URL: ${NEWS_URL}
+      USER_URL: ${USER_URL}
       JAVA_OPTS: -Xmx768m -Xms256m
     deploy:
       resources:
@@ -34,11 +35,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-        DATABASE_URL_CONNECTION: ${RUST_DATABASE_URL}
+        RUST_DATABASE_URL: ${RUST_DATABASE_URL}
         FRONTEND_URL: ${FRONTEND_URL}
-        TARIFF_URL: http://backend:8081
-        USER_URL: http://backend:8082
-        NEWS_URL: http://backend:8083
+        TARIFF_URL: ${TARIFF_URL}
+        USER_URL: ${USER_URL}
+        NEWS_URL: ${NEWS_URL}
         RUST_LOG: info
     deploy:
       resources:

@@ -126,6 +126,9 @@ jobs:
         FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
         VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+        TARIFF_URL: ${{ secrets.TARIFF_URL }}
+        USER_URL: ${{ secrets.USER_URL }}
+        NEWS_URL: ${{ secrets.NEWS_URL }}
       run: |
         # Validate required secrets
         if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
@@ -225,6 +228,9 @@ jobs:
           export FRONTEND_URL='${FRONTEND_URL}'
           export OPEN_AI_KEY='${OPEN_AI_KEY}'
           export VITE_BACKEND_URL='${VITE_BACKEND_URL}'
+          export TARIFF_URL='${TARIFF_URL}'
+          export USER_URL='${USER_URL}'
+          export NEWS_URL='${NEWS_URL}'
           
           # Append dynamic vars to .env.prod
           echo "ECR_REGISTRY=$ECR_REGISTRY" >> .env.prod
