@@ -11,7 +11,7 @@ on:
         default: ''
 
 env:
-  AWS_REGION: ap-southeast-1  # Change to your preferred region
+  AWS_REGION: ap-southeast-1 
   ECR_REPOSITORY_BACKEND: goattariff/backend
   ECR_REPOSITORY_ROUTER: goattariff/router
   ECR_REPOSITORY_FRONTEND: goattariff/frontend
@@ -76,7 +76,7 @@ jobs:
         if [ -n "${{ github.event.inputs.version_tag }}" ]; then
           echo "tag=${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
         else
-          echo "tag=V${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "tag=$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:8}" >> $GITHUB_OUTPUT
         fi
 
     - name: Build and push backend image
@@ -117,34 +117,42 @@ jobs:
         IMAGE_TAG: ${{ steps.version.outputs.tag }}
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
+        # Validate required secrets
+        if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+          echo "Error: EC2_SSH_KEY secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.EC2_HOST }}" ]; then
+          echo "Error: EC2_HOST secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.ENV_PROD_CONTENT }}" ]; then
+          echo "Error: ENV_PROD_CONTENT secret is not set"
+          exit 1
+        fi
+
         # Create deployment script
-        cat > deploy.sh << EOF
+        cat > deploy.sh << 'EOF'
         #!/bin/bash
         set -e
 
-        export ECR_REGISTRY=$ECR_REGISTRY
-        export TAG=$IMAGE_TAG
-        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-        export AWS_REGION=$AWS_REGION
-
         # Save current version for rollback
-        mkdir -p /opt/tariff
-        PREVIOUS_VERSION=\$(cat /opt/tariff/current_version.txt 2>/dev/null || echo "none")
+        mkdir -p /home/ubuntu/tariff
+        PREVIOUS_VERSION=$(cat /home/ubuntu/tariff/current_version.txt 2>/dev/null || echo "none")
 
         # Rollback function
         rollback() {
             echo "Deployment failed"
-            if [ "\$PREVIOUS_VERSION" != "none" ]; then
-                echo "Rolling back to \$PREVIOUS_VERSION"
-                export TAG=\$PREVIOUS_VERSION
-                docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
+            if [ "$PREVIOUS_VERSION" != "none" ]; then
+                echo "Rolling back to $PREVIOUS_VERSION"
+                export TAG=$PREVIOUS_VERSION
+                docker-compose --env-file .env.prod -f docker-compose.prod.yml down
                 if docker-compose --env-file .env.prod -f docker-compose.prod.yml pull 2>/dev/null; then
-                    docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d || true
-                    echo \$PREVIOUS_VERSION > /opt/tariff/current_version.txt
+                    docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
+                    echo $PREVIOUS_VERSION > /home/ubuntu/tariff/current_version.txt
                     echo "Rollback completed"
                 else
-                    echo "Previous version \$PREVIOUS_VERSION not available, cannot rollback"
+                    echo "Previous version $PREVIOUS_VERSION not available, cannot rollback"
                 fi
             else
                 echo "No previous version available for rollback"
@@ -156,13 +164,13 @@ jobs:
         trap rollback ERR
 
         # Login to ECR
-        aws ecr get-login-password --region \$AWS_REGION | docker login --username AWS --password-stdin \$ECR_REGISTRY
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-        # Stop and remove all existing containers to avoid port conflicts
-        docker stop \$(docker ps -q) && docker rm \$(docker ps -aq) || true
-
-        # Stop existing containers
+        # Stop only containers related to this project (safer than stopping all)
         docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
+
+        # Remove orphaned containers from this project
+        docker container prune -f || true
 
         # Pull latest images
         docker-compose --env-file .env.prod -f docker-compose.prod.yml pull
@@ -174,8 +182,8 @@ jobs:
         docker image prune -f
 
         # Update version file only on successful deployment
-        mkdir -p /opt/tariff
-        echo \$TAG > /opt/tariff/current_version.txt
+        mkdir -p /home/ubuntu/tariff
+        echo $TAG > /home/ubuntu/tariff/current_version.txt
         echo "Deployment completed successfully"
         EOF
 
@@ -190,8 +198,16 @@ jobs:
         scp -i ec2_key -o StrictHostKeyChecking=no docker-compose.prod.yml ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
         scp -i ec2_key -o StrictHostKeyChecking=no .env.prod ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
 
-        # Execute deployment on EC2
+        # Execute deployment on EC2 with environment variables
         ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
+          export ECR_REGISTRY='${ECR_REGISTRY}'
+          export TAG='${IMAGE_TAG}'
+          export AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'
+          export AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'
+          export AWS_REGION='${AWS_REGION}'
           chmod +x deploy.sh
           ./deploy.sh
         EOF
+
+        # Cleanup sensitive files from runner
+        rm -f deploy.sh ec2_key .env.prod
