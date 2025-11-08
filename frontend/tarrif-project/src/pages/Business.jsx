@@ -179,14 +179,37 @@ export function Business({onMenuClick}) {
             const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // console.log("Backend response for business items:", resp);
+            
+            // Get the normalized items first
             const normalized = _normalizeToItems(resp.data);
-            setItems(normalized);
-            console.log("Fetched business items:", normalized);
+            
+            // For each item, fetch its tariff rate
+            const itemsWithRates = await Promise.all(normalized.map(async (item) => {
+                // For each hsCode in the item, get its rate
+                const ratesPromises = item.hsCode.map(async (code) => {
+                    try {
+                        const rate = await _getTariffRate(item.report, code);
+                        return rate;
+                    } catch (err) {
+                        console.warn(`Failed to fetch rate for ${code} in ${item.report}:`, err);
+                        return null;
+                    }
+                });
+
+                // Wait for all rates to be fetched
+                const rates = await Promise.all(ratesPromises);
+                
+                // Return item with updated rates
+                return {
+                    ...item,
+                    rate: rates
+                };
+            }));
+
+            setItems(itemsWithRates);
+            console.log("Fetched business items with rates:", itemsWithRates);
         } catch (error) {
             console.error("Error fetching business items:", error);
-            // fallback: keep existing items (or use preset)
-            // setItems(presetListJSON);
         }
     }, [backendURL, username, token]);
 
@@ -452,9 +475,9 @@ export function Business({onMenuClick}) {
         let currentRate = 5; // default fallback
         try {
             const response = await axios.post(`${backendURL}/tariff/current`, {
-                reportingCountry: report,
+                reportingCountry: reportingCountry,
                 partnerCountry: _defaultOrigin,
-                item: hs,
+                item: item,
                 itemCost: 1000 // dummy cost, magic number
             });
             const fetched = response?.data;
@@ -466,6 +489,7 @@ export function Business({onMenuClick}) {
             }
         } catch (err) {
             console.warn("Could not fetch tariff rate, using fallback rate:", err);
+            return '-';
         }
         return currentRate;
     }
@@ -696,11 +720,7 @@ export function Business({onMenuClick}) {
                                                         {row.item}
                                                     </td>
                                                     <td className="px-6 py-4 font-semibold" style={{ color: colors.accent }}>
-                                                        {useEffect(() => {
-                                                            _getTariffRate(row.reportingCountry, row.item).then(rate => 
-                                                                row.rate = rate !== null ? `${rate}%` : "-"
-                                                            );
-                                                        }, [row.reportingCountry, row.item]), row.rate}
+                                                        {row.rate !== null ? `${row.rate}%` : "-"}
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <Button
