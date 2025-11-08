@@ -73,7 +73,7 @@ export function ChatBot({ onMenuClick }) {
   const { isAuthenticated } = useAuth();
 
   // Get backend URL from environment variables (.env file)
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
+  const backendURL = import.meta.env.VITE_BACKEND_URL || '';
 
   // ====================================
   // THEME INTEGRATION

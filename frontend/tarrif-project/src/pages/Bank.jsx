@@ -11,7 +11,7 @@ import { AlignCenter } from "lucide-react";
 import { useToast } from "../hooks/use-toast.js";
 
 export function Bank({ onMenuClick }) {
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
+  const backendURL = import.meta.env.VITE_BACKEND_URL || '';
   const { colors } = useTheme();
 
   /*
