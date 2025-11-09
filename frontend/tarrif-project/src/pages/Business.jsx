@@ -172,6 +172,30 @@ export function Business({onMenuClick}) {
     // local items state (normalized to same shape used in UI)
     const [items, setItems] = useState(presetListJSON);
 
+    // get tariff rate for item from backend
+    const _getTariffRate = useCallback(async (reportingCountry, item) => {
+        let currentRate = 5; // default fallback
+        try {
+            const response = await axios.post(`${backendURL}/tariff/current`, {
+                reportingCountry: reportingCountry,
+                partnerCountry: _defaultOrigin,
+                item: item,
+                itemCost: 1000 // dummy cost, magic number
+            });
+            const fetched = response?.data;
+            const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
+            if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
+                currentRate = rateFromResp;
+            } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
+                currentRate = Number(rateFromResp);
+            }
+        } catch (err) {
+            console.warn("Could not fetch tariff rate, using fallback rate:", err);
+            return '-';
+        }
+        return currentRate;
+    }, [backendURL]);
+
     // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
         if (!username) return;
@@ -211,7 +235,7 @@ export function Business({onMenuClick}) {
         } catch (error) {
             console.error("Error fetching business items:", error);
         }
-    }, [backendURL, username, token]);
+    }, [backendURL, username, token, _getTariffRate]);
 
     useEffect(() => {
         fetchBusinessItems();
@@ -468,30 +492,6 @@ export function Business({onMenuClick}) {
         }
 
         console.log("Delete item for country:", reportingCountry, itemToDel);
-    }
-
-    // get tariff rate for item from backend
-    const _getTariffRate = async (reportingCountry, item) => {
-        let currentRate = 5; // default fallback
-        try {
-            const response = await axios.post(`${backendURL}/tariff/current`, {
-                reportingCountry: reportingCountry,
-                partnerCountry: _defaultOrigin,
-                item: item,
-                itemCost: 1000 // dummy cost, magic number
-            });
-            const fetched = response?.data;
-            const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
-            if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
-                currentRate = rateFromResp;
-            } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
-                currentRate = Number(rateFromResp);
-            }
-        } catch (err) {
-            console.warn("Could not fetch tariff rate, using fallback rate:", err);
-            return '-';
-        }
-        return currentRate;
     }
 
 
