@@ -408,9 +408,9 @@ public class TariffCalculationImpl implements TariffCalculationService {
         log.info("No problem with Item Query");
         // Needs to be final here because being used in a very interesting lambda later
         // down the line
-        final List<Tariff> tariffList = tariffRepo.findByReportingCountryAndItem(
+        final List<Tariff> tariffList = new ArrayList<>(tariffRepo.findByReportingCountryAndItem(
                 reportingCountry,
-                item);
+                item));
 
         if (tariffList.isEmpty()) {
             log.info("Attempting to load....");
@@ -419,11 +419,13 @@ public class TariffCalculationImpl implements TariffCalculationService {
         
         tariffList.sort((a, b) -> b.getLocalDate().compareTo(a.getLocalDate()));
         
-        Period timeDiff = Period.between(tariffList.get(0).getLocalDate(), LocalDate.now()); 
-        if (timeDiff.getYears() >= 1 && timeDiff.getYears() <= 5) {
-            log.info("Attempting to load....");
-            // log.info("6. Attempting to load from API because tariffList.size() = {}\n", tariffList.size());
-            tariffList.addAll(loadTariffFromApi(reportingCountry, item));
+        if (!tariffList.isEmpty()) {
+            Period timeDiff = Period.between(tariffList.get(0).getLocalDate(), LocalDate.now()); 
+            if (timeDiff.getYears() >= 1 && timeDiff.getYears() <= 5) {
+                log.info("Attempting to load....");
+                // log.info("6. Attempting to load from API because tariffList.size() = {}\n", tariffList.size());
+                tariffList.addAll(loadTariffFromApi(reportingCountry, item));
+            }
         }
         
         
