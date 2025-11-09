@@ -109,6 +109,18 @@ public class ChatHistoryController {
             @Parameter(description = "Id of the history entry to delete", required = true)
             @PathVariable Long id) {
         try {
+            // Check if the chat history exists and belongs to the user
+            var chatHistoryOpt = service.findById(id);
+            if (chatHistoryOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            var chatHistory = chatHistoryOpt.get();
+            // Check authorization - user can only delete their own history
+            if (!username.equals(chatHistory.getUsername())) {
+                return ResponseEntity.status(403).build(); // Forbidden
+            }
+            
             service.deleteById(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {

@@ -10,7 +10,6 @@ import Calendar from "../components/ui/calendar";
 import { AlignCenter } from "lucide-react";
 
 export function IndustrySearch({ onMenuClick }) {
-  const backendURL = import.meta.env.VITE_BACKEND_URL || '';
   const { colors } = useTheme();
 
   /*

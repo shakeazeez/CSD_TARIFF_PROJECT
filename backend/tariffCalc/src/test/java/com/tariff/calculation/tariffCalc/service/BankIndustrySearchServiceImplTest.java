@@ -293,8 +293,8 @@ class BankIndustrySearchServiceImplTest {
             List<Tariff> chinaTariffs = Arrays.asList(tariff1);
             List<Tariff> canadaTariffs = Arrays.asList(tariff2);
             
-            when(itemRepo.findByItemName("Electronics")).thenReturn(Optional.of(electronicsItem));
             when(countryRepo.findByCountryName("United States")).thenReturn(Optional.of(usaCountry));
+            when(itemRepo.findByItemNameAndCountry("Electronics", usaCountry)).thenReturn(Optional.of(electronicsItem));
             when(tariffRepo.findByReportingCountryAndItem(usaCountry, electronicsItem)).thenReturn(itemTariffs);
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, chinaCountry, electronicsItem)).thenReturn(chinaTariffs);
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, canadaCountry, electronicsItem)).thenReturn(canadaTariffs);
@@ -313,8 +313,8 @@ class BankIndustrySearchServiceImplTest {
             assertTrue(result.tariffDetailsList().size() <= 10, "Should not exceed top 10 countries");
             
             // Verify repository interactions
-            verify(itemRepo, times(1)).findByItemName("Electronics");
-            verify(countryRepo, times(1)).findByCountryName("United States");
+            verify(countryRepo, times(2)).findByCountryName("United States");
+            verify(itemRepo, times(1)).findByItemNameAndCountry("Electronics", usaCountry);
             verify(tariffRepo, times(1)).findByReportingCountryAndItem(usaCountry, electronicsItem);
         }
 
@@ -330,7 +330,8 @@ class BankIndustrySearchServiceImplTest {
                 "2023-12-31"
             );
             
-            when(itemRepo.findByItemName("NonExistentItem")).thenReturn(Optional.empty());
+            when(countryRepo.findByCountryName("United States")).thenReturn(Optional.of(usaCountry));
+            when(itemRepo.findByItemNameAndCountry("NonExistentItem", usaCountry)).thenReturn(Optional.empty());
 
             // Act & Assert
             IllegalArgumentException exception = assertThrows(
@@ -340,8 +341,8 @@ class BankIndustrySearchServiceImplTest {
             );
             
             assertEquals("Item not found.", exception.getMessage());
-            verify(itemRepo, times(1)).findByItemName("NonExistentItem");
-            verify(countryRepo, never()).findByCountryName(anyString());
+            verify(countryRepo, times(2)).findByCountryName("United States");
+            verify(itemRepo, times(1)).findByItemNameAndCountry("NonExistentItem", usaCountry);
         }
 
         @Test
@@ -356,7 +357,6 @@ class BankIndustrySearchServiceImplTest {
                 "2023-12-31"
             );
             
-            when(itemRepo.findByItemName("Electronics")).thenReturn(Optional.of(electronicsItem));
             when(countryRepo.findByCountryName("NonExistentCountry")).thenReturn(Optional.empty());
 
             // Act & Assert
@@ -366,9 +366,9 @@ class BankIndustrySearchServiceImplTest {
                 "Should throw IllegalArgumentException when country not found"
             );
             
-            assertEquals("Country not found.", exception.getMessage());
-            verify(itemRepo, times(1)).findByItemName("Electronics");
+            assertEquals("No home country", exception.getMessage());
             verify(countryRepo, times(1)).findByCountryName("NonExistentCountry");
+            verify(itemRepo, never()).findByItemNameAndCountry(anyString(), any(Country.class));
         }
 
         @Test
@@ -383,8 +383,8 @@ class BankIndustrySearchServiceImplTest {
                 "2023-12-31"
             );
             
-            when(itemRepo.findByItemName("Electronics")).thenReturn(Optional.of(electronicsItem));
             when(countryRepo.findByCountryName("United States")).thenReturn(Optional.of(usaCountry));
+            when(itemRepo.findByItemNameAndCountry("Electronics", usaCountry)).thenReturn(Optional.of(electronicsItem));
             when(tariffRepo.findByReportingCountryAndItem(usaCountry, electronicsItem)).thenReturn(Collections.emptyList());
 
             // Act
@@ -397,8 +397,8 @@ class BankIndustrySearchServiceImplTest {
             assertNotNull(result.tariffDetailsList(), "Tariff details should not be null");
             assertTrue(result.tariffDetailsList().isEmpty(), "Tariff details should be empty when no partner countries");
             
-            verify(itemRepo, times(1)).findByItemName("Electronics");
-            verify(countryRepo, times(1)).findByCountryName("United States");
+            verify(countryRepo, times(2)).findByCountryName("United States");
+            verify(itemRepo, times(1)).findByItemNameAndCountry("Electronics", usaCountry);
             verify(tariffRepo, times(1)).findByReportingCountryAndItem(usaCountry, electronicsItem);
         }
 
@@ -425,8 +425,8 @@ class BankIndustrySearchServiceImplTest {
             List<Tariff> itemTariffs = Arrays.asList(tariff1);
             List<Tariff> chinaTariffsWithZero = Arrays.asList(tariff1, zeroTariff);
             
-            when(itemRepo.findByItemName("Electronics")).thenReturn(Optional.of(electronicsItem));
             when(countryRepo.findByCountryName("United States")).thenReturn(Optional.of(usaCountry));
+            when(itemRepo.findByItemNameAndCountry("Electronics", usaCountry)).thenReturn(Optional.of(electronicsItem));
             when(tariffRepo.findByReportingCountryAndItem(usaCountry, electronicsItem)).thenReturn(itemTariffs);
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, chinaCountry, electronicsItem)).thenReturn(chinaTariffsWithZero);
 
@@ -462,8 +462,8 @@ class BankIndustrySearchServiceImplTest {
             List<Tariff> itemTariffs = Arrays.asList(tariff1); // Only tariff1 is in range
             List<Tariff> chinaTariffs = Arrays.asList(tariff1);
             
-            when(itemRepo.findByItemName("Electronics")).thenReturn(Optional.of(electronicsItem));
             when(countryRepo.findByCountryName("United States")).thenReturn(Optional.of(usaCountry));
+            when(itemRepo.findByItemNameAndCountry("Electronics", usaCountry)).thenReturn(Optional.of(electronicsItem));
             when(tariffRepo.findByReportingCountryAndItem(usaCountry, electronicsItem)).thenReturn(itemTariffs);
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, chinaCountry, electronicsItem)).thenReturn(chinaTariffs);
 
@@ -506,8 +506,8 @@ class BankIndustrySearchServiceImplTest {
             List<Tariff> itemTariffs = Arrays.asList(tariff1);
             List<Tariff> chinaTariffsWithNull = Arrays.asList(tariff1, nullDateTariff);
             
-            when(itemRepo.findByItemName("Electronics")).thenReturn(Optional.of(electronicsItem));
             when(countryRepo.findByCountryName("United States")).thenReturn(Optional.of(usaCountry));
+            when(itemRepo.findByItemNameAndCountry("Electronics", usaCountry)).thenReturn(Optional.of(electronicsItem));
             when(tariffRepo.findByReportingCountryAndItem(usaCountry, electronicsItem)).thenReturn(itemTariffs);
             when(tariffRepo.findByReportingCountryAndPartnerCountryAndItem(usaCountry, chinaCountry, electronicsItem)).thenReturn(chinaTariffsWithNull);
 

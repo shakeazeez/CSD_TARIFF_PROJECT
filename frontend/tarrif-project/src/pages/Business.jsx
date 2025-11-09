@@ -63,7 +63,6 @@ export function Business({onMenuClick}) {
 
     // Get theme context for component-level color management
     const { colors } = useTheme();
-    const backendURL = import.meta.env.VITE_BACKEND_URL || '';
     const { toast } = useToast();
 
     // auth / username resolution
