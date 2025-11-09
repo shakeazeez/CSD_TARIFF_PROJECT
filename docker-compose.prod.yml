@@ -45,6 +45,7 @@ services:
     environment:
         RUST_DATABASE_URL: ${RUST_DATABASE_URL}
         FRONTEND_URL: ${FRONTEND_URL}
+        SIGNING_SECRET: ${SIGNING_SECRET}
         TARIFF_URL: http://backend:8081
         USER_URL: http://backend:8082
         NEWS_URL: http://backend:8083
