@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
 import com.user.dto.BusinessInfoDTO;
 import com.user.dto.BusinessTariffDTO;
 import com.user.history.History;
@@ -18,10 +22,6 @@ import com.user.user.User;
 import com.user.user.UserRepo;
 
 import jakarta.transaction.Transactional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 @Service
 public class BusinessServiceImpl implements BusinessService {
