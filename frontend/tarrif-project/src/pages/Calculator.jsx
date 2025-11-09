@@ -96,6 +96,9 @@ export function Calculator({ onMenuClick }) {
   // STATE VARIABLES
   // ====================================
 
+  // Get backend URLs from environment variables (.env file)
+  const backendURL = import.meta.env.VITE_BACKEND_URL || '';
+
   // Initialize search functionality
   const searchMethods = Searches();
 

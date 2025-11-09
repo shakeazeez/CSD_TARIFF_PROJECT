@@ -11,7 +11,7 @@ on:
         default: ''
 
 env:
-  AWS_REGION: ap-southeast-1  # Change to your preferred region
+  AWS_REGION: ap-southeast-1 
   ECR_REPOSITORY_BACKEND: goattariff/backend
   ECR_REPOSITORY_ROUTER: goattariff/router
   ECR_REPOSITORY_FRONTEND: goattariff/frontend
@@ -76,7 +76,7 @@ jobs:
         if [ -n "${{ github.event.inputs.version_tag }}" ]; then
           echo "tag=${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
         else
-          echo "tag=V${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "tag=$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:8}" >> $GITHUB_OUTPUT
         fi
 
     - name: Build and push backend image
@@ -116,23 +116,74 @@ jobs:
       env:
         IMAGE_TAG: ${{ steps.version.outputs.tag }}
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        RUST_DATABASE_URL: ${{ secrets.RUST_DATABASE_URL }}
+        THE_NEWS_API_KEY: ${{ secrets.THE_NEWS_API_KEY }}
+        MOACH_API_KEY: ${{ secrets.MOACH_API_KEY }}
+        SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
+        FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
+        VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+        TARIFF_URL: ${{ secrets.TARIFF_URL }}
+        USER_URL: ${{ secrets.USER_URL }}
+        NEWS_URL: ${{ secrets.NEWS_URL }}
       run: |
+        # Validate required secrets
+        if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+          echo "Error: EC2_SSH_KEY secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.EC2_HOST }}" ]; then
+          echo "Error: EC2_HOST secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.ENV_PROD_CONTENT }}" ]; then
+          echo "Error: ENV_PROD_CONTENT secret is not set"
+          exit 1
+        fi
+
         # Create deployment script
-        cat > deploy.sh << EOF
+        cat > deploy.sh << 'EOF'
         #!/bin/bash
         set -e
 
-        export ECR_REGISTRY=$ECR_REGISTRY
-        export TAG=$IMAGE_TAG
-        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-        export AWS_REGION=$AWS_REGION
+        # Save current version for rollback
+        mkdir -p /home/ubuntu/tariff
+        PREVIOUS_VERSION=$(cat /home/ubuntu/tariff/current_version.txt 2>/dev/null || echo "none")
+
+        # Rollback function
+        rollback() {
+            echo "Deployment failed"
+            if [ "$PREVIOUS_VERSION" != "none" ]; then
+                echo "Rolling back to $PREVIOUS_VERSION"
+                export TAG=$PREVIOUS_VERSION
+                docker-compose --env-file .env.prod -f docker-compose.prod.yml down --remove-orphans
+                if docker-compose --env-file .env.prod -f docker-compose.prod.yml pull 2>/dev/null; then
+                    docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
+                    echo $PREVIOUS_VERSION > /home/ubuntu/tariff/current_version.txt
+                    echo "Rollback completed"
+                else
+                    echo "Previous version $PREVIOUS_VERSION not available, cannot rollback"
+                fi
+            else
+                echo "No previous version available for rollback"
+            fi
+            exit 1
+        }
+
+        # Set trap for automatic rollback on error
+        trap rollback ERR
 
         # Login to ECR
         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-        # Stop existing containers
-        docker-compose --env-file .env.prod -f docker-compose.prod.yml down || true
+        # Stop only containers related to this project (safer than stopping all)
+        docker-compose --env-file .env.prod -f docker-compose.prod.yml down --remove-orphans || true
+
+        # Remove orphaned containers from this project
+        docker container prune -f || true
 
         # Pull latest images
         docker-compose --env-file .env.prod -f docker-compose.prod.yml pull
@@ -140,11 +191,28 @@ jobs:
         # Start services
         docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
 
-        # Clean up old images
+        # Clean up old images, keeping 2 most recent per repository
+        echo "Cleaning up old images, keeping 2 most recent per repository..."
+        
+        # Function to keep 2 most recent images for a repo
+        keep_recent_images() {
+            local repo=$1
+            # List images sorted by creation time (newest first), skip first 2, delete the rest
+            docker images $repo --format "table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}" | tail -n +2 | sort -k2 -r | tail -n +3 | awk '{print $1}' | xargs -r docker rmi || true
+        }
+        
+        # Keep 2 for each service
+        keep_recent_images "$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND"
+        keep_recent_images "$ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND"
+        keep_recent_images "$ECR_REGISTRY/$ECR_REPOSITORY_ROUTER"
+        
+        # Also prune dangling images
         docker image prune -f
 
-        # Save current version for rollback
-        echo \$TAG > /opt/tariff/current_version.txt
+        # Update version file only on successful deployment
+        mkdir -p /home/ubuntu/tariff
+        echo $TAG > /home/ubuntu/tariff/current_version.txt
+        echo "Deployment completed successfully"
         EOF
 
         # Copy files to EC2
@@ -158,8 +226,38 @@ jobs:
         scp -i ec2_key -o StrictHostKeyChecking=no docker-compose.prod.yml ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
         scp -i ec2_key -o StrictHostKeyChecking=no .env.prod ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/
 
-        # Execute deployment on EC2
+        # Execute deployment on EC2 with environment variables
         ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
+          export ECR_REGISTRY='${ECR_REGISTRY}'
+          export ECR_REPOSITORY_BACKEND='goattariff/backend'
+          export ECR_REPOSITORY_ROUTER='goattariff/router'
+          export ECR_REPOSITORY_FRONTEND='goattariff/frontend'
+          export TAG='${IMAGE_TAG}'
+          export AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'
+          export AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'
+          export AWS_REGION='${AWS_REGION}'
+          export DATABASE_URL='${DATABASE_URL}'
+          export DB_USERNAME='${DB_USERNAME}'
+          export DB_PASSWORD='${DB_PASSWORD}'
+          export RUST_DATABASE_URL='${RUST_DATABASE_URL}'
+          export THE_NEWS_API_KEY='${THE_NEWS_API_KEY}'
+          export MOACH_API_KEY='${MOACH_API_KEY}'
+          export SIGNING_SECRET='${SIGNING_SECRET}'
+          export FRONTEND_URL='${FRONTEND_URL}'
+          export OPEN_AI_KEY='${OPEN_AI_KEY}'
+          export VITE_BACKEND_URL='${VITE_BACKEND_URL}'
+          export TARIFF_URL='${TARIFF_URL}'
+          export USER_URL='${USER_URL}'
+          export NEWS_URL='${NEWS_URL}'
+          
+          # Append dynamic vars to .env.prod
+          echo "ECR_REGISTRY=$ECR_REGISTRY" >> .env.prod
+          echo "TAG=$TAG" >> .env.prod
+          echo "AWS_REGION=$AWS_REGION" >> .env.prod
+          
           chmod +x deploy.sh
           ./deploy.sh
         EOF
+
+        # Cleanup sensitive files from runner
+        rm -f deploy.sh ec2_key .env.prod

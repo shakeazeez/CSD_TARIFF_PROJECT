@@ -5,6 +5,7 @@ import { useTheme } from "../contexts/use-theme.js";
 import { Newspaper, ExternalLink, Calendar, X } from "lucide-react";
 
 export function News({ onMenuClick }) {
+    const backendURL = import.meta.env.VITE_BACKEND_URL || '';
     const { colors } = useTheme();
     const [newsData, setNewsData] = useState([]);
     const [loading, setLoading] = useState(true);
