@@ -65,6 +65,8 @@ class BusinessServiceImplTest {
                 Role.BUSINESS,
                 new HashSet<>(Set.of(detail1, detail2, detail3)),
                 "USA");
+       
+        businessUser.setTariffData(new HashSet<>(Set.of(detail1, detail2, detail3)));
 
         nonBusinessUser = new User();
         nonBusinessUser.setUsername("regular_user");
@@ -285,6 +287,7 @@ class BusinessServiceImplTest {
                 Role.BUSINESS,
                 new HashSet<>(Set.of(detail1, detail2)),
                 "Canada");
+        anotherBusinessUser.setTariffData(new HashSet<>(Set.of(detail1, detail2)));
 
         when(userRepo.findByUsername("another_business_user")).thenReturn(Optional.of(anotherBusinessUser));
         when(historyRepo.findByUser(anotherBusinessUser)).thenReturn(new ArrayList<>());
@@ -343,6 +346,7 @@ class BusinessServiceImplTest {
                 Role.BUSINESS,
                 new HashSet<>(),
                 "Germany");
+        businessUserEmpty.setTariffData(new HashSet<>());
 
         when(userRepo.findByUsername("business_user_empty")).thenReturn(Optional.of(businessUserEmpty));
         when(historyRepo.findByUser(businessUserEmpty)).thenReturn(new ArrayList<>());
@@ -372,6 +376,7 @@ class BusinessServiceImplTest {
                 Role.BUSINESS,
                 new HashSet<>(Set.of(singleDetail)),
                 "Japan");
+        singleItemBusinessUser.setTariffData(new HashSet<>(Set.of(singleDetail)));
 
         when(userRepo.findByUsername("single_item_business")).thenReturn(Optional.of(singleItemBusinessUser));
         when(historyRepo.findByUser(singleItemBusinessUser)).thenReturn(new ArrayList<>());

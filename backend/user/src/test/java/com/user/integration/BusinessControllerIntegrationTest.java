@@ -58,14 +58,11 @@ class BusinessControllerIntegrationTest {
     }
 
     private BusinessUser preloadBusiness(String username) {
-        // Create and save BusinessDetails first
-        BusinessDetails detail1 = new BusinessDetails("US", "widgets");
-        BusinessDetails detail2 = new BusinessDetails("MY", "gadgets");
         
-        detail1 = businessDetailsRepo.save(detail1);
-        detail2 = businessDetailsRepo.save(detail2);
+        BusinessDetails detail1 = businessDetailsRepo.save(new BusinessDetails("US", "widgets"));
+        BusinessDetails detail2 = businessDetailsRepo.save(new BusinessDetails("MY", "gadgets"));
 
-        // Create BusinessUser with the new structure
+        
         BusinessUser b = new BusinessUser(
             username,
             "pw",
@@ -73,23 +70,14 @@ class BusinessControllerIntegrationTest {
             new HashSet<>(Set.of(detail1, detail2)),
             "SG"
         );
+        b.setTariffData(new HashSet<>(Set.of(detail1, detail2)));
         return userRepo.save(b);
-    }
-
-    private void preloadHistory(BusinessUser user, int tariffId, int counter) {
-        History h = new History(tariffId, user);
-        h.setCounter(counter);
-        h.setLocalDate(LocalDate.now());
-        historyRepo.save(h);
     }
 
     @Test
     @DisplayName("GET /business/{username} returns BusinessInfoDTO for business user")
     void getBusinessUserDetails_success() {
-        BusinessUser u = preloadBusiness("biz");
-        preloadHistory(u, 101, 5);
-        preloadHistory(u, 102, 2);
-
+        preloadBusiness("biz");
         BusinessInfoDTO dto =
             given()
             .when()
