@@ -4,7 +4,7 @@
 
 // External libraries
 import { useEffect, useState, useCallback } from "react"; // React hooks for state management and side effects
-import axios from "axios"; // HTTP client for API requests
+import api from "../lib/api.js"; // HTTP client for API requests
 
 // Animation library for smooth transitions
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,52 +46,15 @@ import Dropdown from "../components/Dropdown.jsx"; // Custom dropdown component
 import Chart from "../components/Chart.jsx"; // Custom chart component
 import { Header } from "../components/Header.jsx"; // Header component
 import { useToast } from "../hooks/use-toast";
+// import { data } from "react-router-dom";
 
 // ====================================
 // HELPER FUNCTIONS AND CONSTANTS
 // ====================================
 
-// Preset data for development/testing
-const presetListJSON = [
-    {
-        report: "United States",
-        partner: ["Germany", "Canada", "Mexico"],
-        hsCode: ["slipper", "boot", "sandal"],
-        rate: [7, 5, 6]
-    },
-    {
-        report: "Canada",
-        partner: ["Mexico", "United States", "Germany"],
-        hsCode: ["slipper", "boot", "sandal"],
-        rate: [6, 4, 8]
-    },
-];
-
-// Helper: normalize backend response into items shape used by UI
-const normalizeToItems = (data) => {
-    if (!data) return presetListJSON;
-    // If already an array of items in the expected shape
-    if (Array.isArray(data) && data.length && data[0].report) return data;
-    // If response is an object that contains items list
-    if (Array.isArray(data.items)) return data.items;
-    if (Array.isArray(data.businessItems)) return data.businessItems;
-    // If response has a map of report -> partners, convert (best-effort)
-    if (typeof data === "object") {
-        const arr = [];
-        for (const key of Object.keys(data)) {
-            if (Array.isArray(data[key].partner)) {
-                arr.push({
-                    report: key,
-                    partner: data[key].partner,
-                    hsCode: data[key].hsCode || data[key].hs || [],
-                    rate: data[key].rate || []
-                });
-            }
-        }
-        if (arr.length) return arr;
-    }
-    return presetListJSON;
-};
+// ====================================
+// COMPONENT DEFINITION
+// ====================================
 
 export function Business({onMenuClick}) {
     // ====================================
@@ -106,9 +69,82 @@ export function Business({onMenuClick}) {
     // auth / username resolution
     const { user } = useAuth?.() ?? {}; // gracefully handle if useAuth not available
     const username = user?.username || localStorage.getItem("username") || "demo";
-    const token = localStorage.getItem("authToken");
 
-    // Confirmation dialog state
+// default country of origin
+const _defaultOrigin = user?.originCountry || "not found";
+console.log("Default origin country:", _defaultOrigin);
+
+// Helper: normalize backend response into items shape used by UI
+const _normalizeToItems = useCallback((data) => {
+    // Helper to group simple item arrays into UI shape:
+    // result: [{ report: 'Country', partner: [...], hsCode: [...], rate: [...] }, ...]
+    const groupByReporting = (arr) => {
+        const out = [];
+        for (const entry of arr || []) {
+            const reporting = entry.reportingCountry || entry.report || _defaultOrigin;
+            let target = out.find((x) => x.report === reporting);
+            if (!target) {
+                target = { report: reporting, partner: [], hsCode: [], rate: [] };
+                out.push(target);
+            }
+            // push item / hsCode
+            if (typeof entry.item !== "undefined" && entry.item !== null) {
+                target.hsCode.push(entry.item);
+            } else if (typeof entry.hsCode === "string" || typeof entry.hsCode === "number") {
+                target.hsCode.push(entry.hsCode);
+            }
+            // push rate if present, else null placeholder
+            if (typeof entry.rate !== "undefined") target.rate.push(entry.rate);
+            else target.rate.push(null);
+            // optional partner
+            if (entry.partner && !target.partner.includes(entry.partner)) {
+                target.partner.push(entry.partner);
+            }
+        }
+        return out;
+    };
+
+    // No data -> return empty array
+    if (!data) return [];
+
+    // If array -> try to detect shape
+    if (Array.isArray(data) && data.length) {
+        // already in UI shape (report property)
+        if (data[0].report) return data;
+
+        // simple fetched tariffs list shape: [{ reportingCountry, item, rate? }, ...]
+        if (data[0].reportingCountry || data[0].item) {
+            return groupByReporting(data);
+        }
+
+        // some responses may already be a list of items under .items or .businessItems
+        if (Array.isArray(data.items)) return _normalizeToItems(data.items);
+        if (Array.isArray(data.businessItems)) return _normalizeToItems(data.businessItems);
+    }
+
+    // If object keyed by reporting country -> convert (legacy)
+    if (typeof data === "object" && data !== null) {
+        const arr = [];
+        for (const key of Object.keys(data)) {
+            const val = data[key];
+            if (val && Array.isArray(val.partner)) {
+                arr.push({
+                    report: key,
+                    partner: val.partner,
+                    hsCode: val.hsCode || val.hs || [],
+                    rate: val.rate || []
+                });
+            }
+        }
+        if (arr.length) return arr;
+
+        // If object contains tariffs array (country-level payload), flatten and group
+        if (Array.isArray(data.tariffs)) return groupByReporting(data.tariffs);
+    }
+
+    // fallback -> return empty array
+    return [];
+}, [_defaultOrigin]);    // Confirmation dialog state
     const [deleteConfirm, setDeleteConfirm] = useState(null); // { reportingCountry, partnerIndex, partnerName, hsCode }
 
     // Country data and user selections
@@ -119,24 +155,98 @@ export function Business({onMenuClick}) {
     const [hs, setHS] = useState(""); // HS Code / item description
 
     // local items state (normalized to same shape used in UI)
-    const [items, setItems] = useState(presetListJSON);
+    const [items, setItems] = useState([]);
+
+    // Loading state for initial fetch
+    const [loading, setLoading] = useState(true);
+
+    // get tariff rate for item from backend
+    const _getTariffRate = useCallback(async (reportingCountry, item) => {
+        console.log("Fetching tariff rate for:", { reportingCountry, partnerCountry: _defaultOrigin, item });
+        let currentRate = 5; // default fallback
+        const maxRetries = 5;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await api.post('/tariff/current', {
+                    reportingCountry: reportingCountry,
+                    partnerCountry: _defaultOrigin,
+                    item: item,
+                    itemCost: 1000 // dummy cost, magic number
+                });
+                const fetched = response?.data;
+                const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
+                if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
+                    currentRate = rateFromResp;
+                } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
+                    currentRate = Number(rateFromResp);
+                }
+                console.log("Success on attempt", attempt, "rate:", currentRate);
+                return currentRate; // Success, return the rate
+            } catch (err) {
+                console.warn(`Attempt ${attempt} failed to fetch tariff rate for ${item}:`, err.response?.data || err.message);
+                if (attempt < maxRetries) {
+                    // Wait before retrying (longer backoff)
+                    await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+                }
+            }
+        }
+        console.warn("All attempts failed to fetch tariff rate, using fallback rate");
+        return '-';
+    }, [_defaultOrigin]);
 
     // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
-        if (!username) return;
+        setLoading(true);
+        if (!username) {
+            setLoading(false);
+            return;
+        }
         try {
-            const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = resp?.data;
-            const normalized = normalizeToItems(data);
-            setItems(normalized);
+            const resp = await api.get(`/business/${encodeURIComponent(username)}`);
+            
+            // Get the normalized items first
+            const normalized = _normalizeToItems(resp.data);
+            
+            // Set items with loading rates initially
+            const initialItemsWithLoading = normalized.map(item => ({
+                ...item,
+                rate: item.hsCode.map(() => "Loading...")
+            }));
+            setItems(initialItemsWithLoading);
+            
+            // For each item, fetch its tariff rate
+            const itemsWithRates = [];
+            for (const item of normalized) {
+                // For each hsCode in the item, get its rate
+                const ratesPromises = item.hsCode.map(async (code) => {
+                    try {
+                        const rate = await _getTariffRate(item.report, code);
+                        return rate;
+                    } catch (err) {
+                        console.warn(`Failed to fetch rate for ${code} in ${item.report}:`, err);
+                        return '-';
+                    }
+                });
+
+                // Wait for all rates for this item to be fetched
+                const rates = await Promise.all(ratesPromises);
+                
+                // Return item with updated rates
+                itemsWithRates.push({
+                    ...item,
+                    rate: rates
+                });
+            }
+
+            setItems(itemsWithRates);
+            // console.log("Fetched business items with rates:", itemsWithRates);
         } catch (error) {
             console.error("Error fetching business items:", error);
-            // fallback: keep existing items (or use preset)
-            // setItems(presetListJSON);
+            setItems([]);
+        } finally {
+            setLoading(false);
         }
-    }, [backendURL, username, token]);
+    }, [username, _getTariffRate, _normalizeToItems]);
 
     useEffect(() => {
         fetchBusinessItems();
@@ -147,7 +257,7 @@ export function Business({onMenuClick}) {
     const fetchCountry = async () => {
       try {
         // Make GET request to backend countries endpoint
-        const response = await axios.get(`${backendURL}/tariff/countries`);
+        const response = await api.get('/tariff/countries');
 
         // Update state with fetched country list
         setList(response.data);
@@ -173,7 +283,7 @@ export function Business({onMenuClick}) {
 
     // Execute the fetch function
     fetchCountry();
-  }, [backendURL]); // run on mount / backendURL change
+  }, []); // run on mount
 
 
     const modList =
@@ -185,13 +295,13 @@ export function Business({onMenuClick}) {
             : [];
 
     // Add item: POST to /business/{username}/items
-    const handleAddItem = async () => {
+    const _handleAddItem = async () => {
         if (!report || !partner || !hs) return;
 
         // fetch current rate from tariff service first (best-effort)
         let currentRate = 5; // default fallback
         try {
-            const response = await axios.post(`${backendURL}/tariff/current`, {
+            const response = await api.post('/tariff/current', {
                 reportingCountry: report,
                 partnerCountry: partner,
                 item: hs,
@@ -221,9 +331,7 @@ export function Business({onMenuClick}) {
         };
 
         try {
-            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/items`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/business/${encodeURIComponent(username)}/items`, payload);
             // refresh from server after successful add
             await fetchBusinessItems();
             toast({
@@ -267,7 +375,7 @@ export function Business({onMenuClick}) {
     };
 
     // Delete an item: call DELETE /business/{username}/items with body { information: [...] }
-    const handleDelete = async (reportingCountry, partnerIndex) => {
+    const _handleDelete = async (reportingCountry, partnerIndex) => {
         // find the item details from current state
         const entry = items.find(it => it.report === reportingCountry);
         if (!entry) return;
@@ -302,10 +410,9 @@ export function Business({onMenuClick}) {
         };
 
         try {
-            // axios.delete with body requires { data: payload } as second arg
-            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/items`, { 
-                data: payload,
-                headers: { Authorization: `Bearer ${token}` }
+            // api.delete with body requires { data: payload } as second arg
+            await api.delete(`/business/${encodeURIComponent(username)}/items`, {
+                data: payload
             });
             // refresh from server after successful delete
             await fetchBusinessItems();
@@ -340,6 +447,59 @@ export function Business({onMenuClick}) {
         }
     };
 
+    // new handleAdd
+    const newHandleAddItem = async () => {
+        if (!report || !hs) return;
+        const payload = {
+            reportingCountry: report,
+            item: hs 
+        };
+        try {
+            // to /business/{username}/items POST with body { information: [ { partner, hsCode } ] }
+            await api.post(`/business/${encodeURIComponent(username)}/entry`, payload);
+            // refresh from server after successful add
+            await fetchBusinessItems();
+            toast({
+                title: "Item Added",
+                description: `Successfully added ${hs} for partner ${partner}`,
+                variant: "default",
+            });
+        } catch (error) {
+            console.error("Error adding item:", error);
+        }
+
+        console.log("Add item:", payload);
+    };
+    // example of data received: tariffs: [ { reportingCountry: 'China', item: 'sugar' }, ... ]
+
+    // newHandleDelete
+    const newHandleDelete = async (reportingCountry, itemToDel) => {
+        if (!reportingCountry) return;
+        // delete from /business/{username}/entry DELETE with body { information: [ reporting, hsCode ] }
+        try {
+            const payload = {
+                reportingCountry: reportingCountry,
+                item: itemToDel
+            };
+            console.log("Delete payload:", payload);
+            await api.delete(`/business/${encodeURIComponent(username)}/entry`, {
+                data: payload
+            });
+            // refresh from server after successful delete
+            await fetchBusinessItems();
+            toast({
+                title: "Item Deleted",
+                // description: `Successfully deleted item with id ${_id}`,
+                variant: "default",
+            });
+        } catch (error) {
+            console.error("Error deleting item:", error);
+        }
+
+        console.log("Delete item for country:", reportingCountry, itemToDel);
+    }
+
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -373,6 +533,14 @@ export function Business({onMenuClick}) {
                         Manage your tariff data and analyze trade patterns
                     </p>
                 </motion.div>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                        <span className="ml-4" style={{ color: colors.foreground }}>Loading business insights...</span>
+                    </div>
+                ) : (
+                <>
 
                 {/* Add Item Form */}
                 <motion.div
@@ -419,7 +587,7 @@ export function Business({onMenuClick}) {
                                         className="w-full"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                {/* <div className="space-y-2">
                                     <Label
                                         htmlFor="partner-country"
                                         style={{ color: colors.foreground }}
@@ -435,7 +603,7 @@ export function Business({onMenuClick}) {
                                         placeholder="Select partner country"
                                         className="w-full"
                                     />
-                                </div>
+                                </div> */}
                             </div>
 
                             {/* HS Code and Cost */}
@@ -462,7 +630,7 @@ export function Business({onMenuClick}) {
                                 </div>
                                 <div className="flex items-end">
                                     <Button
-                                        onClick={handleAddItem}
+                                        onClick={newHandleAddItem}
                                         className="w-full h-10 transition-all duration-200 hover:scale-[1.02] shadow-md"
                                         style={{
                                             backgroundColor: colors.accent,
@@ -500,20 +668,45 @@ export function Business({onMenuClick}) {
                             }}
                         >
                             <CardHeader>
-                                <CardTitle
-                                    className="flex items-center gap-2"
-                                    style={{ color: colors.foreground }}
-                                >
-                                    <CalculatorIcon className="h-5 w-5" />
-                                    Tariff Items List
-                                </CardTitle>
-                                <CardDescription style={{ color: colors.muted }}>
-                                    List of items with tariff rates based on selected countries.
-                                </CardDescription>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle
+                                            className="flex items-center gap-2"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            <CalculatorIcon className="h-5 w-5" />
+                                            Tariff Items List
+                                        </CardTitle>
+                                        <CardDescription style={{ color: colors.muted }}>
+                                            List of items with tariff rates based on selected countries.
+                                        </CardDescription>
+                                    </div>
+                                    <Button
+                                        onClick={fetchBusinessItems}
+                                        variant="outline"
+                                        size="sm"
+                                        className="transition-all duration-200 hover:scale-[1.02] shadow-md"
+                                        style={{
+                                            borderColor: colors.border,
+                                            color: colors.foreground,
+                                            backgroundColor: colors.surface
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.muted + '20';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = colors.surface;
+                                        }}
+                                    >
+                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                        Refresh Rates
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="overflow-x-auto relative">
                                     <table className="w-full text-sm text-left">
+                                        {/* Table Header */}
                                         <thead
                                             className="text-xs uppercase"
                                             style={{
@@ -526,10 +719,7 @@ export function Business({onMenuClick}) {
                                                     Reporting Country (Importer)
                                                 </th>
                                                 <th scope="col" className="px-6 py-3">
-                                                    Partner Country (Exporter)
-                                                </th>
-                                                <th scope="col" className="px-6 py-3">
-                                                    Item/Item Description
+                                                    Item / Description
                                                 </th>
                                                 <th scope="col" className="px-6 py-3">
                                                     Tariff Rate
@@ -539,73 +729,96 @@ export function Business({onMenuClick}) {
                                                 </th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
-                                            {items.map((entry, idx) => (
-                                                entry.partner.map((partnerCountry, pIdx) => (
-                                                    <tr
-                                                        key={`${idx}-${pIdx}`}
-                                                        className="border-b hover:bg-opacity-50 transition-colors duration-200"
-                                                        style={{
-                                                            borderColor: colors.border,
-                                                            backgroundColor: 'transparent'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.target.closest('tr').style.backgroundColor = colors.hover + '20';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.target.closest('tr').style.backgroundColor = 'transparent';
-                                                        }}
-                                                    >
-                                                        <td
-                                                            className="px-6 py-4 font-medium"
-                                                            style={{ color: colors.foreground }}
+                                            {/** Render local `items` (existing shape: report, hsCode[], rate[] ) */}
+                                            {Array.isArray(items) && items.length > 0 && items.flatMap((entry, entryIdx) => {
+                                                const hsArr = Array.isArray(entry.hsCode) ? entry.hsCode : [];
+                                                const rateArr = Array.isArray(entry.rate) ? entry.rate : [];
+                                                return hsArr.map((code, codeIdx) => ({
+                                                    key: `local-${entryIdx}-${codeIdx}`,
+                                                    reportingCountry: entry.report || "",
+                                                    item: code || "",
+                                                    rate: rateArr[codeIdx] ?? null,
+                                                    source: "local",
+                                                    reportIndex: entryIdx,
+                                                    itemIndex: codeIdx
+                                                }));
+                                            }).map(row => (
+                                                <tr
+                                                    key={row.key}
+                                                    className="border-b hover:bg-opacity-50 transition-colors duration-200"
+                                                    style={{ borderColor: colors.border, backgroundColor: 'transparent' }}
+                                                >
+                                                    <td className="px-6 py-4 font-medium" style={{ color: colors.foreground }}>
+                                                        {row.reportingCountry}
+                                                    </td>
+                                                    <td className="px-6 py-4" style={{ color: colors.foreground }}>
+                                                        {row.item}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-semibold" style={{ color: colors.accent }}>
+                                                        {row.rate === "Loading..." ? "Loading..." : row.rate !== null && row.rate !== '-' ? `${row.rate}%` : "-"}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => newHandleDelete(row.reportingCountry, row.item)}
+                                                            className="transition-all duration-300 hover:scale-105 shadow-md"
+                                                            style={{
+                                                                backgroundColor: colors.error || '#ef4444',
+                                                                borderColor: colors.error || '#ef4444',
+                                                                color: 'white'
+                                                            }}
                                                         >
-                                                            {entry.report}
-                                                        </td>
-                                                        <td
-                                                            className="px-6 py-4"
-                                                            style={{ color: colors.foreground }}
+                                                            <Trash2 className="h-4 w-4 mr-1" />
+                                                            Delete
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+
+                                            {/** Render fetched list -> flatten all tariffs arrays.
+                                                Expected tariff shape per entry: { reportingCountry: 'China', item: 'sugar', rate?: number }
+                                                We show them after local items. Actions are disabled for remote-only tariffs (adjust if you have delete endpoint). */}
+                                            {Array.isArray(list) && list.length > 0 && list.flatMap((country, cIdx) => {
+                                                const tariffs = Array.isArray(country.tariffs) ? country.tariffs : [];
+                                                return tariffs.map((t, tIdx) => ({
+                                                    key: `fetched-${cIdx}-${tIdx}`,
+                                                    reportingCountry: t.reportingCountry || country.countryName || "",
+                                                    item: t.item || "",
+                                                    rate: t.rate ?? null,
+                                                    source: "fetched",
+                                                    countryIndex: cIdx,
+                                                    tariffIndex: tIdx
+                                                }));
+                                            }).map(row => (
+                                                <tr
+                                                    key={row.key}
+                                                    className="border-b hover:bg-opacity-50 transition-colors duration-200"
+                                                    style={{ borderColor: colors.border, backgroundColor: 'transparent' }}
+                                                >
+                                                    <td className="px-6 py-4 font-medium" style={{ color: colors.foreground }}>
+                                                        {row.reportingCountry}
+                                                    </td>
+                                                    <td className="px-6 py-4" style={{ color: colors.foreground }}>
+                                                        {row.item}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-semibold" style={{ color: colors.accent }}>
+                                                        {row.rate !== null ? `${row.rate}%` : "-"}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {/* no-op / disabled action for fetched entries by default */}
+                                                        <Button
+                                                            size="sm"
+                                                            disabled
+                                                            className="opacity-50"
+                                                            style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.muted }}
                                                         >
-                                                            {partnerCountry}
-                                                        </td>
-                                                        <td
-                                                            className="px-6 py-4"
-                                                            style={{ color: colors.foreground }}
-                                                        >
-                                                            {entry.hsCode[pIdx]}
-                                                        </td>
-                                                        <td
-                                                            className="px-6 py-4 font-semibold"
-                                                            style={{ color: colors.accent }}
-                                                        >
-                                                            {entry.rate[pIdx]}%
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={() => handleDelete(entry.report, pIdx)}
-                                                                className="transition-all duration-300 hover:scale-105 shadow-md"
-                                                                style={{
-                                                                    backgroundColor: colors.error || '#ef4444',
-                                                                    borderColor: colors.error || '#ef4444',
-                                                                    color: 'white'
-                                                                }}
-                                                                onMouseEnter={(e) => {
-                                                                    e.target.style.backgroundColor = colors.error ? colors.error + 'cc' : '#dc2626';
-                                                                    e.target.style.transform = 'scale(1.05)';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.target.style.backgroundColor = colors.error || '#ef4444';
-                                                                    e.target.style.transform = 'scale(1)';
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 mr-1" />
-                                                                Delete
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                                            Fetched
+                                                        </Button>
+                                                    </td>
+                                                </tr>
                                             ))}
                                         </tbody>
                                     </table>
@@ -646,6 +859,9 @@ export function Business({onMenuClick}) {
                         </p>
                     </motion.div>
                 )}
+                </>
+                )}
+
             </div>
 
             {/* Delete Confirmation Dialog */}

@@ -15,8 +15,7 @@ public class TokenDTO {
     private List<Integer> pin; 
     private String industry; 
     private String originCountry;
-    private List<String> destinationCountries;
-    private List<String> itemsSold;
+    private List<BusinessTariffDTO> tariffs;
     private Map<Integer, LocalDate> historicalTariffId;
     
     public TokenDTO(String username, String token, Map<Integer, LocalDate>  historicalTariffId) {
@@ -40,11 +39,10 @@ public class TokenDTO {
         this.historicalTariffId = historicalTariffId;
     }
     
-    public TokenDTO(String username, String token, List<String> itemsSold, List<String> destinationCountries ,String originCountry, Map<Integer, LocalDate>  historicalTariffId) {
+    public TokenDTO(String username, String token, List<BusinessTariffDTO> tariffs ,String originCountry, Map<Integer, LocalDate>  historicalTariffId) {
         this.username = username;
         this.token = token;
-        this.itemsSold = itemsSold;
-        this.destinationCountries = destinationCountries;
+        this.tariffs = tariffs;
         this.originCountry = originCountry;
         this.historicalTariffId = historicalTariffId;
     }

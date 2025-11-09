@@ -104,6 +104,7 @@ pub async fn login(
             };
             let status = response.status();
             let body = response.text().await.unwrap();
+            println!("{body:?}");
             // println!("Failed due to some reason {}", status);
             if status.is_success() {
                 let mut token_dto: TokenDTO = serde_json::from_slice(&body.into_bytes()).unwrap();
@@ -141,10 +142,10 @@ pub async fn create_user(
 ) -> impl Responder {
     
     
-    println!("{login_details:?}");
+    // println!("{login_details:?}");
     let mut borrow = login_details.into_inner();
     let checker = get_user_details(&database, &borrow.username).await;
-    
+    // println!("{checker:?}");
     if checker.len() != 0 {
         return HttpResponse::build(StatusCode::CONFLICT).finish()
     }

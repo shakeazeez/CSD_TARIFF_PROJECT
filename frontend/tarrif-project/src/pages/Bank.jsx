@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import axios from "axios";
+import api from "../lib/api.js";
 import IndustryChart from "../components/IndustryChart.jsx";
 import { Header } from "../components/Header.jsx";
 import Dropdown from "../components/Dropdown.jsx";
@@ -23,13 +23,13 @@ export function Bank({ onMenuClick }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const countryResponse = await axios.get(
-          `${backendURL}/tariff/countries`
+        const countryResponse = await api.get(
+          '/tariff/countries'
         );
         setCountryList(countryResponse.data);
 
-        const industryResponse = await axios.get(
-          `${backendURL}/tariff/industries`
+        const industryResponse = await api.get(
+          '/tariff/industries'
         ); // endpoint does not exist...yet
         setIndustryList(industryResponse.data);
       } catch (error) {
@@ -37,7 +37,7 @@ export function Bank({ onMenuClick }) {
       }
     };
     fetchData();
-  }, [backendURL]);
+  }, []);
 
   // Transform country list for dropdown component compatibility
   // Converts backend format to {id, code} format expected by Dropdown component
@@ -138,8 +138,8 @@ export function Bank({ onMenuClick }) {
     setInvalidItems([]);
 
     try {
-      const response = await axios.post(
-        `${backendURL}/tariff/items`,
+      const response = await api.post(
+        '/tariff/items',
         userInput
       );
 
@@ -159,8 +159,8 @@ export function Bank({ onMenuClick }) {
           endDate: "",
         };
         try {
-          const defaultResponse = await axios.post(
-            `${backendURL}/tariff/items`,
+          const defaultResponse = await api.post(
+            '/tariff/items',
             defaultUserInput
           );
           setItemList(defaultResponse.data);
@@ -214,22 +214,22 @@ export function Bank({ onMenuClick }) {
 
     try {
       // POST request to get historical tariff data
-      await axios.post(
-        `${backendURL}/tariff/past`,
+      await api.post(
+        '/tariff/past',
         tariffCalculationQueryDTO
       );
 
     } catch (error) {
       console.error("Error fetching historical tariff data:", error);
     } 
-  }, [backendURL]);
+  }, []);
 
   // Method to fetch current tariff information for items and backup partner countries 
   const fetchCurrent = useCallback(async (tariffCalculationQueryDTO) => {
       try {
         // POST request to get current tariff calculation
-        const response = await axios.post(
-          `${backendURL}/tariff/current`,
+        const response = await api.post(
+          '/tariff/current',
           tariffCalculationQueryDTO
         );
 
@@ -242,7 +242,7 @@ export function Bank({ onMenuClick }) {
 
         fetchPast(tariffCalculationQueryDTO); // Automatically fetch historical data after current calculation
       }
-  }, [backendURL, fetchPast]);
+  }, [fetchPast]);
   
 
   const queryTariffs = useCallback((backupCountries, selectedItems) => {
@@ -290,8 +290,8 @@ export function Bank({ onMenuClick }) {
 
       try {
         console.log("Attempting to get tariff details for item ", filteredItems[i]);
-        const response = await axios.post (
-        `${backendURL}/tariff/items/tariffDetails`,
+        const response = await api.post(
+        '/tariff/items/tariffDetails',
         {
           selectedItem: filteredItems[i],
           homeCountry: homeCountry,
@@ -333,7 +333,7 @@ export function Bank({ onMenuClick }) {
 
     setLoadingDetails(false);
     
-  }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate, backendURL]);
+  }, [selectedItems, invalidItems, existingItemDetailsMap, homeCountry, industry, startDate, endDate]);
 
 
   useEffect(() => {
@@ -612,7 +612,7 @@ export function Bank({ onMenuClick }) {
             </p>
 
             <div className="flex items-center mb-3 text-sm">
-              <button
+              {/* <button
                 onClick={() => {
                   setSelectedItems([...itemList]);
 
@@ -631,8 +631,8 @@ export function Bank({ onMenuClick }) {
                 onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 All
-              </button>
-              <span className="mx-2" style={{ color: colors.muted }}>
+              </button>*/}
+              {/* <span className="mx-2" style={{ color: colors.muted }}>
                 |
               </span>
               <button
@@ -646,7 +646,7 @@ export function Bank({ onMenuClick }) {
                 onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 None
-              </button>
+              </button>*/}
             </div>
 
             {loadingItems && (

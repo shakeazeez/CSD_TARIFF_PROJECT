@@ -39,7 +39,6 @@ pub fn verify_jwt(token: String) -> Result<TokenData<Claims>, Error> {
     let mut validation = Validation::new(jsonwebtoken::Algorithm::HS512);
     validation.required_spec_claims = HashSet::new();
     validation.validate_aud = false;
-
     let secret = DecodingKey::from_secret(env::var("SIGNING_SECRET").unwrap().as_bytes());
 
     jsonwebtoken::decode::<Claims>(&token, &secret, &validation)
@@ -65,9 +64,9 @@ pub fn generate_token(user: &AuthUser) -> String {
     let created_claims =
         Claims {
             custom_claims: "Logging in".to_owned(),
-            iss: env::var("USER_URL").unwrap(),
+            iss: env::var("USER_URL").unwrap_or_default(),
             exp: now_plus_60,
-            sub: user.username.clone(),
+            sub: user.username.to_owned(),
             groups: user.user_roles,
             aud: "frontend".to_owned()
         };

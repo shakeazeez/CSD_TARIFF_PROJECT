@@ -50,4 +50,14 @@ public class Tariff {
         this.description = description;
         this.localDate = localDate;
     }
+
+    @Override
+    public String toString() {
+        return "Tariff{" +
+                "id=" + id +
+                ", percentageRate=" + percentageRate +
+                ", description='" + description + '\'' +
+                ", localDate=" + localDate +
+                '}';
+    }
 }

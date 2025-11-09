@@ -63,7 +63,7 @@ public class TariffController {
             @ApiResponse(responseCode = "404", description = "Countries not found", content = @Content)
     })
     @GetMapping("/countries")
-    public ResponseEntity<List<Country>> getAllItems() {
+    public ResponseEntity<List<Country>> getAllCountries() {
         List<Country> country = null;
 
         try {
@@ -151,10 +151,12 @@ public class TariffController {
 
         try {
             result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
+            
         } catch (Exception e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
-
+        // log.info("Result: " + result);
         return ResponseEntity.ok(result);
     }
     
@@ -190,6 +192,9 @@ public class TariffController {
         } catch (ApiFailureException e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (jakarta.persistence.NonUniqueResultException e) {
+            log.info("Multiple items found for query: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
         } catch (Exception e) {
             log.info(e.getMessage()); 
             return ResponseEntity.internalServerError().build();

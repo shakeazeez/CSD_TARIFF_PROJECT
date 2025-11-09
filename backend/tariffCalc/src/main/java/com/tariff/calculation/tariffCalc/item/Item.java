@@ -52,4 +52,14 @@ public class Item {
         this.country = country;
         this.industry = industry;
     }
+
+    @Override
+    public String toString() {
+        return "Item{" +
+                "id=" + id +
+                ", itemCode=" + itemCode +
+                ", itemName='" + itemName + '\'' +
+                ", industry=" + industry +
+                '}';
+    }
 }

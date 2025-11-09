@@ -10,17 +10,25 @@ pub struct LoginDTO {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+pub struct BusinessDetailsDTO {
+    #[serde(rename = "reporting3Country")]
+    pub reporting_country: Option<String>,
+    #[serde(rename = "item")]
+    pub item_name: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct CreateDTO {
     pub username: String, 
     pub password: String,
     pub role: String,
     pub industry: Option<String>, 
-    #[serde(rename = "originCountry")]
-    pub origin_country: Option<String>,
-    #[serde(rename = "destinationCountries")]
-    pub destination_countries: Option<Vec<String>>,
+    #[serde(rename = "tariffs")]
+    pub tariffs: Option<Vec<BusinessDetailsDTO>>,
     #[serde(rename = "itemsSold")]
-    pub items_sold: Option<Vec<String>>
+    pub items_sold: Option<Vec<String>>,
+    #[serde(rename = "originCountry")]
+    pub origin_country: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -29,14 +37,12 @@ pub struct TokenDTO {
     pub token: Option<String>,
     pub role: Option<String>,
     #[serde(rename = "pin")]
-    pin: Option<Vec<i32>>,
-    industry: Option<String>,
+    pub pin: Option<Vec<i32>>,
+    pub industry: Option<String>,
     #[serde(rename = "originCountry")]
-    origin_country: Option<String>,
-    #[serde(rename = "destinationCountries")]
-    destination_countries: Option<Vec<String>>,
-    #[serde(rename = "itemsSold")]
-    items_sold: Option<Vec<String>>,
+    pub origin_country: Option<String>,
+    #[serde(rename = "tariffs")]
+    pub tariffs: Option<Vec<BusinessDetailsDTO>>,
     #[serde(rename = "historicalTariffId")]
-    historical_tariff_id: Option<IndexMap<i32, String>>
+    pub historical_tariff_id: Option<IndexMap<i32, String>>
 }

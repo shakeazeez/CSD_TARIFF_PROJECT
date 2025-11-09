@@ -200,7 +200,7 @@ public class TariffOverviewImpl implements TariffOverviewService {
         // else {
             // log.info("6. Using existing tariffs from database, skipping API call\n");
         // }
-
+        
         List<HistoricalTariffData> historicalTariffData = tariffList.stream()
                 .map(tariff -> new HistoricalTariffData(
                         tariff.getLocalDate(), // start period
