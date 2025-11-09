@@ -52,20 +52,29 @@ import { useToast } from "../hooks/use-toast";
 // HELPER FUNCTIONS AND CONSTANTS
 // ====================================
 
-// Preset data for development/testing
-const presetListJSON = [
-    {
-        reportingCountry: "United States",
-        item: "sugar"
-    },
-    {
-        reportingCountry: "China",
-        item: "slippers"
-    }
-];
+// ====================================
+// COMPONENT DEFINITION
+// ====================================
+
+export function Business({onMenuClick}) {
+    // ====================================
+    // THEME INTEGRATION
+    // ====================================
+
+    // Get theme context for component-level color management
+    const { colors } = useTheme();
+    const { toast } = useToast();
+
+    // auth / username resolution
+    const { user } = useAuth?.() ?? {}; // gracefully handle if useAuth not available
+    const username = user?.username || localStorage.getItem("username") || "demo";
+
+// default country of origin
+const _defaultOrigin = user?.originCountry || "not found";
+console.log("Default origin country:", _defaultOrigin);
 
 // Helper: normalize backend response into items shape used by UI
-const _normalizeToItems = (data) => {
+const _normalizeToItems = useCallback((data) => {
     // Helper to group simple item arrays into UI shape:
     // result: [{ report: 'Country', partner: [...], hsCode: [...], rate: [...] }, ...]
     const groupByReporting = (arr) => {
@@ -134,27 +143,7 @@ const _normalizeToItems = (data) => {
 
     // fallback -> return empty array
     return [];
-};
-
-export function Business({onMenuClick}) {
-    // ====================================
-    // THEME INTEGRATION
-    // ====================================
-
-    // Get theme context for component-level color management
-    const { colors } = useTheme();
-    const { toast } = useToast();
-
-    // auth / username resolution
-    const { user } = useAuth?.() ?? {}; // gracefully handle if useAuth not available
-    const username = user?.username || localStorage.getItem("username") || "demo";
-    const token = localStorage.getItem("authToken");
-
-    // default country of origin
-    const _defaultOrigin = user?.originCountry || "not found";
-    console.log("Default origin country:", _defaultOrigin);
-
-    // Confirmation dialog state
+}, [_defaultOrigin]);    // Confirmation dialog state
     const [deleteConfirm, setDeleteConfirm] = useState(null); // { reportingCountry, partnerIndex, partnerName, hsCode }
 
     // Country data and user selections
@@ -202,7 +191,7 @@ export function Business({onMenuClick}) {
         }
         console.warn("All attempts failed to fetch tariff rate, using fallback rate");
         return '-';
-    }, []);
+    }, [_defaultOrigin]);
 
     // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
@@ -256,7 +245,7 @@ export function Business({onMenuClick}) {
         } finally {
             setLoading(false);
         }
-    }, [username, token, _getTariffRate]);
+    }, [username, _getTariffRate, _normalizeToItems]);
 
     useEffect(() => {
         fetchBusinessItems();
