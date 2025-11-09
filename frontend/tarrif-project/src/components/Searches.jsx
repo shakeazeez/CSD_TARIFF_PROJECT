@@ -199,7 +199,7 @@ const Searches = () => {
                       {searchData.item}
                     </div>
                     <div className="text-xl font-bold" style={{ color: colors?.accent || '#3b82f6' }}>
-                      {searchData.tariff}%
+                      {(searchData.tariff).toFixed(2)}%
                     </div>
                   </div>
                 </div>
