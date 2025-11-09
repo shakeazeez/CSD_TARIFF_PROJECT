@@ -57,10 +57,10 @@ where
 
                 match verify_jwt(token.to_string()) {
                     Ok(token) => {
-                        req.extensions_mut().insert(token.clone());
-                        req.extensions_mut().insert(token.claims.groups);
-                        // println!("{}", token.claims.groups);
                         println!("{token:?}");
+                        req.extensions_mut().insert(token.claims.groups);
+                        req.extensions_mut().insert(token);
+                        // println!("{}", token.claims.groups);
                         // println!("Raw token: {}", token);
                         // println!("Extracted token: {:?}", req.extensions().get::<String>());
                         let fut = self.service.call(req);

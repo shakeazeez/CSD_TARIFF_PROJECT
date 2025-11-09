@@ -21,6 +21,7 @@ mod router;
 mod schema;
 mod tables;
 mod config;
+mod test;
 
 type DbPool = Pool<ConnectionManager<PgConnection>>;
 
@@ -72,3 +73,4 @@ async fn main() {
     .unwrap();
     println!("Ended process");
 }
+

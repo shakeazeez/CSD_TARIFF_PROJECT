@@ -64,9 +64,9 @@ pub fn generate_token(user: &AuthUser) -> String {
     let created_claims =
         Claims {
             custom_claims: "Logging in".to_owned(),
-            iss: env::var("USER_URL").unwrap(),
+            iss: env::var("USER_URL").unwrap_or_default(),
             exp: now_plus_60,
-            sub: user.username.clone(),
+            sub: user.username.to_owned(),
             groups: user.user_roles,
             aud: "frontend".to_owned()
         };

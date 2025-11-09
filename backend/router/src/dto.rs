@@ -37,12 +37,12 @@ pub struct TokenDTO {
     pub token: Option<String>,
     pub role: Option<String>,
     #[serde(rename = "pin")]
-    pin: Option<Vec<i32>>,
-    industry: Option<String>,
+    pub pin: Option<Vec<i32>>,
+    pub industry: Option<String>,
     #[serde(rename = "originCountry")]
-    origin_country: Option<String>,
+    pub origin_country: Option<String>,
     #[serde(rename = "tariffs")]
-    tariffs: Option<Vec<BusinessDetailsDTO>>,
+    pub tariffs: Option<Vec<BusinessDetailsDTO>>,
     #[serde(rename = "historicalTariffId")]
-    historical_tariff_id: Option<IndexMap<i32, String>>
+    pub historical_tariff_id: Option<IndexMap<i32, String>>
 }
