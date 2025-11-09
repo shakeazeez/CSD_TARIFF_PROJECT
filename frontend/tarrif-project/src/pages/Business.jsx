@@ -64,14 +64,6 @@ const presetListJSON = [
     }
 ];
 
-// default country of origin
-// key: userData
-// vaule: {"role":"BUSINESS","industry":null,"originCountry":"Singapore","tariffs":[],"historicalTariffId":{},"username":"testBusiness0001","pin":[]}
-
-const _defaultOrigin = localStorage.getItem("userData")
-    ? JSON.parse(localStorage.getItem("userData")).originCountry || "not found1"
-    : "not found2";
-    console.log("Default origin country:", _defaultOrigin);
 // Helper: normalize backend response into items shape used by UI
 const _normalizeToItems = (data) => {
     // Helper to group simple item arrays into UI shape:
@@ -158,6 +150,10 @@ export function Business({onMenuClick}) {
     const username = user?.username || localStorage.getItem("username") || "demo";
     const token = localStorage.getItem("authToken");
 
+    // default country of origin
+    const _defaultOrigin = user?.originCountry || "not found";
+    console.log("Default origin country:", _defaultOrigin);
+
     // Confirmation dialog state
     const [deleteConfirm, setDeleteConfirm] = useState(null); // { reportingCountry, partnerIndex, partnerName, hsCode }
 
@@ -176,6 +172,7 @@ export function Business({onMenuClick}) {
 
     // get tariff rate for item from backend
     const _getTariffRate = useCallback(async (reportingCountry, item) => {
+        console.log("Fetching tariff rate for:", { reportingCountry, partnerCountry: _defaultOrigin, item });
         let currentRate = 5; // default fallback
         const maxRetries = 5;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -193,9 +190,10 @@ export function Business({onMenuClick}) {
                 } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
                     currentRate = Number(rateFromResp);
                 }
+                console.log("Success on attempt", attempt, "rate:", currentRate);
                 return currentRate; // Success, return the rate
             } catch (err) {
-                console.warn(`Attempt ${attempt} failed to fetch tariff rate for ${item}:`, err);
+                console.warn(`Attempt ${attempt} failed to fetch tariff rate for ${item}:`, err.response?.data || err.message);
                 if (attempt < maxRetries) {
                     // Wait before retrying (longer backoff)
                     await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
