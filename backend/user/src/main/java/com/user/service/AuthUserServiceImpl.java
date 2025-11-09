@@ -1,28 +1,25 @@
 package com.user.service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import com.user.dto.CreateUserDTO;
 import com.user.dto.TokenDTO;
 import com.user.enums.Industry;
 import com.user.enums.Role;
-import com.user.user.User;
 import com.user.user.BankUser;
 import com.user.user.BusinessDetails;
 import com.user.user.BusinessDetailsRepo;
 import com.user.user.BusinessUser;
-import com.user.user.MemberUser;
+import com.user.user.User;
 import com.user.user.UserRepo;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AuthUserServiceImpl implements AuthUserService {

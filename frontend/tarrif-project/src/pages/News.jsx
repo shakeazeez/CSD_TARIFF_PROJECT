@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { Header } from "../components/Header.jsx";
-import axios from "axios";
+import api from "../lib/api.js";
 import { useTheme } from "../contexts/use-theme.js";
 import { Newspaper, ExternalLink, Calendar, X } from "lucide-react";
 
 export function News({ onMenuClick }) {
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
     const { colors } = useTheme();
     const [newsData, setNewsData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,7 +18,7 @@ export function News({ onMenuClick }) {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const response = await axios.get(`${backendURL}/news/articles`);
+                const response = await api.get('/news/articles');
                 setNewsData(response.data);
             } catch (error) {
                 console.error("Error fetching news data:", error);
@@ -29,7 +28,7 @@ export function News({ onMenuClick }) {
             }
         };
         fetchNews();
-    }, [backendURL, testingData]);
+    }, [testingData]);
 
     const list = Array.isArray(newsData) ? newsData : testingData;
 

@@ -5,7 +5,7 @@
 // External libraries
 import { useEffect, useState, useMemo, useCallback } from "react"; // React hooks for state management and side effects
 import { useLocation } from "react-router-dom"; // Navigation hook to access location state
-import axios from "axios"; // HTTP client for API requests
+import api from "../lib/api.js"; // HTTP client for API requests
 
 // Animation library for smooth transitions
 import { motion, AnimatePresence } from "framer-motion";
@@ -96,11 +96,8 @@ export function Calculator({ onMenuClick }) {
   // STATE VARIABLES
   // ====================================
 
-  // Get backend URLs from environment variables (.env file)
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
-
   // Initialize search functionality
-  const searchMethods = Searches({ backendURL });
+  const searchMethods = Searches();
 
   // Country data and user selections
   const [list, setList] = useState([]); // Array of all available countries from backend
@@ -157,8 +154,8 @@ export function Calculator({ onMenuClick }) {
 
     try {
       // POST request to get historical tariff data
-      const response = await axios.post(
-        `${backendURL}/tariff/past`,
+      const response = await api.post(
+        '/tariff/past',
         tariffCalculationQueryDTO
       );
 
@@ -223,7 +220,7 @@ export function Calculator({ onMenuClick }) {
       setLoadingPast(false);
       setLoadingCurrent(false);
     }
-  }, [backendURL, hasCurrent, report, partner, hs, cost, tariffCalculationQueryDTO, searchMethods]);
+  }, [hasCurrent, report, partner, hs, cost, tariffCalculationQueryDTO, searchMethods]);
 
   // Function to fetch current tariff calculation from backend
   const fetchCurrent = useCallback(async () => {
@@ -246,8 +243,8 @@ export function Calculator({ onMenuClick }) {
 
     try {
       // POST request to get current tariff calculation
-      const response = await axios.post(
-        `${backendURL}/tariff/current`,
+      const response = await api.post(
+        '/tariff/current',
         tariffCalculationQueryDTO
       );
 
@@ -298,7 +295,7 @@ export function Calculator({ onMenuClick }) {
         setLoadingCurrent(false);
       }
     }
-  }, [report, partner, hs, cost, backendURL, current, hasCurrent, tariffCalculationQueryDTO, searchMethods, fetchPast, loadingCurrent]);
+  }, [report, partner, hs, cost, current, hasCurrent, tariffCalculationQueryDTO, searchMethods, fetchPast, loadingCurrent]);
 
   // auto fetch when form fields are populated from search history
   useEffect(() => {
@@ -312,7 +309,7 @@ export function Calculator({ onMenuClick }) {
         window.scrollTo({ top: 800, behavior: 'smooth' });
       }, 200);
     }
-  }, [autoFetch, backendURL, cost, fetchCurrent, fetchPast, hs, partner, report]);
+  }, [autoFetch, cost, fetchCurrent, fetchPast, hs, partner, report]);
 
   useEffect(() => {
     window.scrollTo({top: 0, behavior: "smooth"});
@@ -467,7 +464,7 @@ export function Calculator({ onMenuClick }) {
     const fetchCountry = async () => {
       try {
         // Make GET request to backend countries endpoint
-        const response = await axios.get(`${backendURL}/tariff/countries`);
+        const response = await api.get('/tariff/countries');
 
         // Update state with fetched country list
         setList(response.data);
@@ -493,7 +490,7 @@ export function Calculator({ onMenuClick }) {
 
     // Execute the fetch function
     fetchCountry();
-  }, [backendURL]); // Empty dependency array = run only once on component mount
+  }, []); // Empty dependency array = run only once on component mount
 
   // ====================================
   // USER ACTION HANDLERS
@@ -519,16 +516,11 @@ export function Calculator({ onMenuClick }) {
 
   const addPin = async (item) => {
     try {
-      const response = await axios.post(
-        `${backendURL}/user/${localStorage.getItem(
+      const response = await api.post(
+        `/user/${localStorage.getItem(
           "username"
         )}/pinned-tariffs/${item}`,
-        "",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
+        ""
       );
       localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
@@ -538,16 +530,11 @@ export function Calculator({ onMenuClick }) {
 
   const delPin = async (item) => {
     try {
-      const response = await axios.post(
-        `${backendURL}/user/${localStorage.getItem(
+      const response = await api.post(
+        `/user/${localStorage.getItem(
           "username"
         )}/unpinned-tariffs/${item}`,
-        "",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
+        ""
       );
       localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {

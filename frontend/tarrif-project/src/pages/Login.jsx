@@ -3,7 +3,7 @@
 // ====================================
 
 // External libraries
-import axios from 'axios' // HTTP client for API calls
+import api from '../lib/api.js' // HTTP client for API calls
 import { useEffect, useState } from 'react' // React hooks for state management and side effects
 import { useNavigate } from 'react-router-dom' // Navigation hook
 
@@ -115,9 +115,6 @@ export function Login(){
     // STATE VARIABLES
     // ====================================
 
-    // Get backend URL from environment variables (.env file)
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
-
     // Login form data
     const [form, setForm] = useState({ 
         username: "", 
@@ -171,7 +168,7 @@ export function Login(){
     useEffect(() => {
         const fetchCountries = async () => {
             try {
-                const response = await axios.get(`${backendURL}/tariff/countries`);
+                const response = await api.get('/tariff/countries');
                 setCountries(response.data);
             } catch (error) {
                 console.error("Error fetching countries:", error);
@@ -191,7 +188,7 @@ export function Login(){
             }
         };
         fetchCountries();
-    }, [backendURL]);
+    }, []);
 
     // Transform countries for dropdown compatibility
     const modCountries = countries && Array.isArray(countries)
@@ -247,9 +244,15 @@ export function Login(){
         if (!form.password) return "Please enter your password";
         if (form.password.length < 8) return "Password must be at least 8 characters long";
         if (form.password.length > 20) return "Password must be at most 20 characters long";
+
+        // Username character validation
+        if (form.username.includes(" ")) return "Username cannot contain spaces";
+        const usernameValidChars = /^[a-zA-Z0-9._]+$/;
+        if (!usernameValidChars.test(form.username)) return "Username can only contain letters, numbers, dots, and underscores";
+
         if (isSignUp && !role) return "Please select a role";
         if (isSignUp && form.password !== form.rePassword) return "Passwords do not match";
-        
+
         // Role-specific validation
         if (isSignUp && role === 'Business') {
             if (!form.originCountry) return "Please enter your origin country";
@@ -260,7 +263,7 @@ export function Login(){
             if (!form.industry) return "Please select your industry";
             if (!form.originCountry) return "Please enter your origin country";
         }
-        
+
         return null;
     };
 
@@ -357,26 +360,18 @@ export function Login(){
             // POST request to appropriate endpoint
             const endpoint = isSignUp ? '/auth/register' : '/auth/login';
             // Debug: log outgoing payload (remove in production)
-            console.debug('Auth request payload:', { endpoint: `${backendURL}${endpoint}`, data });
+            console.debug('Auth request payload:', { endpoint, data });
             console.debug('Username being sent:', data.username);
-            const response = await axios.post(`${backendURL}${endpoint}`, data, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await api.post(endpoint, data);
 
             // Handle successful authentication
             // Store authentication token (you can modify this based on your API response)
             let authPayload = response?.data ?? {};
 
             if (isSignUp && (!authPayload?.token || !authPayload?.username)) {
-                const loginResponse = await axios.post(`${backendURL}/auth/login`, {
+                const loginResponse = await api.post('/auth/login', {
                     username: form.username,
                     password: form.password
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
                 });
 
                 authPayload = loginResponse?.data ?? {};

@@ -4,7 +4,7 @@
 
 // External libraries
 import { useEffect, useState, useRef, useCallback } from "react"; // React hooks for state management and side effects
-import axios from "axios"; // HTTP client for API requests
+import api from "../lib/api.js"; // HTTP client for API requests
 
 // Animation library for smooth transitions
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,9 +71,6 @@ const containerVariants = {
 export function ChatBot({ onMenuClick }) {
   // Get authentication context for user management
   const { isAuthenticated } = useAuth();
-
-  // Get backend URL from environment variables (.env file)
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   // ====================================
   // THEME INTEGRATION
@@ -202,13 +199,7 @@ export function ChatBot({ onMenuClick }) {
     try {
       const username = localStorage.getItem("username");
       if (!username) return;
-      const response = await axios.get(`${backendURL}/news/history/${username}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await api.get(`/news/history/${username}`);
 
       // response is an array of conversation objects
       const convs = response.data.map(history => ({
@@ -225,7 +216,7 @@ export function ChatBot({ onMenuClick }) {
     } catch (e) {
       console.error("Error fetching chat history:", e);
     }
-  }, [backendURL]);
+  }, []);
 
   // load query history
   // check if browser supports speech recognition
@@ -258,23 +249,6 @@ export function ChatBot({ onMenuClick }) {
   }, [guestConversations, isAuthenticated]);
 
 
-
-  // add query history to backend
-  // const updateQueryToBackend = async () => {
-  // try {
-  //   const response = await axios.post(`${backendURL}/news/history`, reponseData, // THE ENDPOINT DOESNT EXIST YET
-  //     {
-  //       headers: {
-  //         Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-  //       },
-  //     }
-  //   );
-  //   localStorage.setItem("userQueryHistory", JSON.stringify(response.data));
-  //   setUserQueryHistory(response.data);
-  // } catch (error) {
-  //   console.error("Error adding query searches:", error);
-  // }
-  // }
 
   /*
    * Fetch the query response from backend and update the localStorage
@@ -378,7 +352,7 @@ export function ChatBot({ onMenuClick }) {
         }
       }
 
-      const response = await axios.post(`${backendURL}/news/process`, null, { params });
+      const response = await api.post('/news/process', null, { params });
 
       // Update local conversation id with server id for threading
       if (isAuthenticated && response.data.conversationId) {
@@ -513,7 +487,7 @@ export function ChatBot({ onMenuClick }) {
           const username = localStorage.getItem('username');
           const token = localStorage.getItem('authToken');
           if (username && token) {
-            axios.delete(`${backendURL}/news/history/${username}/${convToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } })
+            api.delete(`/news/history/${username}/${convToDelete.id}`)
               .then(() => {
                 toast({ title: 'Deleted', description: 'Conversation deleted from server.' });
               })

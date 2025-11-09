@@ -5,7 +5,7 @@
 // External libraries
 import { useEffect, useState, useCallback } from 'react' // React hooks for state management and side effects
 import { useNavigate } from 'react-router-dom' // Navigation hook
-import axios from 'axios' // HTTP client for API requests
+import api from '../lib/api.js' // HTTP client for API requests
 
 // Animation library for smooth transitions
 import { motion, AnimatePresence } from 'framer-motion'
@@ -101,11 +101,8 @@ export function Dashboard({ onMenuClick }) {
   // STATE VARIABLES
   // ====================================
 
-  // Get backend URLs from environment variables (.env file)
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
-
   // Initialize search functionality
-  const searchMethods = Searches({ backendURL });
+  const searchMethods = Searches();
 
   // Dashboard data
   const [stats, setStats] = useState({
@@ -219,7 +216,7 @@ export function Dashboard({ onMenuClick }) {
 
   const pinnedTariffRate = useCallback(async (pinnedId) => {
     try {
-      const response = await axios.post(`${backendURL}/tariff/past/${pinnedId}`);
+      const response = await api.post(`/tariff/past/${pinnedId}`);
 
       // Map pinnedId -> response.data
       setShowPin(prev => ({
@@ -230,7 +227,7 @@ export function Dashboard({ onMenuClick }) {
     } catch (error) {
       console.error("Error fetching pinned tariff data:", error);
     }
-  }, [backendURL]);
+  }, []);
 
   const [pinned, setPinned] = useState([]);
   const [showPin, setShowPin] = useState({}); // object: { id: response.data }
@@ -281,9 +278,7 @@ export function Dashboard({ onMenuClick }) {
 
   const addPin = async (item) => {
     try {
-      const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
-      });
+      const response = await api.post(`/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "");
       localStorage.setItem("pin", response.data);
     } catch (error) {
       console.error("Error adding pin:", error);
@@ -292,9 +287,7 @@ export function Dashboard({ onMenuClick }) {
 
   const delPin = async (item) => {
     try {
-      const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
-      });
+      const response = await api.post(`/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "");
       localStorage.setItem("pin", response.data);
     } catch (error) {
       console.error("Error removing pin:", error);
@@ -305,9 +298,7 @@ export function Dashboard({ onMenuClick }) {
   const downloadCSV = async () => {
     var response;
     try {
-      response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/csv/`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
-      });
+      response = await api.get(`/user/${localStorage.getItem("username")}/csv/`);
 
     } catch {
       console.error("Error calling user history. Breaking....", error);
@@ -319,9 +310,7 @@ export function Dashboard({ onMenuClick }) {
     for (const [id, date] of Object.entries(response.data)) {
       console.log("Id " + id + " Date " + date);
       try {
-        const tariffResponse = await axios.post(`${backendURL}/tariff/past/${id}`, "", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` }
-        });
+        const tariffResponse = await api.post(`/tariff/past/${id}`, "");
 
         for (const record of tariffResponse.data) {
           const enhancedDTO = {

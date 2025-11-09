@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import api from "../lib/api.js";
 
 import { useAuth } from '../contexts/use-auth.js'
 
-const Searches = ({ backendURL }) => {
+const Searches = () => {
   const { isAuthenticated } = useAuth()
 
   // tariffIds are stored in local storage, data are fetched from backend for each tariffIds
@@ -21,7 +21,7 @@ const Searches = ({ backendURL }) => {
    */
   const fetchSearches = useCallback(async (tariffId, setDataFunction) => {
     try {
-      const response = await axios.post(`${backendURL}/tariff/current/${tariffId}`);
+      const response = await api.post(`/tariff/current/${tariffId}`);
 
       // map tariffId -> response.data
       setDataFunction(prev => ({
@@ -31,7 +31,7 @@ const Searches = ({ backendURL }) => {
     } catch (error) {
       console.error("Error fetching relevant tariff data:", error);
     }
-  }, [backendURL]);
+  }, []);
 
   /* 
    * Fetch top searches ids for logged in users from backend
@@ -42,13 +42,7 @@ const Searches = ({ backendURL }) => {
   const fetchTopSearchesIds = useCallback(async () => {
     // console.log("Starting fetchTopSearchesIds for logged in user");
     try { // calls backend to get the top searches for logged in users
-      const response = await axios.get(`${backendURL}/user/${localStorage.getItem("username")}/history`, // returns Map<Integer, LocalDate> of tariffIds
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await api.get(`/user/${localStorage.getItem("username")}/history`); // returns Map<Integer, LocalDate> of tariffIds
 
       const tariffIds = Object.keys(response.data).map(Number); // array of tariffIds as numbers
       localStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds)); // saves the tariffIds in local storage
@@ -56,7 +50,7 @@ const Searches = ({ backendURL }) => {
     } catch (e) {
       console.error("Error fetching relevant searches:", e);
     }
-  }, [backendURL]);
+  }, []);
 
   /*
    * Loads guest user's recent search history from localStorage.
@@ -146,13 +140,7 @@ const Searches = ({ backendURL }) => {
    */
   const addRelevantSearch = async (tariffId) => {
     try {
-      const response = await axios.post(`${backendURL}/user/${localStorage.getItem("username")}/history/${tariffId}`, "",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await api.post(`/user/${localStorage.getItem("username")}/history/${tariffId}`, "");
       const tariffIds = Object.keys(response.data).map(Number); // array of tariffIds as numbers
       localStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds));
       setTopSearchesIds(tariffIds);

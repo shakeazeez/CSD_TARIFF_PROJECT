@@ -4,7 +4,7 @@
 
 // External libraries
 import { useEffect, useState, useCallback } from "react"; // React hooks for state management and side effects
-import axios from "axios"; // HTTP client for API requests
+import api from "../lib/api.js"; // HTTP client for API requests
 
 // Animation library for smooth transitions
 import { motion, AnimatePresence } from "framer-motion";
@@ -151,7 +151,6 @@ export function Business({onMenuClick}) {
 
     // Get theme context for component-level color management
     const { colors } = useTheme();
-    const backendURL = import.meta.env.VITE_BACKEND_URL;
     const { toast } = useToast();
 
     // auth / username resolution
@@ -176,7 +175,7 @@ export function Business({onMenuClick}) {
     const _getTariffRate = useCallback(async (reportingCountry, item) => {
         let currentRate = 5; // default fallback
         try {
-            const response = await axios.post(`${backendURL}/tariff/current`, {
+            const response = await api.post('/tariff/current', {
                 reportingCountry: reportingCountry,
                 partnerCountry: _defaultOrigin,
                 item: item,
@@ -194,15 +193,13 @@ export function Business({onMenuClick}) {
             return '-';
         }
         return currentRate;
-    }, [backendURL]);
+    }, []);
 
     // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
         if (!username) return;
         try {
-            const resp = await axios.get(`${backendURL}/business/${encodeURIComponent(username)}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const resp = await api.get(`/business/${encodeURIComponent(username)}`);
             
             // Get the normalized items first
             const normalized = _normalizeToItems(resp.data);
@@ -235,7 +232,7 @@ export function Business({onMenuClick}) {
         } catch (error) {
             console.error("Error fetching business items:", error);
         }
-    }, [backendURL, username, token, _getTariffRate]);
+    }, [username, token, _getTariffRate]);
 
     useEffect(() => {
         fetchBusinessItems();
@@ -246,7 +243,7 @@ export function Business({onMenuClick}) {
     const fetchCountry = async () => {
       try {
         // Make GET request to backend countries endpoint
-        const response = await axios.get(`${backendURL}/tariff/countries`);
+        const response = await api.get('/tariff/countries');
 
         // Update state with fetched country list
         setList(response.data);
@@ -272,7 +269,7 @@ export function Business({onMenuClick}) {
 
     // Execute the fetch function
     fetchCountry();
-  }, [backendURL]); // run on mount / backendURL change
+  }, []); // run on mount
 
 
     const modList =
@@ -290,7 +287,7 @@ export function Business({onMenuClick}) {
         // fetch current rate from tariff service first (best-effort)
         let currentRate = 5; // default fallback
         try {
-            const response = await axios.post(`${backendURL}/tariff/current`, {
+            const response = await api.post('/tariff/current', {
                 reportingCountry: report,
                 partnerCountry: partner,
                 item: hs,
@@ -320,9 +317,7 @@ export function Business({onMenuClick}) {
         };
 
         try {
-            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/items`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/business/${encodeURIComponent(username)}/items`, payload);
             // refresh from server after successful add
             await fetchBusinessItems();
             toast({
@@ -401,10 +396,9 @@ export function Business({onMenuClick}) {
         };
 
         try {
-            // axios.delete with body requires { data: payload } as second arg
-            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/items`, { 
-                data: payload,
-                headers: { Authorization: `Bearer ${token}` }
+            // api.delete with body requires { data: payload } as second arg
+            await api.delete(`/business/${encodeURIComponent(username)}/items`, {
+                data: payload
             });
             // refresh from server after successful delete
             await fetchBusinessItems();
@@ -448,9 +442,7 @@ export function Business({onMenuClick}) {
         };
         try {
             // to /business/{username}/items POST with body { information: [ { partner, hsCode } ] }
-            await axios.post(`${backendURL}/business/${encodeURIComponent(username)}/entry`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/business/${encodeURIComponent(username)}/entry`, payload);
             // refresh from server after successful add
             await fetchBusinessItems();
             toast({
@@ -476,9 +468,8 @@ export function Business({onMenuClick}) {
                 item: itemToDel
             };
             console.log("Delete payload:", payload);
-            await axios.delete(`${backendURL}/business/${encodeURIComponent(username)}/entry`, {
-                data: payload,
-                headers: { Authorization: `Bearer ${token}` }
+            await api.delete(`/business/${encodeURIComponent(username)}/entry`, {
+                data: payload
             });
             // refresh from server after successful delete
             await fetchBusinessItems();
