@@ -102,8 +102,8 @@ const _normalizeToItems = (data) => {
         return out;
     };
 
-    // No data -> use preset and normalize it
-    if (!data) return groupByReporting(presetListJSON);
+    // No data -> return empty array
+    if (!data) return [];
 
     // If array -> try to detect shape
     if (Array.isArray(data) && data.length) {
@@ -140,8 +140,8 @@ const _normalizeToItems = (data) => {
         if (Array.isArray(data.tariffs)) return groupByReporting(data.tariffs);
     }
 
-    // fallback -> normalize preset list
-    return groupByReporting(presetListJSON);
+    // fallback -> return empty array
+    return [];
 };
 
 export function Business({onMenuClick}) {
@@ -169,32 +169,38 @@ export function Business({onMenuClick}) {
     const [hs, setHS] = useState(""); // HS Code / item description
 
     // local items state (normalized to same shape used in UI)
-    const [items, setItems] = useState(presetListJSON);
+    const [items, setItems] = useState([]);
 
     // get tariff rate for item from backend
     const _getTariffRate = useCallback(async (reportingCountry, item) => {
         let currentRate = 5; // default fallback
-        try {
-            const response = await api.post('/tariff/current', {
-                reportingCountry: reportingCountry,
-                partnerCountry: _defaultOrigin,
-                item: item,
-                itemCost: 1000 // dummy cost, magic number
-            });
-            const fetched = response?.data;
-            const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
-            if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
-                currentRate = rateFromResp;
-            } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
-                currentRate = Number(rateFromResp);
+        const maxRetries = 3;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await api.post('/tariff/current', {
+                    reportingCountry: reportingCountry,
+                    partnerCountry: _defaultOrigin,
+                    item: item,
+                    itemCost: 1000 // dummy cost, magic number
+                });
+                const fetched = response?.data;
+                const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
+                if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
+                    currentRate = rateFromResp;
+                } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
+                    currentRate = Number(rateFromResp);
+                }
+                return currentRate; // Success, return the rate
+            } catch (err) {
+                console.warn(`Attempt ${attempt} failed to fetch tariff rate for ${item}:`, err);
+                if (attempt < maxRetries) {
+                    // Wait before retrying (exponential backoff)
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                }
             }
-        } catch (err) {
-            console.warn("Could not fetch tariff rate, using fallback rate:", err);
-            // Add small delay to prevent overwhelming the API
-            await new Promise(resolve => setTimeout(resolve, 100));
-            return '-';
         }
-        return currentRate;
+        console.warn("All attempts failed to fetch tariff rate, using fallback rate");
+        return '-';
     }, []);
 
     // Fetch business items for the current user from backend: GET /business/{username}
@@ -206,6 +212,13 @@ export function Business({onMenuClick}) {
             // Get the normalized items first
             const normalized = _normalizeToItems(resp.data);
             
+            // Set items with loading rates initially
+            const initialItemsWithLoading = normalized.map(item => ({
+                ...item,
+                rate: item.hsCode.map(() => "Loading...")
+            }));
+            setItems(initialItemsWithLoading);
+            
             // For each item, fetch its tariff rate
             const itemsWithRates = [];
             for (const item of normalized) {
@@ -216,7 +229,7 @@ export function Business({onMenuClick}) {
                         return rate;
                     } catch (err) {
                         console.warn(`Failed to fetch rate for ${code} in ${item.report}:`, err);
-                        return null;
+                        return '-';
                     }
                 });
 
@@ -649,16 +662,40 @@ export function Business({onMenuClick}) {
                             }}
                         >
                             <CardHeader>
-                                <CardTitle
-                                    className="flex items-center gap-2"
-                                    style={{ color: colors.foreground }}
-                                >
-                                    <CalculatorIcon className="h-5 w-5" />
-                                    Tariff Items List
-                                </CardTitle>
-                                <CardDescription style={{ color: colors.muted }}>
-                                    List of items with tariff rates based on selected countries.
-                                </CardDescription>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle
+                                            className="flex items-center gap-2"
+                                            style={{ color: colors.foreground }}
+                                        >
+                                            <CalculatorIcon className="h-5 w-5" />
+                                            Tariff Items List
+                                        </CardTitle>
+                                        <CardDescription style={{ color: colors.muted }}>
+                                            List of items with tariff rates based on selected countries.
+                                        </CardDescription>
+                                    </div>
+                                    <Button
+                                        onClick={fetchBusinessItems}
+                                        variant="outline"
+                                        size="sm"
+                                        className="transition-all duration-200 hover:scale-[1.02] shadow-md"
+                                        style={{
+                                            borderColor: colors.border,
+                                            color: colors.foreground,
+                                            backgroundColor: colors.surface
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.muted + '20';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = colors.surface;
+                                        }}
+                                    >
+                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                        Refresh Rates
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="overflow-x-auto relative">
@@ -714,7 +751,7 @@ export function Business({onMenuClick}) {
                                                         {row.item}
                                                     </td>
                                                     <td className="px-6 py-4 font-semibold" style={{ color: colors.accent }}>
-                                                        {row.rate !== null ? `${row.rate}%` : "-"}
+                                                        {row.rate === "Loading..." ? "Loading..." : row.rate !== null && row.rate !== '-' ? `${row.rate}%` : "-"}
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <Button
