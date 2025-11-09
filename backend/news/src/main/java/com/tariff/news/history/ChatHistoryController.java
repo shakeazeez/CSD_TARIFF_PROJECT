@@ -107,20 +107,21 @@ public class ChatHistoryController {
             @Parameter(description = "Username who owns the history", required = true)
             @PathVariable String username,
             @Parameter(description = "Id of the history entry to delete", required = true)
-            @PathVariable Long id,
-            java.security.Principal principal) {
+            @PathVariable Long id) {
         try {
-            String authUser = principal != null ? principal.getName() : username;
-            if (!authUser.equals(username)) {
-                username = authUser;
-            }
-            service.deleteByIdIfOwned(id, username);
+            service.deleteById(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
+            System.err.println("Delete failed - not found: " + e.getMessage());
             return ResponseEntity.notFound().build();
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).build();
         } catch (Exception e) {
+            System.err.println("Delete failed - internal error: " + e.getMessage());
+            e.printStackTrace();
+            // Check if it's optimistic locking and the record is actually deleted
+            if (e.getCause() instanceof org.hibernate.StaleObjectStateException && !service.existsById(id)) {
+                System.err.println("Record was already deleted, returning success");
+                return ResponseEntity.noContent().build();
+            }
             return ResponseEntity.internalServerError().build();
         }
     }

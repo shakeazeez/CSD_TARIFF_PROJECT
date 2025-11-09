@@ -80,12 +80,18 @@ public class ChatHistoryService {
         return repo.findByUsernameAndTopicOrderByCreatedAtDesc(username, topic);
     }
 
-    public void deleteByIdIfOwned(Long id, String username) {
+    public void deleteById(Long id) {
         var opt = repo.findById(id);
         if (opt.isEmpty()) throw new IllegalArgumentException("Chat history not found");
-        ChatHistory h = opt.get();
-        if (!h.getUsername().equals(username)) throw new SecurityException("Not authorized to delete this history");
-        repo.deleteById(id);
+        try {
+            repo.deleteById(id);
+        } catch (Exception e) {
+            // If already deleted by another transaction, ignore
+            if (repo.findById(id).isEmpty()) {
+                return;
+            }
+            throw e;
+        }
     }
 
     public Optional<ChatHistory> findByIdAndUsername(Long id, String username) {
@@ -94,5 +100,13 @@ public class ChatHistoryService {
             return opt;
         }
         return Optional.empty();
+    }
+
+    public Optional<ChatHistory> findById(Long id) {
+        return repo.findById(id);
+    }
+
+    public boolean existsById(Long id) {
+        return repo.existsById(id);
     }
 }

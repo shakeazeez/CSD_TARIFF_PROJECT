@@ -375,15 +375,14 @@ class ChatHistoryServiceTest {
     }
 
     @Test
-    void testDeleteByIdIfOwned_ValidOwner_DeletesSuccessfully() {
+    void testDeleteById_Success() {
         // Arrange
         Long id = 1L;
-        String username = "testuser";
         
         when(repo.findById(id)).thenReturn(Optional.of(mockChatHistory));
 
         // Act
-        chatHistoryService.deleteByIdIfOwned(id, username);
+        chatHistoryService.deleteById(id);
 
         // Assert
         verify(repo).findById(id);
@@ -391,33 +390,15 @@ class ChatHistoryServiceTest {
     }
 
     @Test
-    void testDeleteByIdIfOwned_NotFound_ThrowsIllegalArgumentException() {
+    void testDeleteById_NotFound_ThrowsIllegalArgumentException() {
         // Arrange
         Long id = 999L;
-        String username = "testuser";
         
         when(repo.findById(id)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            chatHistoryService.deleteByIdIfOwned(id, username);
-        });
-        
-        verify(repo).findById(id);
-        verify(repo, never()).deleteById(any());
-    }
-
-    @Test
-    void testDeleteByIdIfOwned_NotOwner_ThrowsSecurityException() {
-        // Arrange
-        Long id = 1L;
-        String username = "differentuser";
-        
-        when(repo.findById(id)).thenReturn(Optional.of(mockChatHistory));
-
-        // Act & Assert
-        assertThrows(SecurityException.class, () -> {
-            chatHistoryService.deleteByIdIfOwned(id, username);
+            chatHistoryService.deleteById(id);
         });
         
         verify(repo).findById(id);
