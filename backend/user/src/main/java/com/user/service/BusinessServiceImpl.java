@@ -94,11 +94,11 @@ public class BusinessServiceImpl implements BusinessService {
                 store.put(temp.getCounter(), temp.getLocalDate());
             }
             
-            log.info(bUser.getTariffData().toString());
+            log.info(bUser.getTariffData() != null ? bUser.getTariffData().toString() : "null");
 
-            List<BusinessTariffDTO> tariff = bUser.getTariffData().stream()
+            List<BusinessTariffDTO> tariff = (bUser.getTariffData() != null ? bUser.getTariffData().stream()
                     .map(a -> new BusinessTariffDTO(a.getReportingCountry(), a.getItem()))
-                    .collect(Collectors.toCollection(ArrayList::new));
+                    .collect(Collectors.toCollection(ArrayList::new)) : new ArrayList<>());
 
             return new BusinessInfoDTO(
                     // query origin is reporting

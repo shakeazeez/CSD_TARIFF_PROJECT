@@ -190,6 +190,9 @@ public class TariffController {
         } catch (ApiFailureException e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (jakarta.persistence.NonUniqueResultException e) {
+            log.info("Multiple items found for query: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
         } catch (Exception e) {
             log.info(e.getMessage()); 
             return ResponseEntity.internalServerError().build();

@@ -75,4 +75,15 @@ public class User {
         this.role = role;
         this.pinnedTariffId = new ArrayList<>();
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", hashedPassword='" + hashedPassword + '\'' +
+                ", role=" + role +
+                ", pinnedTariffId=" + pinnedTariffId +
+                '}';
+    }
 }

@@ -46,5 +46,15 @@ public class History {
         this.localDate = LocalDate.now();
         this.user = user;
     }
+
+    @Override
+    public String toString() {
+        return "History{" +
+                "id=" + id +
+                ", tariffId=" + tariffId +
+                ", counter=" + counter +
+                ", localDate=" + localDate +
+                '}';
+    }
 }
 

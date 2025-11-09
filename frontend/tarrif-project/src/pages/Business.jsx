@@ -190,6 +190,8 @@ export function Business({onMenuClick}) {
             }
         } catch (err) {
             console.warn("Could not fetch tariff rate, using fallback rate:", err);
+            // Add small delay to prevent overwhelming the API
+            await new Promise(resolve => setTimeout(resolve, 100));
             return '-';
         }
         return currentRate;
@@ -205,7 +207,8 @@ export function Business({onMenuClick}) {
             const normalized = _normalizeToItems(resp.data);
             
             // For each item, fetch its tariff rate
-            const itemsWithRates = await Promise.all(normalized.map(async (item) => {
+            const itemsWithRates = [];
+            for (const item of normalized) {
                 // For each hsCode in the item, get its rate
                 const ratesPromises = item.hsCode.map(async (code) => {
                     try {
@@ -217,15 +220,15 @@ export function Business({onMenuClick}) {
                     }
                 });
 
-                // Wait for all rates to be fetched
+                // Wait for all rates for this item to be fetched
                 const rates = await Promise.all(ratesPromises);
                 
                 // Return item with updated rates
-                return {
+                itemsWithRates.push({
                     ...item,
                     rate: rates
-                };
-            }));
+                });
+            }
 
             setItems(itemsWithRates);
             // console.log("Fetched business items with rates:", itemsWithRates);
