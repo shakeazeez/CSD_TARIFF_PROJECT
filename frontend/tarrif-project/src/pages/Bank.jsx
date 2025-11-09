@@ -611,7 +611,7 @@ export function Bank({ onMenuClick }) {
             </p>
 
             <div className="flex items-center mb-3 text-sm">
-              <button
+              {/* <button
                 onClick={() => {
                   setSelectedItems([...itemList]);
 
@@ -630,8 +630,8 @@ export function Bank({ onMenuClick }) {
                 onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 All
-              </button>
-              <span className="mx-2" style={{ color: colors.muted }}>
+              </button>*/}
+              {/* <span className="mx-2" style={{ color: colors.muted }}>
                 |
               </span>
               <button
@@ -645,7 +645,7 @@ export function Bank({ onMenuClick }) {
                 onMouseLeave={(e) => e.target.style.color = colors.accent}
               >
                 None
-              </button>
+              </button>*/}
             </div>
 
             {loadingItems && (

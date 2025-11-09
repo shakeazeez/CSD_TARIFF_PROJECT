@@ -151,10 +151,12 @@ public class TariffController {
 
         try {
             result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
+            
         } catch (Exception e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
-
+        // log.info("Result: " + result);
         return ResponseEntity.ok(result);
     }
     
