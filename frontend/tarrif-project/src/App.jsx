@@ -114,7 +114,9 @@ function App() {
                 <Calculator onMenuClick={() => setSidebarOpen(true)} />
               }/>
               <Route path="/business" element={
-                <Business onMenuClick={() => setSidebarOpen(true)} />
+                <ProtectedRoute allowedRoles={["BUSINESS"]}>
+                  <Business onMenuClick={() => setSidebarOpen(true)} />
+                </ProtectedRoute>
               }/>
               <Route path="/faq" element={
                 <FAQ onMenuClick={() => setSidebarOpen(true)} />
