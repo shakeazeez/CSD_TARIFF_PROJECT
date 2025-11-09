@@ -171,10 +171,13 @@ export function Business({onMenuClick}) {
     // local items state (normalized to same shape used in UI)
     const [items, setItems] = useState([]);
 
+    // Loading state for initial fetch
+    const [loading, setLoading] = useState(true);
+
     // get tariff rate for item from backend
     const _getTariffRate = useCallback(async (reportingCountry, item) => {
         let currentRate = 5; // default fallback
-        const maxRetries = 3;
+        const maxRetries = 5;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 const response = await api.post('/tariff/current', {
@@ -194,8 +197,8 @@ export function Business({onMenuClick}) {
             } catch (err) {
                 console.warn(`Attempt ${attempt} failed to fetch tariff rate for ${item}:`, err);
                 if (attempt < maxRetries) {
-                    // Wait before retrying (exponential backoff)
-                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                    // Wait before retrying (longer backoff)
+                    await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
                 }
             }
         }
@@ -205,7 +208,11 @@ export function Business({onMenuClick}) {
 
     // Fetch business items for the current user from backend: GET /business/{username}
     const fetchBusinessItems = useCallback(async () => {
-        if (!username) return;
+        setLoading(true);
+        if (!username) {
+            setLoading(false);
+            return;
+        }
         try {
             const resp = await api.get(`/business/${encodeURIComponent(username)}`);
             
@@ -247,6 +254,9 @@ export function Business({onMenuClick}) {
             // console.log("Fetched business items with rates:", itemsWithRates);
         } catch (error) {
             console.error("Error fetching business items:", error);
+            setItems([]);
+        } finally {
+            setLoading(false);
         }
     }, [username, token, _getTariffRate]);
 
@@ -535,6 +545,14 @@ export function Business({onMenuClick}) {
                         Manage your tariff data and analyze trade patterns
                     </p>
                 </motion.div>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                        <span className="ml-4" style={{ color: colors.foreground }}>Loading business insights...</span>
+                    </div>
+                ) : (
+                <>
 
                 {/* Add Item Form */}
                 <motion.div
@@ -853,6 +871,9 @@ export function Business({onMenuClick}) {
                         </p>
                     </motion.div>
                 )}
+                </>
+                )}
+
             </div>
 
             {/* Delete Confirmation Dialog */}
