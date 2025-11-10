@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import { useTheme } from '../contexts/use-theme.js';
 
 // WorldMapRoutes.jsx
@@ -273,6 +273,23 @@ export default function WorldMapRoutes({
   const animRef = useRef([]);
   const { isDark } = useTheme();
 
+  // Responsive dimensions based on viewport - scales for all screen sizes
+  const [dimensions, setDimensions] = useState({ width: 1920, height: 1080 });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+      // Always use full viewport dimensions for true responsiveness
+      setDimensions({ width: vw, height: vh });
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
   // Convert countries → coordinates
   const allStops = countryList.map((c) => ({ ...countryCoords[c], name: c })).filter((c) => c.lat && c.lon);
 
@@ -288,13 +305,13 @@ export default function WorldMapRoutes({
 
       const from = allStops[fromIdx];
       const to = allStops[toIdx];
-      const [x1, y1] = project(from.lat, from.lon, width, height);
-      const [x2, y2] = project(to.lat, to.lon, width, height);
+      const [x1, y1] = project(from.lat, from.lon, dimensions.width, dimensions.height);
+      const [x2, y2] = project(to.lat, to.lon, dimensions.width, dimensions.height);
       const d = makeCurvePath(x1, y1, x2, y2, 0.15);
       data.push({ d, from, to });
     }
     return data;
-  }, [allStops, width, height]);
+  }, [allStops, dimensions.width, dimensions.height]);
 
   // Filter stops to only include countries used in routes
   const routeCountries = new Set();
@@ -343,9 +360,10 @@ export default function WorldMapRoutes({
         ref={svgRef}
         width="100%"
         height="100%"
-        viewBox="360 202 1200 675"
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
         className="absolute inset-0"
         style={{ opacity: background ? 0.6 : 1 }}
+        preserveAspectRatio="xMidYMid slice"
       >
         {/* World map background */}
         <defs>
@@ -363,11 +381,11 @@ export default function WorldMapRoutes({
         </defs>
 
         {/* Ocean background */}
-        <rect x="0" y="0" width={width} height={height} fill="url(#oceanGradient)" opacity="0.9" />
+        <rect x="0" y="0" width={dimensions.width} height={dimensions.height} fill="url(#oceanGradient)" opacity="0.9" />
 
-        {/* Simplified continent outlines */}
+        {/* Simplified continent outlines - fully responsive */}
         <path
-          d="M200 150 Q300 120 400 140 Q500 160 600 150 Q700 140 800 160 Q850 180 900 170 Q950 160 1000 180 Q1100 200 1200 190 Q1300 180 1400 200 Q1500 220 1600 210 Q1650 200 1700 220 L1700 400 Q1600 420 1500 410 Q1400 400 1300 420 Q1200 440 1100 430 Q1000 420 900 440 Q800 460 700 450 Q600 440 500 460 Q400 480 300 470 Q200 460 200 480 Z"
+          d={`M${dimensions.width * 0.05} ${dimensions.height * 0.2} Q${dimensions.width * 0.2} ${dimensions.height * 0.15} ${dimensions.width * 0.35} ${dimensions.height * 0.18} Q${dimensions.width * 0.5} ${dimensions.height * 0.2} ${dimensions.width * 0.65} ${dimensions.height * 0.19} Q${dimensions.width * 0.8} ${dimensions.height * 0.21} ${dimensions.width * 0.9} ${dimensions.height * 0.2} Q${dimensions.width * 0.95} ${dimensions.height * 0.22} ${dimensions.width * 0.85} ${dimensions.height * 0.25} Q${dimensions.width * 0.75} ${dimensions.height * 0.28} ${dimensions.width * 0.65} ${dimensions.height * 0.3} Q${dimensions.width * 0.55} ${dimensions.height * 0.32} ${dimensions.width * 0.45} ${dimensions.height * 0.34} Q${dimensions.width * 0.35} ${dimensions.height * 0.36} ${dimensions.width * 0.25} ${dimensions.height * 0.38} Q${dimensions.width * 0.15} ${dimensions.height * 0.4} ${dimensions.width * 0.1} ${dimensions.height * 0.42} Q${dimensions.width * 0.05} ${dimensions.height * 0.45} ${dimensions.width * 0.15} ${dimensions.height * 0.47} Q${dimensions.width * 0.25} ${dimensions.height * 0.46} ${dimensions.width * 0.35} ${dimensions.height * 0.45} Q${dimensions.width * 0.45} ${dimensions.height * 0.44} ${dimensions.width * 0.55} ${dimensions.height * 0.43} Q${dimensions.width * 0.65} ${dimensions.height * 0.42} ${dimensions.width * 0.75} ${dimensions.height * 0.41} Q${dimensions.width * 0.85} ${dimensions.height * 0.4} ${dimensions.width * 0.9} ${dimensions.height * 0.38} Q${dimensions.width * 0.95} ${dimensions.height * 0.36} ${dimensions.width * 0.9} ${dimensions.height * 0.34} Q${dimensions.width * 0.8} ${dimensions.height * 0.32} ${dimensions.width * 0.7} ${dimensions.height * 0.3} Q${dimensions.width * 0.6} ${dimensions.height * 0.28} ${dimensions.width * 0.5} ${dimensions.height * 0.26} Q${dimensions.width * 0.4} ${dimensions.height * 0.24} ${dimensions.width * 0.3} ${dimensions.height * 0.22} Q${dimensions.width * 0.2} ${dimensions.height * 0.2} ${dimensions.width * 0.1} ${dimensions.height * 0.18} Q${dimensions.width * 0.05} ${dimensions.height * 0.16} ${dimensions.width * 0.05} ${dimensions.height * 0.2} Z`}
           fill={isDark ? "#0a1934ff" : "#94a3b8"}
           stroke={isDark ? "#4a5568" : "#64748b"}
           strokeWidth="1"
