@@ -479,6 +479,9 @@ public class NewsEmbeddingService {
             // Clean up the text - remove excessive whitespace
             fullText = fullText.replaceAll("\\s+", " ").trim();
             
+            // Remove control characters except \n, \r, \t
+            fullText = fullText.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "");
+            
             // If text is too short, it might be a bad scrape
             if (fullText.length() < 100) {
                 log.warn("Extracted text too short ({} chars) from: {}", fullText.length(), url);
