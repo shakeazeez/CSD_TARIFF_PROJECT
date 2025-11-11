@@ -210,12 +210,12 @@ const IndustryChart = ({ labels, value, baseCost }) => {
 
   return (
     <div style={{ height: "300px", width: "100%", position: 'relative' }}>
-      {/* Zoomed-in number display at top right */}
+      {/* Zoomed-in number display - repositioned to avoid blocking chart */}
       {value && value.length > 0 && value[0] && value[0].length > 0 && (
         <div style={{
           position: 'absolute',
-          top: '10px',
-          right: '10px',
+          top: '-45px',
+          right: '-15px',
           zIndex: 10,
           backgroundColor: colors.surface,
           border: `2px solid ${colors.accent}`,
