@@ -102,20 +102,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - User Service: http://localhost:8082
 - News Service: http://localhost:8083
 
-## Usage Examples
 
-### Calculate a Tariff
-```javascript
-// Frontend usage
-const tariffData = {
-  product: "Smartphone",
-  origin: "China",
-  value: 500
-};
-
-const result = await calculateTariff(tariffData);
-console.log(`Your tariff is: $${result.amount}`);
-```
 
 ### API Endpoints
 ```
@@ -148,20 +135,8 @@ cd frontend/tarrif-project && npm run lint
 cd frontend/tarrif-project && npm run format
 ```
 
-## Deployment
+## Docker Deployment
 
-### Local Deployment
-```bash
-./run-all.sh  # Linux/Mac
-run-all.cmd   # Windows
-```
-
-### Production Deployment
-```bash
-./deploy-ec2.sh  # AWS EC2 deployment
-```
-
-### Docker Deployment
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
@@ -196,19 +171,17 @@ We love contributions! Here's how you can help:
 ### Common Issues
 - Port conflicts? Check if ports 8080-8083 are free
 - Database connection? Verify your `.env` credentials
-- API keys? Make sure your OpenAI and NewsAPI keys are valid
+- API keys? Make sure your OpenAI and TheNewsAPI keys are valid
 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
 - OpenAI for AI-powered features
-- NewsAPI for real-time news feeds
+- TheNewsAPI for real-time news feeds
 - PostgreSQL for reliable data storage
 - Docker for amazing containerization
+- WITS for the past tariff data
+- Moaah for the real-time tariff data
 
 ## Team
 
