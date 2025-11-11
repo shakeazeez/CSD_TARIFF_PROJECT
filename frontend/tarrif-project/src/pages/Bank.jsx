@@ -283,16 +283,21 @@ export function Bank({ onMenuClick }) {
                 const originalData = existingItemDetailsMap[currentItem];
                 const filteredTariffData = {
                     ...originalData,
-                    tariffDetailsList: originalData.tariffDetailsList.map(tariffDetails => ({
-                        ...tariffDetails,
-                        tariffList: tariffDetails.tariffList.filter(tariff => {
-                            if (!tariff.localDate) return false;
-                            const tariffDate = new Date(tariff.localDate);
+                    tariffDetailsList: originalData.tariffDetailsList.map(tariffDetails => {
+                        const filteredList = tariffDetails.tariffList.filter(tariff => {
+                            // if (!tariff.localDate) return false;
+                            const tariffDate = parseDate(tariff.localDate);
                             const userStartDate = startDate || new Date("1975-11-01");
                             const userEndDate = endDate || new Date();
                             return tariffDate >= userStartDate && tariffDate <= userEndDate;
-                        })
-                    })).filter(tariffDetails => tariffDetails.tariffList.length > 0)
+                        });
+                        const averageRate = filteredList.length > 0 ? filteredList.reduce((sum, t) => sum + t.percentageRate, 0) / filteredList.length : 0;
+                        return {
+                            ...tariffDetails,
+                            tariffList: filteredList,
+                            averageRate: averageRate
+                        };
+                    })
                 };
 
                 setValidItemDetailsMap(prev => ({
@@ -329,16 +334,21 @@ export function Bank({ onMenuClick }) {
 
                 const filteredTariffData = {
                     ...response.data,
-                    tariffDetailsList: response.data.tariffDetailsList.map(tariffDetails => ({
-                        ...tariffDetails,
-                        tariffList: tariffDetails.tariffList.filter(tariff => {
+                    tariffDetailsList: response.data.tariffDetailsList.map(tariffDetails => {
+                        const filteredList = tariffDetails.tariffList.filter(tariff => {
                             if (!tariff.localDate) return false;
-                            const tariffDate = new Date(tariff.localDate);
+                            const tariffDate = parseDate(tariff.localDate);
                             const userStartDate = startDate || new Date("1975-11-01");
                             const userEndDate = endDate || new Date();
                             return tariffDate >= userStartDate && tariffDate <= userEndDate;
-                        })
-                    })).filter(tariffDetails => tariffDetails.tariffList.length > 0) // Remove countries with no data in date range
+                        });
+                        const averageRate = filteredList.length > 0 ? filteredList.reduce((sum, t) => sum + t.percentageRate, 0) / filteredList.length : 0;
+                        return {
+                            ...tariffDetails,
+                            tariffList: filteredList,
+                            averageRate: averageRate
+                        };
+                    })
                 };
 
                 // Store the item and it's tariff data
@@ -385,23 +395,26 @@ export function Bank({ onMenuClick }) {
 
             const filteredTariffData = {
                 ...originalData,
-                tariffDetailsList: originalData.tariffDetailsList.map(tariffDetails => ({
-                    ...tariffDetails,
-                    tariffList: tariffDetails.tariffList.filter(tariff => {
+                tariffDetailsList: originalData.tariffDetailsList.map(tariffDetails => {
+                    const filteredList = tariffDetails.tariffList.filter(tariff => {
                         if (!tariff.localDate) return false;
-                        const tariffDate = new Date(tariff.localDate);
+                        const tariffDate = parseDate(tariff.localDate);
                         const userStartDate = startDate || new Date("1975-11-01");
                         const userEndDate = endDate || new Date();
-                        
-                        
                         return tariffDate >= userStartDate && tariffDate <= userEndDate;
-                    })
-                })).filter(tariffDetails => tariffDetails.tariffList.length > 0)
+                    });
+                    const averageRate = filteredList.length > 0 ? filteredList.reduce((sum, t) => sum + t.percentageRate, 0) / filteredList.length : 0;
+                    return {
+                        ...tariffDetails,
+                        tariffList: filteredList,
+                        averageRate: averageRate
+                    };
+                })
             };
             
             console.log(`${itemName} after filtering: ${filteredTariffData.tariffDetailsList?.length} countries`);
 
-            if (selectedItems.includes(itemName) && filteredTariffData.tariffDetailsList.length > 0) {
+            if (selectedItems.includes(itemName)) {
                 reFilteredTariffDetails[itemName] = filteredTariffData;
                 console.log(`Added ${itemName} to results`);
             }
@@ -425,16 +438,21 @@ export function Bank({ onMenuClick }) {
                     const originalData = existingItemDetailsMap[item];
                     const filteredTariffData = {
                         ...originalData,
-                        tariffDetailsList: originalData.tariffDetailsList.map(tariffDetails => ({
-                            ...tariffDetails,
-                            tariffList: tariffDetails.tariffList.filter(tariff => {
+                        tariffDetailsList: originalData.tariffDetailsList.map(tariffDetails => {
+                            const filteredList = tariffDetails.tariffList.filter(tariff => {
                                 if (!tariff.localDate) return false;
-                                const tariffDate = new Date(tariff.localDate);
+                                const tariffDate = parseDate(tariff.localDate);
                                 const userStartDate = startDate || new Date("1975-11-01");
                                 const userEndDate = endDate || new Date();
                                 return tariffDate >= userStartDate && tariffDate <= userEndDate;
-                            })
-                        })).filter(tariffDetails => tariffDetails.tariffList.length > 0)
+                            });
+                            const averageRate = filteredList.length > 0 ? filteredList.reduce((sum, t) => sum + t.percentageRate, 0) / filteredList.length : 0;
+                            return {
+                                ...tariffDetails,
+                                tariffList: filteredList,
+                                averageRate: averageRate
+                            };
+                        })
                     };
 
                     setValidItemDetailsMap(prev => ({
@@ -505,6 +523,9 @@ export function Bank({ onMenuClick }) {
         console.log("INVALID ITEMS ", invalidItems);
     }, [invalidItems]);
 
+    // State for expanding other partners section
+    const [expandedOther, setExpandedOther] = useState({});
+
     function getTopPartners(tariffDetailsList, n = 3) {
         return [...tariffDetailsList]
             .sort((a, b) => {
@@ -540,175 +561,185 @@ export function Bank({ onMenuClick }) {
         return years;
     }
 
-    // default display top 3, expand to display the list of other tariffs
-    const [expandedOther, setExpandedOther] = useState({});
+    // Function to parse date strings in DD/MM/YYYY or YYYY-MM-DD format
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        if (dateStr.includes('/')) {
+            // Assume DD/MM/YYYY
+            const [day, month, year] = dateStr.split('/').map(Number);
+            return new Date(year, month - 1, day);
+        } else {
+            // Assume YYYY-MM-DD or other ISO format
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+    }
 
     return (
-        <div className="h-screen flex flex-col">
-            {/* Header at the top */}
-            <Header onMenuClick={onMenuClick} showUserInfo={true} />
-
-            <div className="flex flex-1 min-h-0">
-                {/* Left sidebar for search filters */}
-                <div
-                    className="w-1/4 p-4 border-r overflow-y-auto"
-                    style={{
-                        backgroundColor: `${colors.surface}15`,
-                        borderColor: colors.border,
-                    }}
-                >
-                    <h2
-                        className="text-2xl font-bold mb-6 mt-2"
-                        style={{ color: colors.foreground }}
-                    >
-                        ↗ Industry Trends
-                    </h2>
-
-                    {/* HERE */}
+        <div className="flex h-screen">
+            <div className="flex flex-col w-full">
+                <Header onMenuClick={onMenuClick} />
+                <div className="flex flex-1">
+                    {/* Left sidebar for search filters */}
                     <div
-                        className="mb-6 border rounded-md p-4"
+                        className="w-1/4 p-4 border-r overflow-y-auto"
                         style={{
+                            backgroundColor: `${colors.surface}15`,
                             borderColor: colors.border,
-                            backgroundColor: `${colors.surface}95`,
                         }}
                     >
                         <h2
-                            className="text-lg font-semibold mb-2"
+                            className="text-2xl font-bold mb-6 mt-2"
                             style={{ color: colors.foreground }}
                         >
-                            Basic Filter
+                            ↗ Industry Trends
                         </h2>
-                        <p className="text-sm mb-4" style={{ color: colors.muted }}>
-                            Filter tariff by reporting country and industry
-                        </p>
 
-                        <div className="space-y-2">
-                            <Label
-                                htmlFor="reporting-country"
+                        {/* HERE */}
+                        <div
+                            className="mb-6 border rounded-md p-4"
+                            style={{
+                                borderColor: colors.border,
+                                backgroundColor: `${colors.surface}95`,
+                            }}
+                        >
+                            <h2
+                                className="text-lg font-semibold mb-2"
                                 style={{ color: colors.foreground }}
                             >
-                                Reporting Country
-                            </Label>
-                            <Dropdown
-                                options={modCountryList}
-                                value={homeCountry}
-                                onChange={(option) => {
-                                    console.log("Country selected:", option);
-                                    setHomeCountry(option ? option.code : "");
-                                }}
-                                placeholder="Select reporting country"
-                                className="w-full"
-                            />
+                                Basic Filter
+                            </h2>
+                            <p className="text-sm mb-4" style={{ color: colors.muted }}>
+                                Filter tariff by reporting country and industry
+                            </p>
+
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="reporting-country"
+                                    style={{ color: colors.foreground }}
+                                >
+                                    Reporting Country
+                                </Label>
+                                <Dropdown
+                                    options={modCountryList}
+                                    value={homeCountry}
+                                    onChange={(option) => {
+                                        console.log("Country selected:", option);
+                                        setHomeCountry(option ? option.code : "");
+                                    }}
+                                    placeholder="Select reporting country"
+                                    className="w-full"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="industry" style={{ color: colors.foreground }}>
+                                    Industry
+                                </Label>
+                                <Dropdown
+                                    options={modIndustryList}
+                                    value={industry}
+                                    onChange={(option) => setIndustry(option ? option.code : "")}
+                                    placeholder="Select industry"
+                                    className="w-full"
+                                />
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="industry" style={{ color: colors.foreground }}>
-                                Industry
-                            </Label>
-                            <Dropdown
-                                options={modIndustryList}
-                                value={industry}
-                                onChange={(option) => setIndustry(option ? option.code : "")}
-                                placeholder="Select industry"
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
-
-                    <div
-                        className="mb-6 border rounded-md p-4"
-                        style={{
-                            borderColor: colors.border,
-                            backgroundColor: `${colors.surface}95`,
-                        }}
-                    >
-                        <h2
-                            className="text-lg font-semibold mb-2"
-                            style={{ color: colors.foreground }}
+                        <div
+                            className="mb-6 border rounded-md p-4"
+                            style={{
+                                borderColor: colors.border,
+                                backgroundColor: `${colors.surface}95`,
+                            }}
                         >
-                            Date Range Filter
-                        </h2>
-                        <p className="text-sm mb-4" style={{ color: colors.muted }}>
-                            Filter tariff data by date range
-                        </p>
+                            <h2
+                                className="text-lg font-semibold mb-2"
+                                style={{ color: colors.foreground }}
+                            >
+                                Date Range Filter
+                            </h2>
+                            <p className="text-sm mb-4" style={{ color: colors.muted }}>
+                                Filter tariff data by date range
+                            </p>
 
-                        <div className="mb-3">
-                            <Label htmlFor="start-date" style={{ color: colors.foreground }}>
-                                From Date
-                            </Label>
-                            <Calendar
-                                placeholder="Select start date"
-                                selectedDate={startDate}
-                                onDateSelect={validateStartDateChanges}
-                                maxDate={endDate}
-                            />
-                            {startDateError && (
-                                <p className="text-xs mt-1" style={{ color: colors.error }}>
-                                    Start date cannot be after end date.
-                                </p>
-                            )}
+                            <div className="mb-3">
+                                <Label htmlFor="start-date" style={{ color: colors.foreground }}>
+                                    From Date
+                                </Label>
+                                <Calendar
+                                    placeholder="Select start date"
+                                    selectedDate={startDate}
+                                    onDateSelect={validateStartDateChanges}
+                                    maxDate={endDate}
+                                />
+                                {startDateError && (
+                                    <p className="text-xs mt-1" style={{ color: colors.error }}>
+                                        Start date cannot be after end date.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <Label htmlFor="end-date" style={{ color: colors.foreground }}>
+                                    To Date
+                                </Label>
+                                <Calendar
+                                    placeholder="Select end date"
+                                    selectedDate={endDate}
+                                    onDateSelect={validateEndDateChanges}
+                                    minDate={startDate}
+                                />
+                                {endDateError && (
+                                    <p className="text-xs mt-1" style={{ color: colors.error }}>
+                                        End date cannot be before start date.
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
-                        <div>
-                            <Label htmlFor="end-date" style={{ color: colors.foreground }}>
-                                To Date
-                            </Label>
-                            <Calendar
-                                placeholder="Select end date"
-                                selectedDate={endDate}
-                                onDateSelect={validateEndDateChanges}
-                                minDate={startDate}
-                            />
-                            {endDateError && (
-                                <p className="text-xs mt-1" style={{ color: colors.error }}>
-                                    End date cannot be before start date.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={fetchItems}
-                        disabled={loadingItems || !homeCountry || !industry}
-                        className="w-full py-2 rounded-md flex items-center justify-center mb-6"
-                        style={{
-                            backgroundColor: colors.accent,
-                            alignItems: "center",
-                            borderColor: colors.accent,
-                            color: "#ffffff",
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = colors.hover;
-                            e.currentTarget.style.color = "#ffffff";
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = colors.accent;
-                            e.currentTarget.style.color = "#ffffff";
-                        }}
-                    >
-                        <span className="mr-2"></span>
-                        {loadingItems ? "Loading..." : "🔎Search"}
-                    </button>
-
-                    <div
-                        className="mb-6 border rounded-md p-4"
-                        style={{
-                            borderColor: colors.border,
-                            backgroundColor: `${colors.surface}95`,
-                        }}
-                    >
-                        <h2
-                            className="text-lg font-semibold mb-2"
-                            style={{ color: colors.foreground }}
+                        <button
+                            onClick={fetchItems}
+                            disabled={loadingItems || !homeCountry || !industry}
+                            className="w-full py-2 rounded-md flex items-center justify-center mb-6"
+                            style={{
+                                backgroundColor: colors.accent,
+                                alignItems: "center",
+                                borderColor: colors.accent,
+                                color: "#ffffff",
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = colors.hover;
+                                e.currentTarget.style.color = "#ffffff";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = colors.accent;
+                                e.currentTarget.style.color = "#ffffff";
+                            }}
                         >
-                            Filter Items
-                        </h2>
-                        <p className="text-sm mb-4" style={{ color: colors.muted }}>
-                            {selectedItems.length} of {itemList.length} selected
-                        </p>
+                            <span className="mr-2"></span>
+                            {loadingItems ? "Loading..." : "🔎Search"}
+                        </button>
 
-                        <div className="flex items-center mb-3 text-sm">
-                            {/* <button
+                        <div
+                            className="mb-6 border rounded-md p-4"
+                            style={{
+                                borderColor: colors.border,
+                                backgroundColor: `${colors.surface}95`,
+                            }}
+                        >
+                            <h2
+                                className="text-lg font-semibold mb-2"
+                                style={{ color: colors.foreground }}
+                            >
+                                Filter Items
+                            </h2>
+                            <p className="text-sm mb-4" style={{ color: colors.muted }}>
+                                {selectedItems.length} of {itemList.length} selected
+                            </p>
+
+                            <div className="flex items-center mb-3 text-sm">
+                                {/* <button
                 onClick={() => {
                   setSelectedItems([...itemList]);
 
@@ -728,7 +759,7 @@ export function Bank({ onMenuClick }) {
               >
                 All
               </button>*/}
-                            {/* <span className="mx-2" style={{ color: colors.muted }}>
+                                {/* <span className="mx-2" style={{ color: colors.muted }}>
                 |
               </span>
               <button
@@ -743,300 +774,317 @@ export function Bank({ onMenuClick }) {
               >
                 None
               </button>*/}
-                        </div>
+                            </div>
 
-                        {loadingItems && (
-                            <p className="text-sm" style={{ color: colors.muted }}>
-                                Loading items...
-                            </p>
-                        )}
-                        {errorItems && (
-                            <p className="text-sm" style={{ color: colors.error }}>
-                                {errorItems}
-                            </p>
-                        )}
+                            {loadingItems && (
+                                <p className="text-sm" style={{ color: colors.muted }}>
+                                    Loading items...
+                                </p>
+                            )}
+                            {errorItems && (
+                                <p className="text-sm" style={{ color: colors.error }}>
+                                    {errorItems}
+                                </p>
+                            )}
 
-                        <div className="max-h-60 overflow-y-auto space-y-2">
-                            {itemList.length > 0 ? (
-                                itemList.map((item) => {
-                                    const isSelected = selectedItems.includes(item);
-                                    return (
-                                        <div
-                                            key={item}
-                                            onClick={() => {
-                                                if (isSelected) {
-                                                    setSelectedItems(selectedItems.filter(i => i !== item));
-                                                } else {
-                                                    setSelectedItems([...selectedItems, item]);
-                                                }
-                                            }}
-                                            className="cursor-pointer rounded-md border p-3 transition-all duration-200 hover:shadow-sm"
-                                            style={{
-                                                borderColor: isSelected ? colors.accent : colors.border,
-                                                color: isSelected
-                                                    ? colors.foreground
-                                                    : colors.foreground,
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.borderColor = colors.accent;
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.borderColor = colors.border;
-                                                }
-                                            }}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm font-medium">{item}</span>
-                                                {isSelected && (
-                                                    <div
-                                                        className="w-4 h-4 rounded-full flex items-center justify-center"
-                                                        style={{
-                                                            backgroundColor: colors.accent,
-                                                        }}
-                                                    >
-                                                        <span
-                                                            className="text-xs"
-                                                            style={{ color: colors.background }}
+                            <div className="max-h-60 overflow-y-auto space-y-2">
+                                {itemList.length > 0 ? (
+                                    itemList.map((item) => {
+                                        const isSelected = selectedItems.includes(item);
+                                        return (
+                                            <div
+                                                key={item}
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setSelectedItems(selectedItems.filter(i => i !== item));
+                                                    } else {
+                                                        setSelectedItems([...selectedItems, item]);
+                                                    }
+                                                }}
+                                                className="cursor-pointer rounded-md border p-3 transition-all duration-200 hover:shadow-sm"
+                                                style={{
+                                                    borderColor: isSelected ? colors.accent : colors.border,
+                                                    color: isSelected
+                                                        ? colors.foreground
+                                                        : colors.foreground,
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (!isSelected) {
+                                                        e.currentTarget.style.borderColor = colors.accent;
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (!isSelected) {
+                                                        e.currentTarget.style.borderColor = colors.border;
+                                                    }
+                                                }}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium">{item}</span>
+                                                    {isSelected && (
+                                                        <div
+                                                            className="w-4 h-4 rounded-full flex items-center justify-center"
+                                                            style={{
+                                                                backgroundColor: colors.accent,
+                                                            }}
                                                         >
-                                                            ✓
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            ) : !loadingItems ? (
-                                <div
-                                    className="text-center py-8 px-4 rounded-md border-2 border-dashed"
-                                    style={{
-                                        borderColor: colors.border,
-                                        color: colors.muted,
-                                    }}
-                                >
-                                    <p className="text-sm">
-                                        No items found. Try different search criteria.
-                                    </p>
-                                </div>
-                            ) : null}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Main content area for results */}
-                <div className="w-3/4 p-6 overflow-y-auto">
-                    <h2
-                        className="text-2xl font-bold mb-6"
-                        style={{ color: colors.foreground }}
-                    >
-                        Results
-                    </h2>
-                    {/* Loading and error states */}
-                    {loadingDetails && (
-                        <div
-                            className="p-6 rounded-md shadow-sm mb-6"
-                            style={{
-                                color: colors.foreground,
-                            }}
-                        >
-                            <p style={{ color: colors.muted }}>Loading tariff details...</p>
-                        </div>
-                    )}
-
-                    {/* Item-specific errors */}
-                    {invalidItems.filter(item => selectedItems.includes(item)).length > 0 && (
-                        <div
-                            className="p-6 rounded-md shadow-sm mb-6 border-l-4"
-                            style={{
-                                borderColor: colors.warning,
-                                backgroundColor: `${colors.warning}10`,
-                                color: colors.foreground,
-                            }}
-                        >
-                            <h3
-                                className="font-semibold mb-2"
-                                style={{ color: colors.warning }}
-                            >
-                                No tariff information found:
-                            </h3>
-                            <ul className="list-disc list-inside space-y-1">
-                                {invalidItems
-                                    .filter(item => selectedItems.includes(item))
-                                    .map((error, index) => (
-                                        <li key={index} className="test-sm" style={{ color: colors.foreground }}>
-                                            {error}
-                                        </li>
-                                    ))}
-                            </ul>
-                        </div>
-                    )}
-
-
-                    {Object.values(tariffDetails)
-                        .filter((item) => selectedItems.includes(item.itemName))
-                        .map((item) => {
-                            const tariffDetailsList = item.tariffDetailsList;
-                            const topPartners = getTopPartners(tariffDetailsList, 3);
-                            const otherPartners = getOtherPartners(
-                                tariffDetailsList,
-                                topPartners
-                            );
-
-                            return (
-                                <div
-                                    key={item.hscode}
-                                    className="mb-8 rounded-md overflow-hidden border"
-                                    style={{
-                                        borderColor: "colors.border",
-                                        backgroundColor: `${colors.surface}95`,
-                                    }}
-                                >
-                                    {/* Item header */}
-                                    <div className="border-b border-gray-100 p-6 flex justify-between items-center mb-6">
-                                        <div>
-                                            <div className="text-gray-500 text-sm">{item.hscode}</div>
-                                            <h2 className="text-lg font-medium">{item.itemName}</h2>
-                                        </div>
-                                    </div>
-
-                                    {/* Top 3 section */}
-                                    <div className="p-6 mb-8">
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-medium">
-                                                Top 3 Best Tariff Rate Partner Countries
-                                            </h3>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-6">
-                                            {topPartners.map((partner) => {
-                                                const tariffs = partner.tariffList || [];
-
-                                                const labels =
-                                                    tariffs.length > 0
-                                                        ? tariffs.map(
-                                                            (t) =>
-                                                                t.localDate?.split("-")[0] ||
-                                                                (startDate instanceof Date ? startDate.getFullYear().toString() : startDate?.split("-")[0])
-                                                        )
-                                                        : generateYearRange(startDate, endDate);
-
-                                                // Fix chart data formatting
-                                                const value =
-                                                    tariffs.length > 0
-                                                        ? tariffs.map((t) => t.percentageRate.toFixed(2))
-                                                        : [0];
-
-
-                                                console.log("Chart data for", partner.country.countryName, { value, labels })
-                                                const avg = partner.averageRate;
-
-                                                return (
-                                                    <div
-                                                        key={partner.country.countryName}
-                                                        className="partner-box border rounded-lg p-6"
-                                                        style={{
-                                                            borderColor: colors.border,
-                                                            backgroundColor: `${colors.surface}98`,
-                                                        }}
-                                                    >
-                                                        <h4 className="text-md font-medium mb-2">
-                                                            {partner.country.countryName}
-                                                        </h4>
-                                                        <div className="h-[300px] mb-6">
-                                                            <IndustryChart
-                                                                labels={labels}
-                                                                value={[value]}
-                                                            />
-                                                        </div>
-                                                        <div className="text-center">
                                                             <span
-                                                                className="text-sm font-medium"
-                                                                style={{ color: colors.foreground }}
+                                                                className="text-xs"
+                                                                style={{ color: colors.background }}
                                                             >
-                                                                Average Rate: {avg.toFixed(2)}%
+                                                                ✓
                                                             </span>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Divider */}
-                                    <div className="border-t border-gray-300 mx-6 my-10"></div>
-
-                                    {/* Other partner countries section */}
-                                    <div className="px-6 pt-4 pb-6">
-                                        <div
-                                            className="flex items-center justify-between cursor-pointer"
-                                            onClick={() =>
-                                                setExpandedOther((prev) => ({
-                                                    ...prev,
-                                                    [item.hscode]: !prev[item.hscode],
-                                                }))
-                                            }
-                                        >
-                                            <h3 className="text-lg font-medium">
-                                                Other Partner Countries Average Rate
-                                            </h3>
-                                            <span>{expandedOther[item.hscode] ? "▲" : "▼"}</span>
-                                        </div>
-
-                                        {expandedOther[item.hscode] && (
-                                            <div className="mt-4">
-                                                <div className="space-y-2">
-                                                    {otherPartners.map((partner) => {
-                                                        const avg = partner.averageRate || 0;
-                                                        return (
-                                                            <div
-                                                                key={partner.country.countryName}
-                                                                className="flex justify-between items-center p-3 border rounded-md"
-                                                                style={{
-                                                                    borderColor: colors.border,
-                                                                    backgroundColor: `${colors.surface}98`,
-                                                                }}
-                                                            >
-                                                                <span
-                                                                    className="text-sm font-medium"
-                                                                    style={{ color: colors.foreground }}
-                                                                >
-                                                                    {partner.country.countryName}
-                                                                </span>
-                                                                <span
-                                                                    className="text-sm font-medium"
-                                                                    style={{ color: colors.foreground }}
-                                                                >
-                                                                    {avg.toFixed(2)}%
-                                                                </span>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
+                                        );
+                                    })
+                                ) : !loadingItems ? (
+                                    <div
+                                        className="text-center py-8 px-4 rounded-md border-2 border-dashed"
+                                        style={{
+                                            borderColor: colors.border,
+                                            color: colors.muted,
+                                        }}
+                                    >
+                                        <p className="text-sm">
+                                            No items found. Try different search criteria.
+                                        </p>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                ) : null}
+                            </div>
+                        </div>
+                    </div>
 
-                    {/* No results state */}
-                    {Object.keys(tariffDetails).length === 0 &&
-                        !loadingDetails &&
-                        selectedItems.length > 0 && (
+                    {/* Main content area for results */}
+                    <div className="w-3/4 p-6 overflow-y-auto">
+                        <h2
+                            className="text-2xl font-bold mb-6"
+                            style={{ color: colors.foreground }}
+                        >
+                            Results
+                        </h2>
+                        {/* Loading and error states */}
+                        {loadingDetails && (
                             <div
-                                className="p-6 rounded-md shadow-sm text-center mt-8"
+                                className="p-6 rounded-md shadow-sm mb-6"
                                 style={{
                                     color: colors.foreground,
                                 }}
                             >
-                                <p style={{ color: colors.muted }}>
-                                    Select items and search to view tariff details
-                                </p>
+                                <p style={{ color: colors.muted }}>Loading tariff details...</p>
                             </div>
                         )}
+
+                        {/* Item-specific errors */}
+                        {invalidItems.filter(item => selectedItems.includes(item)).length > 0 && (
+                            <div
+                                className="p-6 rounded-md shadow-sm mb-6 border-l-4"
+                                style={{
+                                    borderColor: colors.warning,
+                                    backgroundColor: `${colors.warning}10`,
+                                    color: colors.foreground,
+                                }}
+                            >
+                                <h3
+                                    className="font-semibold mb-2"
+                                    style={{ color: colors.warning }}
+                                >
+                                    No tariff information found:
+                                </h3>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {invalidItems
+                                        .filter(item => selectedItems.includes(item))
+                                        .map((error, index) => (
+                                            <li key={index} className="test-sm" style={{ color: colors.foreground }}>
+                                                {error}
+                                            </li>
+                                        ))}
+                                </ul>
+                            </div>
+                        )}
+
+
+                        {Object.values(tariffDetails)
+                            .filter((item) => selectedItems.includes(item.itemName))
+                            .map((item) => {
+                                const tariffDetailsList = item.tariffDetailsList;
+                                const topPartners = getTopPartners(tariffDetailsList, 3);
+                                const otherPartners = getOtherPartners(
+                                    tariffDetailsList,
+                                    topPartners
+                                );
+
+                                return (
+                                    <div
+                                        key={item.hscode}
+                                        className="mb-8 rounded-md overflow-hidden border"
+                                        style={{
+                                            borderColor: "colors.border",
+                                            backgroundColor: `${colors.surface}95`,
+                                        }}
+                                    >
+                                        {/* Item header */}
+                                        <div className="border-b border-gray-100 p-6 flex justify-between items-center mb-6">
+                                            <div>
+                                                <div className="text-gray-500 text-sm">{item.hscode}</div>
+                                                <h2 className="text-lg font-medium">{item.itemName}</h2>
+                                            </div>
+                                        </div>
+
+                                        {tariffDetailsList.length === 0 ? (
+                                            <div className="p-6">
+                                                <p style={{ color: colors.muted }}>No tariff data available for the selected date range.</p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Top 3 section */}
+                                                <div className="p-6 mb-8">
+                                                    <div className="mb-4">
+                                                        <h3 className="text-lg font-medium">
+                                                            Top 3 Best Tariff Rate Partner Countries
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-3 gap-6">
+                                                        {topPartners.map((partner) => {
+                                                            const tariffs = partner.tariffList || [];
+
+                                                            const labels =
+                                                                tariffs.length > 0
+                                                                    ? tariffs
+                                                                        .sort((a, b) => parseDate(a.localDate) - parseDate(b.localDate))
+                                                                        .map((t) => t.localDate)
+                                                                    : generateYearRange(startDate, endDate);
+
+                                                            // Fix chart data formatting
+                                                            const value =
+                                                                tariffs.length > 0
+                                                                    ? tariffs
+                                                                        .sort((a, b) => parseDate(a.localDate) - parseDate(b.localDate))
+                                                                        .map((t) => Number(t.percentageRate.toFixed(2)))
+                                                                    : [0];
+
+
+                                                            // console.log("Chart data for", partner.country.countryName, { value, labels })
+                                                            const avg = partner.averageRate;
+
+                                                            return (
+                                                                <div
+                                                                    key={partner.country.countryName}
+                                                                    className="partner-box border rounded-lg p-6"
+                                                                    style={{
+                                                                        borderColor: colors.border,
+                                                                        backgroundColor: `${colors.surface}98`,
+                                                                    }}
+                                                                >
+                                                                    <h4 className="text-md font-medium mb-2">
+                                                                        {partner.country.countryName}
+                                                                    </h4>
+{tariffs.length === 0 ? (
+                                                                        <div className="h-[300px] flex items-center justify-center">
+                                                                            <p style={{ color: colors.muted }}>No tariff data available for the selected date range.</p>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div className="h-[300px] mb-6">
+                                                                                <IndustryChart
+                                                                                    labels={labels}
+                                                                                    value={[value]}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="text-center">
+                                                                                <span
+                                                                                    className="text-sm font-medium"
+                                                                                    style={{ color: colors.foreground }}
+                                                                                >
+                                                                                    Average Rate: {avg.toFixed(2)}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Divider */}
+                                                <div className="border-t border-gray-300 mx-6 my-10"></div>
+
+                                                {/* Other partner countries section */}
+                                                <div className="px-6 pt-4 pb-6">
+                                                    <div
+                                                        className="flex items-center justify-between cursor-pointer"
+                                                        onClick={() =>
+                                                            setExpandedOther((prev) => ({
+                                                                ...prev,
+                                                                [item.hscode]: !prev[item.hscode],
+                                                            }))
+                                                        }
+                                                    >
+                                                        <h3 className="text-lg font-medium">
+                                                            Other Partner Countries Average Rate
+                                                        </h3>
+                                                        <span>{expandedOther[item.hscode] ? "▲" : "▼"}</span>
+                                                    </div>
+
+                                                    {expandedOther[item.hscode] && (
+                                                        <div className="mt-4">
+                                                            <div className="space-y-2">
+                                                                {otherPartners.map((partner) => {
+                                                                    const avg = partner.averageRate || 0;
+                                                                    return (
+                                                                        <div
+                                                                            key={partner.country.countryName}
+                                                                            className="flex justify-between items-center p-3 border rounded-md"
+                                                                            style={{
+                                                                                borderColor: colors.border,
+                                                                                backgroundColor: `${colors.surface}98`,
+                                                                            }}
+                                                                        >
+                                                                            <span
+                                                                                className="text-sm font-medium"
+                                                                                style={{ color: colors.foreground }}
+                                                                            >
+                                                                                {partner.country.countryName}
+                                                                            </span>
+                                                                            <span
+                                                                                className="text-sm font-medium"
+                                                                                style={{ color: colors.foreground }}
+                                                                            >
+                                                                                {avg.toFixed(2)}%
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                        {/* No results state */}
+                        {Object.keys(tariffDetails).length === 0 &&
+                            !loadingDetails &&
+                            selectedItems.length > 0 && (
+                                <div
+                                    className="p-6 rounded-md shadow-sm text-center mt-8"
+                                    style={{
+                                        color: colors.foreground,
+                                    }}
+                                >
+                                    <p style={{ color: colors.muted }}>
+                                        Select items and search to view tariff details
+                                    </p>
+                                </div>
+                            )}
+                    </div>
                 </div>
             </div>
         </div>
