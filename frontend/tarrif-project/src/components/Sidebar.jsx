@@ -41,12 +41,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         description: 'Landing page with global trade overview'
       }
     ]),
-    {
-      icon: Calculator,
-      label: 'Tariff Calculator',
-      path: '/calculator',
-      description: 'Calculate international tariffs'
-    },
+
     ...(isAuthenticated ? [
       {
         icon: BarChart3,
@@ -55,6 +50,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         description: 'View your tariff calculations and history'
       }
     ] : []),
+    {
+      icon: Calculator,
+      label: 'Tariff Calculator',
+      path: '/calculator',
+      description: 'Calculate international tariffs'
+    },
+    
    
     ...(isAuthenticated && isBankUser ? [
       {
