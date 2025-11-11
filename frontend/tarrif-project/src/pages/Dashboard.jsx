@@ -314,7 +314,7 @@ export function Dashboard({ onMenuClick }) {
 
         for (const record of tariffResponse.data) {
           const enhancedDTO = {
-            searchDate: date,
+            searchDate: record.date,
             ...record, // Keep all existing DTO properties
           };
 
@@ -328,7 +328,7 @@ export function Dashboard({ onMenuClick }) {
     }
 
     const csvHeaders = [
-      "Search Date",
+      "Tariff Date",
       "Reporting Country",
       "Partner Country",
       "item",
@@ -359,7 +359,7 @@ export function Dashboard({ onMenuClick }) {
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      document.body.appendChild(link);
       URL.revokeObjectURL(url);
     }
 

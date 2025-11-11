@@ -241,7 +241,8 @@ public class TariffOverviewImpl implements TariffOverviewService {
                                 ,tariffEntry.getPartnerCountry().getCountryName() 
                                 ,tariffEntry.getItem().getItemName().replaceAll("[0-9]+", "").replaceAll("general", "")
                                 ,tariffEntry.getPercentageRate()
-                                ,tariffEntry.getDescription()));
+                                ,tariffEntry.getDescription()
+                                ,tariffEntry.getLocalDate()));
         });
         
         return res;
