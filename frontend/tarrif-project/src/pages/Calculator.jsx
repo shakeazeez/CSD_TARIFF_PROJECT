@@ -318,8 +318,8 @@ export function Calculator({ onMenuClick }) {
   // Pinning
   const [pinned, setPinned] = useState([]);
   useEffect(() => {
-    if (localStorage.getItem("authToken") != null) {
-      const storedPins = localStorage.getItem("pin");
+    if (sessionStorage.getItem("authToken") != null) {
+      const storedPins = sessionStorage.getItem("pin");
       if (storedPins) {
         try {
           // Try to parse as JSON array first (from login/addPin/delPin responses)
@@ -511,18 +511,18 @@ export function Calculator({ onMenuClick }) {
     // Update state
     setPinned(updatedPins);
     // Sync to localStorage as JSON array (consistent with backend responses)
-    localStorage.setItem("pin", JSON.stringify(updatedPins));
+    sessionStorage.setItem("pin", JSON.stringify(updatedPins));
   };
 
   const addPin = async (item) => {
     try {
       const response = await api.post(
-        `/user/${localStorage.getItem(
+        `/user/${sessionStorage.getItem(
           "username"
         )}/pinned-tariffs/${item}`,
         ""
       );
-      localStorage.setItem("pin", JSON.stringify(response.data));
+      sessionStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error adding pin:", error);
     }
@@ -531,12 +531,12 @@ export function Calculator({ onMenuClick }) {
   const delPin = async (item) => {
     try {
       const response = await api.post(
-        `/user/${localStorage.getItem(
+        `/user/${sessionStorage.getItem(
           "username"
         )}/unpinned-tariffs/${item}`,
         ""
       );
-      localStorage.setItem("pin", JSON.stringify(response.data));
+      sessionStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error removing pin:", error);
     }
@@ -821,7 +821,7 @@ export function Calculator({ onMenuClick }) {
                     Current Tariff Results
                   </CardTitle>
                   {/* add to pin button */}
-                  {localStorage.getItem("authToken") != null ? (
+                  {sessionStorage.getItem("authToken") != null ? (
                     <Button
                       className={`${
                         pinned.includes(Number(current.tariffId))
@@ -882,6 +882,39 @@ export function Calculator({ onMenuClick }) {
                           >
                             {typeof fieldValues[key] === "number" ? fieldValues[key].toFixed(2) : fieldValues[key] || "N/A"}
                           </div>
+                          {key === 'itemCostWithTariff' && cost && current?.tariffRate && (
+                            <div
+                              className="mt-3 pt-2 border-t"
+                              style={{ 
+                                borderColor: colors.border,
+                              }}
+                            >
+                              <div
+                                className="text-sm font-medium mb-1"
+                                style={{ color: colors.muted }}
+                              >
+                                General Formula:
+                              </div>
+                              <div
+                                className="text-base font-mono mb-2"
+                                style={{ color: colors.foreground }}
+                              >
+                                Base Cost + (Tariff Rate × Base Cost)
+                              </div>
+                              <div
+                                className="text-sm font-medium mb-1"
+                                style={{ color: colors.muted }}
+                              >
+                                Calculation:
+                              </div>
+                              <div
+                                className="text-base font-mono"
+                                style={{ color: colors.accent }}
+                              >
+                                ${cost} + (${current.tariffRate.toFixed(2)}% × ${cost})
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                   </div>
@@ -914,6 +947,7 @@ export function Calculator({ onMenuClick }) {
                     value={value}
                     title={title}
                     legend={legend}
+                    baseCost={cost}
                   />
                 </CardContent>
               </Card>

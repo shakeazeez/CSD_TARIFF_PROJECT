@@ -49,7 +49,8 @@ public class TariffController {
     private final Logger log = Logger.getLogger(TariffController.class.getName());
 
     @Autowired
-    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService, BankIndustrySearchService bankIndustrySearchService) {
+    public TariffController(TariffCalculationService tariffService, TariffOverviewService tariffOverviewService,
+            BankIndustrySearchService bankIndustrySearchService) {
         this.tariffService = tariffService;
         this.tariffOverviewService = tariffOverviewService;
         this.bankIndustrySearchService = bankIndustrySearchService;
@@ -98,7 +99,7 @@ public class TariffController {
         return ResponseEntity.ok(industryList);
     }
 
-    /* 
+    /*
      * Get the list of items available in this industry for this period of time
      */
     @Operation(summary = "Get items of a certain industry", description = "Returns all items of the industry with at least one valid tariff entry")
@@ -109,14 +110,11 @@ public class TariffController {
             @ApiResponse(responseCode = "400", description = "Invalid industry selected", content = @Content),
             @ApiResponse(responseCode = "404", description = "Items of this industry not found", content = @Content)
     })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Items query parameters", 
-        required = true, content = @Content(mediaType = "application/json", 
-            schema = @Schema(implementation = TariffItemFilterDTO.class), 
-            examples = @ExampleObject(value = "{ \"homeCountry\": \"China\", \"industry\": \"AGRICULTURE\", \"startDate\": \"2004-05-06\", \"endDate\": \"2024-05-20\"}")
-    ))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Items query parameters", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = TariffItemFilterDTO.class), examples = @ExampleObject(value = "{ \"homeCountry\": \"China\", \"industry\": \"AGRICULTURE\", \"startDate\": \"2004-05-06\", \"endDate\": \"2024-05-20\"}")))
     @PostMapping("/items")
-    public ResponseEntity<List<String>> getAllItemsAvailableInTheIndustry(@RequestBody TariffItemFilterDTO itemFilterDTO) {
-        
+    public ResponseEntity<List<String>> getAllItemsAvailableInTheIndustry(
+            @RequestBody TariffItemFilterDTO itemFilterDTO) {
+
         List<String> itemList = null;
 
         try {
@@ -126,10 +124,11 @@ public class TariffController {
         }
 
         return ResponseEntity.ok(itemList);
-    } 
+    }
 
     /*
-     * Get the top 10 countries and their tariff rates for the period specified for a certain item
+     * Get the top 10 countries and their tariff rates for the period specified for
+     * a certain item
      */
     @Operation(summary = "Get tariff details for item", description = "Returns all tariff details for this item for the top ten best partner countries")
     @ApiResponses(value = {
@@ -139,19 +138,16 @@ public class TariffController {
             @ApiResponse(responseCode = "400", description = "Invalid item selected", content = @Content),
             @ApiResponse(responseCode = "404", description = "Tariff data not found", content = @Content)
     })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Item tariff details query parameters", 
-        required = true, content = @Content(mediaType = "application/json", 
-            schema = @Schema(implementation = SelectedItemsDTO.class), 
-            examples = @ExampleObject(value = "{ \"selectedItem\": \"seafood\", \"homeCountry\": \"China\", \"industry\": \"AGRICULTURE\", \"startDate\": \"1980-01-01\", \"endDate\": \"2025-01-01\" }")
-    ))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Item tariff details query parameters", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = SelectedItemsDTO.class), examples = @ExampleObject(value = "{ \"selectedItem\": \"seafood\", \"homeCountry\": \"China\", \"industry\": \"AGRICULTURE\", \"startDate\": \"1980-01-01\", \"endDate\": \"2025-01-01\" }")))
     @PostMapping("/items/tariffDetails")
-    public ResponseEntity<TariffDetailsforItemDTO> getTariffDetailsForItem(@RequestBody SelectedItemsDTO selectedItemsDTO) {
+    public ResponseEntity<TariffDetailsforItemDTO> getTariffDetailsForItem(
+            @RequestBody SelectedItemsDTO selectedItemsDTO) {
 
         TariffDetailsforItemDTO result = null;
 
         try {
             result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
-            
+
         } catch (Exception e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
@@ -159,7 +155,7 @@ public class TariffController {
         // log.info("Result: " + result);
         return ResponseEntity.ok(result);
     }
-    
+
     /*
      * Get tariff details for item between two countries of default(current) year
      */
@@ -171,11 +167,7 @@ public class TariffController {
             @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content),
             @ApiResponse(responseCode = "404", description = "Tariff data not found", content = @Content)
     })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Tariff calculation query parameters", 
-        required = true, content = @Content(mediaType = "application/json", 
-            schema = @Schema(implementation = TariffCalculationQueryDTO.class), 
-            examples = @ExampleObject(value = "{ \"reportingCountry\": \"China\", \"partnerCountry\": \"India\", \"item\": \"Slipper\", \"itemCost\": 1000.0 }")
-    ))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Tariff calculation query parameters", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = TariffCalculationQueryDTO.class), examples = @ExampleObject(value = "{ \"reportingCountry\": \"China\", \"partnerCountry\": \"India\", \"item\": \"Slipper\", \"itemCost\": 1000.0 }")))
     @PostMapping("/current")
     public ResponseEntity<TariffResponseDTO> getCurrentTariffDetails(
             @Parameter(description = "Tariff calculation query parameters", required = true) @RequestBody TariffCalculationQueryDTO queryDTO) {
@@ -196,13 +188,13 @@ public class TariffController {
             log.info("Multiple items found for query: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         } catch (Exception e) {
-            log.info(e.getMessage()); 
+            log.info(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(response);
     }
-    
+
     /*
      * Get tariff details for item between two countries of selected year
      */
@@ -216,11 +208,7 @@ public class TariffController {
             @ApiResponse(responseCode = "404", description = "Historical tariff data not available for specified parameters", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error during data retrieval", content = @Content)
     })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Tariff calculation query parameters", 
-        required = true, content = @Content(mediaType = "application/json", 
-            schema = @Schema(implementation = TariffCalculationQueryDTO.class), 
-            examples = @ExampleObject(value = "{ \"reportingCountry\": \"China\", \"partnerCountry\": \"India\", \"item\": \"Slipper\", \"itemCost\": 1000.0 }")
-    ))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Tariff calculation query parameters", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = TariffCalculationQueryDTO.class), examples = @ExampleObject(value = "{ \"reportingCountry\": \"China\", \"partnerCountry\": \"India\", \"item\": \"Slipper\", \"itemCost\": 1000.0 }")))
     @PostMapping("/past")
     public ResponseEntity<TariffOverviewResponseDTO> getHistoricalTariffDetails(
             @RequestBody TariffCalculationQueryDTO queryDTO) {
@@ -238,7 +226,7 @@ public class TariffController {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            log.info(e.getMessage()); 
+            log.info(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
@@ -259,9 +247,10 @@ public class TariffController {
         try {
             return ResponseEntity.ok(tariffService.getTariffById(id));
         } catch (IllegalArgumentException e) {
+            log.info(e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.info(e.getMessage()); 
+            log.info(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -279,9 +268,10 @@ public class TariffController {
         try {
             return ResponseEntity.ok(tariffOverviewService.getAllTariff(id));
         } catch (IllegalArgumentException e) {
+            log.info(e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.info(e.getMessage()); 
+            log.info(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

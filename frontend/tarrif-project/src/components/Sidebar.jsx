@@ -41,7 +41,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         description: 'Landing page with global trade overview'
       }
     ]),
-
     ...(isAuthenticated ? [
       {
         icon: BarChart3,
