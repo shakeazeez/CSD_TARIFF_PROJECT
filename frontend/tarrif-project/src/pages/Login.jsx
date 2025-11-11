@@ -411,11 +411,11 @@ export function Login(){
             let redirectPath = '/dashboard'; // default for MEMBER and BANK
             if (destinationCountries) {
                 // Business user
-                redirectPath = '/business';
+                redirectPath = '/business-insights';
             }
 
             if (isSignUp) {
-                setSuccess(`Account created successfully. Redirecting to ${redirectPath === '/business' ? 'business page' : 'dashboard'}...`);
+                setSuccess(`Account created successfully. Redirecting to ${redirectPath === '/business-insights' ? 'business page' : 'dashboard'}...`);
             }
 
             navigate(redirectPath);

@@ -113,7 +113,7 @@ function App() {
               <Route path="/calculator" element={
                 <Calculator onMenuClick={() => setSidebarOpen(true)} />
               }/>
-              <Route path="/business" element={
+              <Route path="/business-insights" element={
                 <ProtectedRoute allowedRoles={["BUSINESS"]}>
                   <Business onMenuClick={() => setSidebarOpen(true)} />
                 </ProtectedRoute>
@@ -139,7 +139,7 @@ function App() {
               <Route path="/" element={
                 <Home onMenuClick={() => setSidebarOpen(true)} />
               }/>
-              <Route path="/bank" element={
+              <Route path="/industry-trends" element={
                 <ProtectedRoute allowedRoles={["BANK"]}>
                   <Bank onMenuClick={() => setSidebarOpen(true)} />
                 </ProtectedRoute>

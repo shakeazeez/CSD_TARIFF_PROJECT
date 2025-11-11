@@ -61,7 +61,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {
         icon: ChartLine,
         label: 'Industry Trends',
-        path: '/bank',
+        path: '/industry-trends',
         description: 'Analyse tariff rates by industry and country'
       }
     ] : []),
@@ -70,7 +70,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {
         icon: ScrollText,
         label: 'Business Insights',
-        path: '/business',
+        path: '/business-insights',
         description: 'Analyse your tariff data and trends'
       }
     ] : []),
