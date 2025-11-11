@@ -70,6 +70,7 @@ public class TariffController {
         try {
             country = tariffOverviewService.getAllCountries();
         } catch (Exception e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
 
@@ -93,6 +94,7 @@ public class TariffController {
             }
 
         } catch (Exception e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
 
@@ -120,6 +122,7 @@ public class TariffController {
         try {
             itemList = bankIndustrySearchService.getAllItemsAvailableInTheIndustry(itemFilterDTO);
         } catch (Exception e) {
+            log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
 
@@ -147,12 +150,12 @@ public class TariffController {
 
         try {
             result = bankIndustrySearchService.getTariffDetailsForItem(selectedItemsDTO);
-
+            
         } catch (Exception e) {
             log.info(e.getMessage());
             return ResponseEntity.notFound().build();
         }
-        // log.info("Result: " + result);
+        log.info("Result: " + result);
         return ResponseEntity.ok(result);
     }
 
@@ -188,7 +191,7 @@ public class TariffController {
             log.info("Multiple items found for query: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.severe(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
@@ -250,7 +253,7 @@ public class TariffController {
             log.info(e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.severe(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
