@@ -9,7 +9,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -28,9 +28,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid - clear storage and redirect to login
-      sessionStorage.removeItem('authToken');
-      sessionStorage.removeItem('username');
-      sessionStorage.removeItem('userType');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userType');
       window.location.href = '/login';
     }
     return Promise.reject(error);

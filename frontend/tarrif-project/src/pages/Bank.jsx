@@ -687,7 +687,7 @@ export function Bank({ onMenuClick }) {
                         }}
                     >
                         <span className="mr-2"></span>
-                        {loadingItems ? "Loading..." : "Search"}
+                        {loadingItems ? "Loading..." : "🔎Search"}
                     </button>
 
                     <div

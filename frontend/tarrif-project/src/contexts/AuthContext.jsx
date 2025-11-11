@@ -39,8 +39,8 @@ export const AuthProvider = ({ children }) => {
     // Check for existing authentication on app load
     useEffect(() => {
         const checkAuth = () => {
-            const token = sessionStorage.getItem('authToken');
-            const storedUser = sessionStorage.getItem('userData');
+            const token = localStorage.getItem('authToken');
+            const storedUser = localStorage.getItem('userData');
             if (token) {
                 // Here you could validate the token with your backend
                 // For now, we'll just check if it exists
@@ -88,20 +88,20 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         setUser(userData);
 
-        sessionStorage.setItem('userData', JSON.stringify(userData));
+        localStorage.setItem('userData', JSON.stringify(userData));
 
         if (token) {
-            sessionStorage.setItem('authToken', token);
+            localStorage.setItem('authToken', token);
         }
 
         if (normalizedUsername) {
-            sessionStorage.setItem('username', normalizedUsername);
+            localStorage.setItem('username', normalizedUsername);
         }
 
         if (normalizedPin.length > 0 || Array.isArray(pin)) {
-            sessionStorage.setItem('pin', JSON.stringify(normalizedPin));
+            localStorage.setItem('pin', JSON.stringify(normalizedPin));
         } else {
-            sessionStorage.setItem('pin', JSON.stringify([]));
+            localStorage.setItem('pin', JSON.stringify([]));
         }
     };
 
@@ -111,12 +111,12 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setIsAuthenticated(false);
         setUser(null);
-        sessionStorage.removeItem('authToken');
-        sessionStorage.removeItem('userData');
-        sessionStorage.removeItem('username');
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('pin');
-        sessionStorage.removeItem('generalUserTopSearches');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('username');
+        localStorage.removeItem('token');
+        localStorage.removeItem('pin');
+        localStorage.removeItem('generalUserTopSearches');
         // You might want to call logout API endpoint here
     };
 

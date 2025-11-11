@@ -319,7 +319,7 @@ export function Calculator({ onMenuClick }) {
   const [pinned, setPinned] = useState([]);
   useEffect(() => {
     if (localStorage.getItem("authToken") != null) {
-      const storedPins = sessionStorage.getItem("pin");
+      const storedPins = localStorage.getItem("pin");
       if (storedPins) {
         try {
           // Try to parse as JSON array first (from login/addPin/delPin responses)
@@ -511,7 +511,7 @@ export function Calculator({ onMenuClick }) {
     // Update state
     setPinned(updatedPins);
     // Sync to localStorage as JSON array (consistent with backend responses)
-    sessionStorage.setItem("pin", JSON.stringify(updatedPins));
+    localStorage.setItem("pin", JSON.stringify(updatedPins));
   };
 
   const addPin = async (item) => {
@@ -522,7 +522,7 @@ export function Calculator({ onMenuClick }) {
         )}/pinned-tariffs/${item}`,
         ""
       );
-      sessionStorage.setItem("pin", JSON.stringify(response.data));
+      localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error adding pin:", error);
     }
@@ -536,7 +536,7 @@ export function Calculator({ onMenuClick }) {
         )}/unpinned-tariffs/${item}`,
         ""
       );
-      sessionStorage.setItem("pin", JSON.stringify(response.data));
+      localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error removing pin:", error);
     }

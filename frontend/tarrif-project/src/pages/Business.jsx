@@ -67,7 +67,7 @@ export function Business({onMenuClick}) {
 
     // auth / username resolution
     const { user } = useAuth?.() ?? {}; // gracefully handle if useAuth not available
-    const username = user?.username || sessionStorage.getItem("username") || "demo";
+    const username = user?.username || localStorage.getItem("username") || "demo";
 
 // default country of origin
 const _defaultOrigin = user?.originCountry || "not found";
