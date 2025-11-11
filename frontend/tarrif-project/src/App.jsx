@@ -124,7 +124,7 @@ function App() {
               <Route path="/chatbot" element={
                 <ChatBot onMenuClick={() => setSidebarOpen(true)} />
               }/>
-              <Route path="/news" element={
+              <Route path="/news-articles" element={
                 <News onMenuClick={() => setSidebarOpen(true)} />
               }/>
               <Route path="/settings" element={

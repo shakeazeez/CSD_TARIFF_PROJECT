@@ -89,7 +89,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     {
       icon: Newspaper,
       label: 'News',
-      path: '/news',
+      path: '/news-articles',
       description: 'Latest tariff news and articles'
     },
     ...(isAuthenticated ? [
