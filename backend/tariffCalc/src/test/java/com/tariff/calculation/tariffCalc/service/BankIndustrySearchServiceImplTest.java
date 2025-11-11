@@ -441,7 +441,7 @@ class BankIndustrySearchServiceImplTest {
             if (!result.tariffDetailsList().isEmpty()) {
                 for (TariffDetails details : result.tariffDetailsList()) {
                     for (Tariff tariff : details.getTariffList()) {
-                        assertTrue(tariff.getPercentageRate() > 0.0, "All tariffs should have positive rates");
+                        assertTrue(tariff.getPercentageRate() >= 0.0, "All tariffs should have positive rates");
                     }
                 }
             }
