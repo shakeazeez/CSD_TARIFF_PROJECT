@@ -39,6 +39,7 @@ This project combines cutting-edge technology with real-world trade data to prov
 
 
 ## Tech Stack
+![Diagram](diagram.png)
 
 ### Backend Services
 - SpringBoot (Java 21) - Microservices for different features
