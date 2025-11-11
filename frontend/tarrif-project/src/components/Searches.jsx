@@ -42,10 +42,10 @@ const Searches = () => {
   const fetchTopSearchesIds = useCallback(async () => {
     // console.log("Starting fetchTopSearchesIds for logged in user");
     try { // calls backend to get the top searches for logged in users
-      const response = await api.get(`/user/${localStorage.getItem("username")}/history`); // returns Map<Integer, LocalDate> of tariffIds
+      const response = await api.get(`/user/${sessionStorage.getItem("username")}/history`); // returns Map<Integer, LocalDate> of tariffIds
 
       const tariffIds = Object.keys(response.data).map(Number); // array of tariffIds as numbers
-      localStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds)); // saves the tariffIds in local storage
+      sessionStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds)); // saves the tariffIds in local storage
       setTopSearchesIds(tariffIds); // update state the fetching of details can be triggered next
     } catch (e) {
       console.error("Error fetching relevant searches:", e);
@@ -140,9 +140,9 @@ const Searches = () => {
    */
   const addRelevantSearch = async (tariffId) => {
     try {
-      const response = await api.post(`/user/${localStorage.getItem("username")}/history/${tariffId}`, "");
+      const response = await api.post(`/user/${sessionStorage.getItem("username")}/history/${tariffId}`, "");
       const tariffIds = Object.keys(response.data).map(Number); // array of tariffIds as numbers
-      localStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds));
+      sessionStorage.setItem("generalUserTopSearches", JSON.stringify(tariffIds));
       setTopSearchesIds(tariffIds);
       fetchSearches(tariffId, setTopSearchesData);
     } catch (error) {
