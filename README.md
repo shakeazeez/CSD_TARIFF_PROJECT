@@ -1,4 +1,4 @@
-# 🚀 CSD Tariff Project
+# CSD Tariff Project
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.java.com/)
@@ -6,91 +6,69 @@
 [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)](https://www.postgresql.org/)
 
-> **Calculate tariffs with style!** 🌍💰 A modern, microservices-based tariff calculation system that brings the world of international trade to your fingertips. From news analysis to precise calculations, we've got your trade needs covered.
+A modern, microservices-based tariff calculation system that brings international trade data to your fingertips. From news analysis to precise calculations, we've got your trade needs covered.
 
-## 🎯 What's This All About?
+## What's This All About?
 
 Ever wondered how much that imported gadget will cost after tariffs? Or want to stay updated on the latest trade news? Our CSD Tariff Project is your one-stop shop for all things tariffs!
 
 This project combines cutting-edge technology with real-world trade data to provide:
-- **Smart Tariff Calculations** 🧮
-- **Real-time News Integration** 📰
-- **User Management** 👥
-- **Seamless API Gateway** 🔗
+- Smart Tariff Calculations
+- Real-time News Integration
+- User Management
+- Seamless API Gateway
 
-## ✨ Features That'll Blow Your Mind
+## Features
 
-### 🚀 Core Functionality
-- **Tariff Calculator**: Input your product details and get instant tariff calculations
-- **News Aggregation**: Stay informed with AI-powered news summaries
-- **User Authentication**: Secure JWT-based authentication system
-- **Chat History**: Keep track of your calculation sessions
+### Core Functionality
+- Tariff Calculator: Input your product details and get instant tariff calculations
+- News Aggregation: Stay informed with AI-powered news summaries
+- User Authentication: Secure JWT-based authentication system
+- Chat History: Keep track of your calculation sessions
 
-### 🛠️ Technical Highlights
-- **Microservices Architecture**: Scalable and maintainable
-- **Docker Orchestration**: Easy deployment with docker-compose
-- **AI Integration**: OpenAI-powered news analysis
-- **Real-time Updates**: Live news feeds and calculations
+### Technical Highlights
+- Microservices Architecture: Scalable and maintainable
+- Docker Orchestration: Easy deployment with docker-compose
+- AI Integration: OpenAI-powered news analysis
+- Real-time Updates: Live news feeds and calculations
 
-### 🎨 User Experience
-- **Modern UI**: Sleek React frontend with Tailwind CSS
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Intuitive Interface**: No PhD in economics required!
+### User Experience
+- Modern UI: Sleek React frontend with Tailwind CSS
+- Responsive Design: Works on desktop, tablet, and mobile
+- Intuitive Interface: No PhD in economics required!
 
-## 🏗️ Architecture Overview
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │     Router      │    │   Backend       │
-│   (React)       │◄──►│   (Rust API     │◄──►│   (Java)        │
-│                 │    │    Gateway)     │    │   Services      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Tariff Calc     │    │   User Service  │    │  News Service   │
-│   (Java)        │    │     (Java)      │    │    (Java)       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-                                               ┌─────────────────┐
-                                               │  PostgreSQL     │
-                                               │   Database      │
-                                               └─────────────────┘
-```
-
-## 🛠️ Tech Stack
-![Diagram](diagram.png)
+## Tech Stack
 
 ### Backend Services
-- **SpringBoot (java 21)** - Microservices for different features
-- **Mockito + Junit** - Mock data uni testing
-- **RestAssured + Spring Framework** - Integreation testing 
-- **Actix-web (Rust 1.89)** - High-performance API gateway and Authentication server
-- **PostgreSQL** - Robust database
+- SpringBoot (Java 21) - Microservices for different features
+- Mockito + JUnit - Unit testing
+- RestAssured + Spring Framework - Integration testing
+- Actix-web (Rust 1.89) - High-performance API gateway and Authentication server
+- PostgreSQL - Robust database
 
 ### Frontend
-- **Reactjs** - Modern UI framework
-- **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **ESLint** - Code quality assurance
+- React - Modern UI framework
+- Vite - Lightning-fast build tool
+- Tailwind CSS - Utility-first styling
+- ESLint - Code quality assurance
 
 ### DevOps & Tools
-- **Docker & Docker Compose** - Containerization
-- **jsonwebtoken + argon2** - Secure authentication and encryption when storing user password
-- **OpenAI API** - AI-powered features
-- **NewsAPI** - Real-time news feeds
+- Docker & Docker Compose - Containerization
+- JSON Web Token + Argon2 - Secure authentication and encryption
+- OpenAI API - AI-powered features
+- NewsAPI - Real-time news feeds
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before diving in, make sure you have:
-- **Docker & Docker Compose** 🐳
-- **Java 21** ☕
-- **Rust 1.89+** 🦀
-- **Node.js 18+** 📦
-- **PostgreSQL** (or use our Docker setup)
+- Docker & Docker Compose
+- Java 21
+- Rust 1.89+
+- Node.js 18+
+- PostgreSQL (or use our Docker setup)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone the Repository
 ```bash
@@ -117,13 +95,13 @@ docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### 4. Access Your App
-- **Frontend**: http://localhost 🌐
-- **API Gateway**: http://localhost:8080 🚪
-- **Tariff Service**: http://localhost:8081 💰
-- **User Service**: http://localhost:8082 👤
-- **News Service**: http://localhost:8083 📰
+- Frontend: http://localhost
+- API Gateway: http://localhost:8080
+- Tariff Service: http://localhost:8081
+- User Service: http://localhost:8082
+- News Service: http://localhost:8083
 
-## 🎮 Usage Examples
+## Usage Examples
 
 ### Calculate a Tariff
 ```javascript
@@ -146,7 +124,7 @@ POST /api/auth/login    # User authentication
 GET  /api/history       # Chat history
 ```
 
-## 🧪 Development
+## Development
 
 ### Running Tests
 ```bash
@@ -169,7 +147,7 @@ cd frontend/tarrif-project && npm run lint
 cd frontend/tarrif-project && npm run format
 ```
 
-## 🚢 Deployment
+## Deployment
 
 ### Local Deployment
 ```bash
@@ -187,61 +165,61 @@ run-all.cmd   # Windows
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We love contributions! Here's how you can help:
 
-1. **Fork** the repository 🍴
-2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **Commit** your changes: `git commit -m 'Add amazing feature'`
-4. **Push** to the branch: `git push origin feature/amazing-feature`
-5. **Open** a Pull Request 🎉
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ### Development Guidelines
 - Follow our coding standards
 - Write tests for new features
 - Update documentation
-- Be awesome! 😎
+- Be awesome!
 
-## 📊 Project Status
+## Project Status
 
-- ✅ **Backend Services**: Fully functional
-- ✅ **Frontend**: Complete and responsive
-- ✅ **API Gateway**: Routing and authentication
-- ✅ **Database**: PostgreSQL integration
-- ✅ **Docker**: Containerized deployment
-- 🚧 **CI/CD**: In progress
+- Backend Services: Fully functional
+- Frontend: Complete and responsive
+- API Gateway: Routing and authentication
+- Database: PostgreSQL integration
+- Docker: Containerized deployment
+- CI/CD: In progress
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
-- **Port conflicts?** Check if ports 8080-8083 are free
-- **Database connection?** Verify your `.env` credentials
-- **API keys?** Make sure your OpenAI and NewsAPI keys are valid
+- Port conflicts? Check if ports 8080-8083 are free
+- Database connection? Verify your `.env` credentials
+- API keys? Make sure your OpenAI and NewsAPI keys are valid
 
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- **OpenAI** for AI-powered features 🤖
-- **NewsAPI** for real-time news feeds 📰
-- **PostgreSQL** for reliable data storage 🗄️
-- **Docker** for amazing containerization 🐳
+- OpenAI for AI-powered features
+- NewsAPI for real-time news feeds
+- PostgreSQL for reliable data storage
+- Docker for amazing containerization
 
-## 👥 Team
+## Team
 
-Built with ❤️ by the GoatTariff Team:
-- **Shake Azeez** 
-- **Joseph** 
-- **Jing Xi** 
-- **Yong Huey** 
-- **Shin En** 
+Built by the GoatTariff Team:
+- Shake Azeez
+- Joseph
+- Jing Xi
+- Yong Huey
+- Shin En
 
 ---
 
-**Ready to revolutionize tariff calculations?** Let's make international trade fun again! 🌍✨
+Ready to revolutionize tariff calculations? Let's make international trade fun again!
 
-*If you find this project helpful, give it a ⭐ and share with fellow traders!*
+If you find this project helpful, give it a star and share with fellow traders!
