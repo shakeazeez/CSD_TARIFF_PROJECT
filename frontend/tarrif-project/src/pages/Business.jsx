@@ -71,7 +71,7 @@ export function Business({onMenuClick}) {
 
 // default country of origin
 const _defaultOrigin = user?.originCountry || "not found";
-console.log("Default origin country:", _defaultOrigin);
+// console.log("Default origin country:", _defaultOrigin);
 
 // Helper: normalize backend response into items shape used by UI
 const _normalizeToItems = useCallback((data) => {
@@ -162,32 +162,68 @@ const _normalizeToItems = useCallback((data) => {
     // get tariff rate for item from backend
     const _getTariffRate = useCallback(async (reportingCountry, item) => {
         console.log("Fetching tariff rate for:", { reportingCountry, partnerCountry: _defaultOrigin, item });
-        let currentRate = 5; // default fallback
-        const maxRetries = 5;
+        let currentRate = 3; // default fallback
+        const maxRetries = 3;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                const response = await api.post('/tariff/current', {
+                const response_curr = await api.post('/tariff/current', {
                     reportingCountry: reportingCountry,
                     partnerCountry: _defaultOrigin,
                     item: item,
                     itemCost: 1000 // dummy cost, magic number
                 });
-                const fetched = response?.data;
-                const rateFromResp = fetched?.tariffRate ?? fetched?.rate ?? fetched?.value ?? null;
-                if (typeof rateFromResp === "number" && !Number.isNaN(rateFromResp)) {
-                    currentRate = rateFromResp;
-                } else if (typeof rateFromResp === "string" && !Number.isNaN(Number(rateFromResp))) {
-                    currentRate = Number(rateFromResp);
+                
+                
+                const fetched_curr = response_curr?.data;
+                
+                const rateFromRespCurr = fetched_curr?.tariffRate ?? fetched_curr?.rate ?? fetched_curr?.value ?? null;
+                console.log("Current fetch " + rateFromRespCurr);
+                
+                
+                if (typeof rateFromRespCurr === "number" && !Number.isNaN(rateFromRespCurr)) {
+                    currentRate = rateFromRespCurr;
+                } else if (typeof rateFromRespCurr === "string" && !Number.isNaN(Number(rateFromRespCurr))) {
+                    currentRate = Number(rateFromRespCurr);
                 }
+                
+                
                 console.log("Success on attempt", attempt, "rate:", currentRate);
                 return currentRate; // Success, return the rate
             } catch (err) {
-                console.warn(`Attempt ${attempt} failed to fetch tariff rate for ${item}:`, err.response?.data || err.message);
+                console.warn(`Attempt ${attempt} failed to fetch tariff rate for current ${item}:`, err.response?.data || err.message);
                 if (attempt < maxRetries) {
                     // Wait before retrying (longer backoff)
                     await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
                 }
             }
+            try {
+              const response_past = await api.post('/tariff/past', {
+                  reportingCountry: reportingCountry,
+                  partnerCountry: _defaultOrigin,
+                  item: item,
+                  itemCost: 1000 // dummy cost, magic number
+              });
+              
+               const fetched_past = response_past?.data;
+               const rateFromRespPast = fetched_past?.tariffData ?? null;;
+               
+               if (rateFromRespPast != null) {
+                    for (const record in rateFromRespPast) {
+                      console.log("Past tariff" + record.tariffRate);
+                    }
+                    
+                    currentRate = rateFromRespPast[rateFromRespPast.length - 1].tariffRate;
+                 return currentRate;
+               }
+              
+            } catch (err) {
+                console.warn(`Attempt ${attempt} failed to fetch tariff rate for past ${item}:`, err.response?.data || err.message);
+                if (attempt < maxRetries) {
+                    // Wait before retrying (longer backoff)
+                    await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+                }
+            }
+            
         }
         console.warn("All attempts failed to fetch tariff rate, using fallback rate");
         return '-';
