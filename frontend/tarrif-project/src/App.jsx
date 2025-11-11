@@ -94,7 +94,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        {/* World Map Background */}
+        {/* World Map Background - Now responsive */}
         <WorldMapRoutes background={true} />
 
         <Router>

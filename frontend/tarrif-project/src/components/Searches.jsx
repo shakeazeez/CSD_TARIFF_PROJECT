@@ -175,12 +175,11 @@ const Searches = () => {
               return (
                 <div
                   key={id}
-                      className="flex-shrink-0 p-3 rounded-lg cursor-pointer transition-all duration-200 shadow hover:shadow-lg flex items-center justify-center"
+                      className="flex-shrink-0 p-3 rounded-lg cursor-pointer transition-all duration-200 shadow hover:shadow-lg flex items-center justify-center w-full sm:w-44"
                   style={{
                     backgroundColor: `${colors?.border || '#e5e7eb'}80`,
                     borderColor: `${colors?.border || '#e5e7eb'}80`,
                     borderWidth: '1px',
-                    width: '176px',
                     minHeight: '120px',
                   }}
                   onClick={() => onSearchClick && onSearchClick(searchData)}
