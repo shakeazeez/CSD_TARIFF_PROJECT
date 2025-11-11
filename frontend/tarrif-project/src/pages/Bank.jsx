@@ -698,24 +698,57 @@ export function Bank({ onMenuClick }) {
                             </div>
                         </div>
 
-                        <button
-                            onClick={fetchItems}
-                            disabled={loadingItems || !homeCountry || !industry}
-                            className="w-full py-2 rounded-md flex items-center justify-center mb-6"
-                            style={{
-                                backgroundColor: colors.accent,
-                                alignItems: "center",
-                                borderColor: colors.accent,
-                                color: "#ffffff",
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.hover;
-                                e.currentTarget.style.color = "#ffffff";
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.accent;
-                                e.currentTarget.style.color = "#ffffff";
-                            }}
+                        <div>
+                            <Label htmlFor="end-date" style={{ color: colors.foreground }}>
+                                To Date
+                            </Label>
+                            <Calendar
+                                placeholder="Select end date"
+                                selectedDate={endDate}
+                                onDateSelect={validateEndDateChanges}
+                                minDate={startDate}
+                            />
+                            {endDateError && (
+                                <p className="text-xs mt-1" style={{ color: colors.error }}>
+                                    End date cannot be before start date.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={fetchItems}
+                        disabled={loadingItems || !homeCountry || !industry}
+                        className="w-full py-2 rounded-md flex items-center justify-center mb-6"
+                        style={{
+                            backgroundColor: colors.accent,
+                            alignItems: "center",
+                            borderColor: colors.accent,
+                            color: "#ffffff",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = colors.hover;
+                            e.currentTarget.style.color = "#ffffff";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = colors.accent;
+                            e.currentTarget.style.color = "#ffffff";
+                        }}
+                    >
+                        <span className="mr-2"></span>
+                        {loadingItems ? "Loading..." : "Search"}
+                    </button>
+
+                    <div
+                        className="mb-6 border rounded-md p-4"
+                        style={{
+                            borderColor: colors.border,
+                            backgroundColor: `${colors.surface}95`,
+                        }}
+                    >
+                        <h2
+                            className="text-lg font-semibold mb-2"
+                            style={{ color: colors.foreground }}
                         >
                             <span className="mr-2"></span>
                             {loadingItems ? "Loading..." : "🔎Search"}
