@@ -500,7 +500,8 @@ public class TariffCalculationImpl implements TariffCalculationService {
                 tariff.getPartnerCountry().getCountryName(),
                 tariff.getItem().getItemName(),
                 tariff.getPercentageRate(),
-                tariff.getDescription());
+                tariff.getDescription(),
+                tariff.getLocalDate());
     }
 
 }
