@@ -207,13 +207,13 @@ class TariffCalculationImplGetCurrentTariffDetailsBasicsTest {
         // Arrange
         when(countryRepo.findByCountryName("USA")).thenReturn(Optional.of(reporting));
         when(countryRepo.findByCountryName("China")).thenReturn(Optional.of(partner));
-        when(itemRepo.findByItemNameAndCountry("  electronics high-tech  ", reporting)).thenReturn(Optional.of(item));
+        when(itemRepo.findByItemNameAndCountry("  electronics, high-tech  ", reporting)).thenReturn(Optional.of(item));
         when(tariffRepo.findByReportingCountryAndItem(reporting, item)).thenReturn(List.of(sampleTariff));
         // Act
         TariffResponseDTO res = service.getCurrentTariffDetails(q);
         // Assert
         assertNotNull(res);
-        verify(itemRepo).findByItemNameAndCountry("  electronics high-tech  ", reporting);
+        verify(itemRepo).findByItemNameAndCountry("  electronics, high-tech  ", reporting);
     }
 
     @Test

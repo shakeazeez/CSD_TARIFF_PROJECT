@@ -72,7 +72,7 @@ pub fn generate_token(user: &AuthUser) -> String {
         };
 
     let header = Header::new(jsonwebtoken::Algorithm::HS512);
-    let secret = EncodingKey::from_secret(env::var("SIGNING_SECRET").unwrap().as_bytes());
+    let secret = EncodingKey::from_secret(env::var("SIGNING_SECRET").unwrap_or_default().as_bytes());
 
     let res = encode(&header, Some(&created_claims), &secret).unwrap();
     format!("{}.{}.{}", res.protected, res.payload, res.signature)
