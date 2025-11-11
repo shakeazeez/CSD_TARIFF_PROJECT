@@ -882,7 +882,7 @@ export function Calculator({ onMenuClick }) {
                           >
                             {typeof fieldValues[key] === "number" ? fieldValues[key].toFixed(2) : fieldValues[key] || "N/A"}
                           </div>
-                          {key === 'itemCostWithTariff' && cost && current?.tariffRate && (
+                          {key === 'itemCostWithTariff' && cost && current && (
                             <div
                               className="mt-3 pt-2 border-t"
                               style={{ 
@@ -911,7 +911,7 @@ export function Calculator({ onMenuClick }) {
                                 className="text-base font-mono"
                                 style={{ color: colors.accent }}
                               >
-                                ${cost} + (${current.tariffRate.toFixed(2)}% × ${cost})
+                                ${cost} + (${current.tariffRate ? current.tariffRate.toFixed(2) : '0.00'}% × ${cost})
                               </div>
                             </div>
                           )}
