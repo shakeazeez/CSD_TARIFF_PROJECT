@@ -62,20 +62,21 @@ This project combines cutting-edge technology with real-world trade data to prov
 ## 🛠️ Tech Stack
 
 ### Backend Services
-- **Java 17+** - Spring Boot microservices
-- **Rust** - High-performance API gateway
+- **SpringBoot (java 21)** - Microservices for different features
+- **Mockito + Junit** - Mock data uni testing
+- **RestAssured + Spring Framework** - Integreation testing 
+- **Actix-web (Rust 1.89)** - High-performance API gateway and Authentication server
 - **PostgreSQL** - Robust database
-- **Maven** - Dependency management
 
 ### Frontend
-- **React 18** - Modern UI framework
+- **Reactjs** - Modern UI framework
 - **Vite** - Lightning-fast build tool
 - **Tailwind CSS** - Utility-first styling
 - **ESLint** - Code quality assurance
 
 ### DevOps & Tools
 - **Docker & Docker Compose** - Containerization
-- **JWT** - Secure authentication
+- **jsonwebtoken + argon2** - Secure authentication and encryption when storing user password
 - **OpenAI API** - AI-powered features
 - **NewsAPI** - Real-time news feeds
 
@@ -83,8 +84,8 @@ This project combines cutting-edge technology with real-world trade data to prov
 
 Before diving in, make sure you have:
 - **Docker & Docker Compose** 🐳
-- **Java 17+** ☕
-- **Rust 1.70+** 🦀
+- **Java 21** ☕
+- **Rust 1.89+** 🦀
 - **Node.js 18+** 📦
 - **PostgreSQL** (or use our Docker setup)
 
@@ -231,7 +232,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Team
 
-Built with ❤️ by the CSD Team:
+Built with ❤️ by the GoatTariff Team:
 - **Shake Azeez** 
 - **Joseph** 
 - **Jing Xi** 
