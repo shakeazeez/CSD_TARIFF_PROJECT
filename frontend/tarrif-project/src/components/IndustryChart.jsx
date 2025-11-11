@@ -118,7 +118,7 @@ const IndustryChart = ({ labels, value, baseCost }) => {
       mode: "index",
       intersect: false,
     },
-    onHover: (event, activeElements, chart) => {
+    onHover: (event, activeElements) => {
       if (activeElements && activeElements.length > 0) {
         const dataIndex = activeElements[0].index;
         const datasetIndex = activeElements[0].datasetIndex;

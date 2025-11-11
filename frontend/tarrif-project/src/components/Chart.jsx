@@ -111,7 +111,7 @@ const Chart = ({ labels, value, title, legend, baseCost }) => {
             mode: 'index',
             intersect: false,
         },
-        onHover: (event, activeElements, chart) => {
+        onHover: (event, activeElements) => {
             if (activeElements && activeElements.length > 0) {
                 const dataIndex = activeElements[0].index;
                 const datasetIndex = activeElements[0].datasetIndex;
@@ -242,7 +242,6 @@ const Chart = ({ labels, value, title, legend, baseCost }) => {
                         {(() => {
                             const currentValue = highlightedData ? highlightedData.value : value[0][value[0].length - 1];
                             const tariffRate = typeof currentValue === 'number' ? currentValue : parseFloat(currentValue) || 0;
-                            const calculatedCost = baseCost ? (parseFloat(baseCost) + (tariffRate / 100) * parseFloat(baseCost)) : null;
                             return `${tariffRate.toFixed(2)}%`;
                         })()}
                     </div>

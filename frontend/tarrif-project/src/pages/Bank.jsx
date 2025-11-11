@@ -473,7 +473,7 @@ export function Bank({ onMenuClick }) {
         }
 
         prevSelectedItemsRef.current = selectedItems;
-    }, [selectedItems, backupCountries, existingItemDetailsMap, invalidItems, queryTariffs]);
+    }, [selectedItems, backupCountries, existingItemDetailsMap, invalidItems, queryTariffs, startDate, endDate]);
 
     // load and store tariff details for the selected items
     const [tariffDetails, setTariffDetails] = useState({});
@@ -506,7 +506,7 @@ export function Bank({ onMenuClick }) {
                 clearTimeout(debounceTimerRef.current);
             }
         };
-    }, [selectedItems, fetchTariffDetails]);
+    }, [selectedItems, fetchTariffDetails, startDate, endDate]);
 
     useEffect(() => {
         console.log("Item is stored in existing map ", existingItemDetailsMap);
@@ -752,7 +752,7 @@ export function Bank({ onMenuClick }) {
                         >
                             <span className="mr-2"></span>
                             {loadingItems ? "Loading..." : "🔎Search"}
-                        </button>
+                        </h2>
 
                         <div
                             className="mb-6 border rounded-md p-4"
