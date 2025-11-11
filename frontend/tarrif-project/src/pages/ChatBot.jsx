@@ -197,7 +197,7 @@ export function ChatBot({ onMenuClick }) {
   // fetch chat history from backend (for authenticated users)
   const fetchChatHistory = useCallback(async () => {
     try {
-      const username = localStorage.getItem("username");
+      const username = sessionStorage.getItem("username");
       if (!username) return;
       const response = await api.get(`/news/history/${username}`);
 
@@ -344,7 +344,7 @@ export function ChatBot({ onMenuClick }) {
 
       const params = { query: queryToSend };
       if (isAuthenticated) {
-        params.username = localStorage.getItem("username");
+        params.username = sessionStorage.getItem("username");
         // Add conversationId if appending to existing conversation
         const activeIdx = activeConversationRef.current;
         if (activeIdx >= 0 && guestConversations[activeIdx] && guestConversations[activeIdx].id) {

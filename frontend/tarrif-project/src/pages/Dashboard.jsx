@@ -233,7 +233,7 @@ export function Dashboard({ onMenuClick }) {
   const [showPin, setShowPin] = useState({}); // object: { id: response.data }
 
   useEffect(() => {
-    const storedPins = localStorage.getItem("pin");
+    const storedPins = sessionStorage.getItem("pin");
     if (storedPins) {
       try {
         // Try to parse as JSON array first (from login/signup responses)
@@ -272,14 +272,14 @@ export function Dashboard({ onMenuClick }) {
     }
     // Update state
     setPinned(updatedPins);
-    // Sync to localStorage as string
-    localStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
+    // Sync to sessionStorage as string
+    sessionStorage.setItem("pin", updatedPins.join(",")); // "1,2,3"
   };
 
   const addPin = async (item) => {
     try {
-      const response = await api.post(`/user/${localStorage.getItem("username")}/pinned-tariffs/${item}`, "");
-      localStorage.setItem("pin", response.data);
+      const response = await api.post(`/user/${sessionStorage.getItem("username")}/pinned-tariffs/${item}`, "");
+      sessionStorage.setItem("pin", response.data);
     } catch (error) {
       console.error("Error adding pin:", error);
     }
@@ -287,8 +287,8 @@ export function Dashboard({ onMenuClick }) {
 
   const delPin = async (item) => {
     try {
-      const response = await api.post(`/user/${localStorage.getItem("username")}/unpinned-tariffs/${item}`, "");
-      localStorage.setItem("pin", response.data);
+      const response = await api.post(`/user/${sessionStorage.getItem("username")}/unpinned-tariffs/${item}`, "");
+      sessionStorage.setItem("pin", response.data);
     } catch (error) {
       console.error("Error removing pin:", error);
     }
@@ -298,7 +298,7 @@ export function Dashboard({ onMenuClick }) {
   const downloadCSV = async () => {
     var response;
     try {
-      response = await api.get(`/user/${localStorage.getItem("username")}/csv/`);
+      response = await api.get(`/user/${sessionStorage.getItem("username")}/csv/`);
 
     } catch {
       console.error("Error calling user history. Breaking....", error);

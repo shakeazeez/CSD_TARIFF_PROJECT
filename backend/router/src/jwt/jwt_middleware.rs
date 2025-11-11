@@ -38,7 +38,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let auth = req
             .headers()
-            .get("authorization")
+            .get("Authorization")
             .and_then(|h| h.to_str().ok());
 
         println!("Authorization token: {auth:?}");
@@ -80,7 +80,7 @@ where
             }
             None => {
                 let res = HttpResponse::Unauthorized()
-                    .json("Token Not Found in format Authorisation: Bearer <Token>")
+                    .json("Token Not Found in format Authorization: Bearer <Token>")
                     .map_into_right_body();
                 Box::pin(async move { Ok(req.into_response(res)) })
             }
