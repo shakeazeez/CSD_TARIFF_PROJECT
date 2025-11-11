@@ -10,6 +10,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useTheme } from "../contexts/use-theme.js"; // Import theme context
+import { useState } from "react";
 
 // Register components
 ChartJS.register(
@@ -36,6 +37,7 @@ ChartJS.register(
  * @param {Array<Array<number>>} props.value - Array of numeric values for the y-axis. Must match labels length.
  * @param {string} props.title - Title displayed at the top of the chart.
  * @param {Array<string>} props.legend - Label shown in the chart legend.
+ * @param {number} props.baseCost - Base cost in USD for calculating total cost with tariff.
  *
  * @example
  * const value = [
@@ -55,9 +57,12 @@ ChartJS.register(
  * />
  */
 
-const Chart = ({ labels, value, title, legend }) => {
+const Chart = ({ labels, value, title, legend, baseCost }) => {
     // Get theme colors for chart styling
     const { colors } = useTheme();
+    
+    // State to track the currently highlighted value and its index
+    const [highlightedData, setHighlightedData] = useState(null);
     
     // Theme-aware color palette for chart lines
     function getThemeColors(index) {
@@ -105,6 +110,17 @@ const Chart = ({ labels, value, title, legend }) => {
         interaction: {
             mode: 'index',
             intersect: false,
+        },
+        onHover: (event, activeElements) => {
+            if (activeElements && activeElements.length > 0) {
+                const dataIndex = activeElements[0].index;
+                const datasetIndex = activeElements[0].datasetIndex;
+                const hoveredValue = value[datasetIndex][dataIndex];
+                const hoveredLabel = labels[dataIndex];
+                setHighlightedData({ value: hoveredValue, label: hoveredLabel });
+            } else {
+                setHighlightedData(null);
+            }
         },
         plugins: {
             title: {
@@ -201,7 +217,60 @@ const Chart = ({ labels, value, title, legend }) => {
     };
     
     return (
-        <div style={{ height: '400px', width: '100%' }}>
+        <div style={{ height: '400px', width: '100%', position: 'relative' }}>
+            {/* Zoomed-in number display at top right */}
+            {value && value.length > 0 && value[0] && value[0].length > 0 && (
+                <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    zIndex: 10,
+                    backgroundColor: colors.surface,
+                    border: `2px solid ${colors.accent}`,
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    minWidth: '120px'
+                }}>
+                    <div style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: colors.accent,
+                        textAlign: 'center',
+                        lineHeight: '1.2'
+                    }}>
+                        {(() => {
+                            const currentValue = highlightedData ? highlightedData.value : value[0][value[0].length - 1];
+                            const tariffRate = typeof currentValue === 'number' ? currentValue : parseFloat(currentValue) || 0;
+                            return `${tariffRate.toFixed(2)}%`;
+                        })()}
+                    </div>
+                    <div style={{
+                        fontSize: '11px',
+                        color: colors.muted,
+                        textAlign: 'center',
+                        marginTop: '2px'
+                    }}>
+                        {highlightedData ? highlightedData.label : (labels && labels.length > 0 ? labels[labels.length - 1] : 'Latest')}
+                    </div>
+                    {baseCost && (
+                        <div style={{
+                            fontSize: '12px',
+                            color: colors.foreground,
+                            textAlign: 'center',
+                            marginTop: '4px',
+                            fontWeight: 'bold'
+                        }}>
+                            ${(() => {
+                                const currentValue = highlightedData ? highlightedData.value : value[0][value[0].length - 1];
+                                const tariffRate = typeof currentValue === 'number' ? currentValue : parseFloat(currentValue) || 0;
+                                const calculatedCost = parseFloat(baseCost) + (tariffRate / 100) * parseFloat(baseCost);
+                                return calculatedCost.toFixed(2);
+                            })()}
+                        </div>
+                    )}
+                </div>
+            )}
             <Line data={data} options={options} />
         </div>
     );

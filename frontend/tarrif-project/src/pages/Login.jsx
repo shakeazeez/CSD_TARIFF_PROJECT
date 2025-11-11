@@ -134,6 +134,7 @@ export function Login(){
     const [isLoading, setIsLoading] = useState(false); // Loading state for login/signup
     const [error, setError] = useState({username: "", password: "", rePassword: ""}); // Error messages for fields
     const [allow, setAllow] = useState(""); // General error message
+    const [isLoginError, setIsLoginError] = useState(false); // Flag to track login errors
     const [success, setSuccess] = useState(""); // Success messages
     const [passwordReqs, setPasswordReqs] = useState({
         length: false,
@@ -151,10 +152,25 @@ export function Login(){
     // Auto-dismiss error message after 5 seconds
     useEffect(() => {
         if (allow) {
-            const timer = setTimeout(() => setAllow(''), 5000);
+            const timer = setTimeout(() => {
+                setAllow('');
+                if (isLoginError) {
+                    // Clear form fields on login error
+                    setForm({ 
+                        username: "", 
+                        password: "", 
+                        rePassword: "",
+                        industry: "",
+                        originCountry: "",
+                        itemsSold: "",
+                        destinationCountries: ""
+                    });
+                    setIsLoginError(false);
+                }
+            }, 5000);
             return () => clearTimeout(timer);
         }
-    }, [allow]);
+    }, [allow, isLoginError]);
 
     // Auto-dismiss success message after 5 seconds
     useEffect(() => {
@@ -320,6 +336,7 @@ export function Login(){
         setIsLoading(true);
         setAllow("");
         setSuccess("");
+        setIsLoginError(false);
 
         try{
 
@@ -413,18 +430,22 @@ export function Login(){
             const action = isSignUp ? 'signup' : 'login';
             const errorMessage = error.response?.status === 401
                 ? "Username or password is invalid."
+                : error.response?.status === 404
+                ? "User not found."
                 : error.response?.status === 409
                 ? "Username already exists. Please choose a different username."
+                : error.response?.status === 500
+                ? "Unexpected error occurred."
                 : (error.response?.data?.message || error.message || `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`);
             setAllow(errorMessage);
+            setIsLoginError(true);
         } finally {
             setIsLoading(false);
         }
     };
 
     // Handle form submission
-    const handleSubmit = async(e) => {
-        e.preventDefault(); // prevent the page from reloading
+    const handleSubmit = async() => {
 
         if (!isSignUp) {
             if (!validateForm(form)) {
@@ -628,7 +649,7 @@ export function Login(){
                     </CardHeader>
 
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form className="space-y-6">
                             {/* USERNAME INPUT */}
                             <motion.div
                                 variants={itemVariants}
@@ -994,7 +1015,8 @@ export function Login(){
                             >
                                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                     <Button
-                                        type="submit"
+                                        type="button"
+                                        onClick={handleSubmit}
                                         disabled={isLoading}
                                         className="w-full text-white transition-all duration-300 shadow-lg"
                                         style={{

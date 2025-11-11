@@ -10,6 +10,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useTheme } from "../contexts/use-theme.js"; // Import theme context
+import { useState } from "react";
 
 // Register components
 ChartJS.register(
@@ -35,6 +36,7 @@ ChartJS.register(
  * @param {Object} props
  * @param {Array<string>} props.labels - Array of labels for the x-axis.
  * @param {Array<Array<number>>} props.value - Array of numeric values for the y-axis. Must match labels length.
+ * @param {number} props.baseCost - Base cost in USD for calculating total cost with tariff.
  *
  * @example
  * const value = [
@@ -50,9 +52,12 @@ ChartJS.register(
  * />
  */
 
-const IndustryChart = ({ labels, value }) => {
+const IndustryChart = ({ labels, value, baseCost }) => {
   // Get theme colors for chart styling
   const { colors } = useTheme();
+
+  // State to track the currently highlighted value and its index
+  const [highlightedData, setHighlightedData] = useState(null);
 
   // Calculate dynamic max value based on data
   const calculateMaxValue = () => {
@@ -112,6 +117,17 @@ const IndustryChart = ({ labels, value }) => {
     interaction: {
       mode: "index",
       intersect: false,
+    },
+    onHover: (event, activeElements) => {
+      if (activeElements && activeElements.length > 0) {
+        const dataIndex = activeElements[0].index;
+        const datasetIndex = activeElements[0].datasetIndex;
+        const hoveredValue = value[datasetIndex][dataIndex];
+        const hoveredLabel = labels[dataIndex];
+        setHighlightedData({ value: hoveredValue, label: hoveredLabel });
+      } else {
+        setHighlightedData(null);
+      }
     },
     plugins: {
       tooltip: {
@@ -193,7 +209,60 @@ const IndustryChart = ({ labels, value }) => {
   };
 
   return (
-    <div style={{ height: "300px", width: "100%" }}>
+    <div style={{ height: "300px", width: "100%", position: 'relative' }}>
+      {/* Zoomed-in number display at top right */}
+      {value && value.length > 0 && value[0] && value[0].length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          zIndex: 10,
+          backgroundColor: colors.surface,
+          border: `2px solid ${colors.accent}`,
+          borderRadius: '8px',
+          padding: '6px 10px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          minWidth: '100px'
+        }}>
+          <div style={{
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: colors.accent,
+            textAlign: 'center',
+            lineHeight: '1.2'
+          }}>
+            {(() => {
+              const currentValue = highlightedData ? highlightedData.value : value[0][value[0].length - 1];
+              const tariffRate = typeof currentValue === 'number' ? currentValue : parseFloat(currentValue) || 0;
+              return `${tariffRate.toFixed(2)}%`;
+            })()}
+          </div>
+          <div style={{
+            fontSize: '9px',
+            color: colors.muted,
+            textAlign: 'center',
+            marginTop: '1px'
+          }}>
+            {highlightedData ? highlightedData.label : (labels && labels.length > 0 ? labels[labels.length - 1] : 'Latest')}
+          </div>
+          {baseCost && (
+            <div style={{
+              fontSize: '10px',
+              color: colors.foreground,
+              textAlign: 'center',
+              marginTop: '2px',
+              fontWeight: 'bold'
+            }}>
+              ${(() => {
+                const currentValue = highlightedData ? highlightedData.value : value[0][value[0].length - 1];
+                const tariffRate = typeof currentValue === 'number' ? currentValue : parseFloat(currentValue) || 0;
+                const calculatedCost = parseFloat(baseCost) + (tariffRate / 100) * parseFloat(baseCost);
+                return calculatedCost.toFixed(2);
+              })()}
+            </div>
+          )}
+        </div>
+      )}
       <Line data={data} options={options} />
     </div>
   );

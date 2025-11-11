@@ -590,7 +590,7 @@ export function Bank({ onMenuClick }) {
             }}
           >
             <span className="mr-2"></span>
-            {loadingItems ? "Loading..." : "🔎Search"}
+            {loadingItems ? "Loading..." : "Search"}
           </button>
 
           <div
@@ -609,44 +609,6 @@ export function Bank({ onMenuClick }) {
             <p className="text-sm mb-4" style={{ color: colors.muted }}>
               {selectedItems.length} of {itemList.length} selected
             </p>
-
-            <div className="flex items-center mb-3 text-sm">
-              {/* <button
-                onClick={() => {
-                  setSelectedItems([...itemList]);
-
-                  const validItems = Object.keys(validItemDetailsMap);
-                  const newItems = itemList.filter(item => !validItems.includes(item));
-
-                  setTariffDetails(validItemDetailsMap)
-
-                  if (newItems.length > 0) {
-                    console.log("New items to fetch: ", newItems);
-                  }
-                }}
-                className="hover:underline transition-colors duration-200"
-                style={{ color: colors.accent }}
-                onMouseEnter={(e) => e.target.style.color = colors.hover}
-                onMouseLeave={(e) => e.target.style.color = colors.accent}
-              >
-                All
-              </button>*/}
-              {/* <span className="mx-2" style={{ color: colors.muted }}>
-                |
-              </span>
-              <button
-                onClick={() => {
-                  setSelectedItems([]);
-                  setTariffDetails({});
-                }}
-                className="hover:underline transition-colors duration-200"
-                style={{ color: colors.accent }}
-                onMouseEnter={(e) => e.target.style.color = colors.hover}
-                onMouseLeave={(e) => e.target.style.color = colors.accent}
-              >
-                None
-              </button>*/}
-            </div>
 
             {loadingItems && (
               <p className="text-sm" style={{ color: colors.muted }}>

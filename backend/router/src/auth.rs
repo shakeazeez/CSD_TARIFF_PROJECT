@@ -69,7 +69,7 @@ pub async fn login(
     }
     
     if acc.len() == 0 {
-        return HttpResponse::InternalServerError()
+        return HttpResponse::NotFound()
             .json("User does not exist");
     }
     // println!("{:?}", acc[0]);
