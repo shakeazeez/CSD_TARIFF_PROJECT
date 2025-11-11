@@ -29,7 +29,6 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-
     - name: Test Backend Services
       run: |
         cd backend/tariffCalc
