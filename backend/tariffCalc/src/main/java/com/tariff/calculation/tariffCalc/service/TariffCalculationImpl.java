@@ -387,7 +387,7 @@ public class TariffCalculationImpl implements TariffCalculationService {
         // Checks for item. If not in database, query from the actual API
         Item item;
 
-        String treatedItemName = tariffQueryDTO.item().toLowerCase().replaceAll(",", "");
+        String treatedItemName = tariffQueryDTO.item().toLowerCase().replaceAll("'", "");
 
         log.info("Searching for item '{}' in country '{}'", treatedItemName, reportingCountry.getCountryName());
 
