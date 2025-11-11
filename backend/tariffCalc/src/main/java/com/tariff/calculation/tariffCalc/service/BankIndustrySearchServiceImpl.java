@@ -118,7 +118,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
      */
 
     public TariffDetailsforItemDTO getTariffDetailsForItem(SelectedItemsDTO selectedItemsDTO) {
-
+        
         List<TariffDetails> topTenCountriesTariffDetails = new ArrayList<>();
 
         String itemName = selectedItemsDTO.selectedItem();
