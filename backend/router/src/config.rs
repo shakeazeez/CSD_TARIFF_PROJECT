@@ -21,7 +21,7 @@ use crate::auth;
  * @Return -> Pointer to the connected database
  */
 pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
-    let database_url = env::var("RUST_DATABASE_URL").unwrap_or_default();
+    let database_url = env::var("RUST_DATABASE_URL").expect("Database url not set");
 
     let manager = ConnectionManager::<PgConnection>::new(&database_url);
     let pool = DbPool::builder().build(manager).unwrap();
