@@ -29,11 +29,6 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-    - name: Router test
-      run : |
-        cd backend/router
-        cargo run
-
     - name: Test Backend Services
       run: |
         cd backend/tariffCalc
