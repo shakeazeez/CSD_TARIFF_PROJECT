@@ -58,7 +58,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
      *         Returns an empty list if no items match.
      */
     public List<String> getAllItemsAvailableInTheIndustry(TariffItemFilterDTO itemFilterDTO) {
-
+        log.info(itemFilterDTO.toString());
         int startYear = LocalDate.parse(itemFilterDTO.startDate()).getYear();
         int endYear = LocalDate.parse(itemFilterDTO.endDate()).getYear();
 
@@ -68,7 +68,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
 
         List<Item> filteredItemList = new ArrayList<>();
 
-        // log.info("Items to be printed" + preItemList.toString() + "\n\n\n");
+        log.info("Items to be printed" + preItemList.toString() + "\n\n\n");
 
         // items that users can select should at least have 1 entry of tariff details
         // for the date range
@@ -118,7 +118,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
      */
 
     public TariffDetailsforItemDTO getTariffDetailsForItem(SelectedItemsDTO selectedItemsDTO) {
-
+        log.info(selectedItemsDTO.toString());
         List<TariffDetails> topTenCountriesTariffDetails = new ArrayList<>();
 
         String itemName = selectedItemsDTO.selectedItem();
@@ -138,7 +138,7 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
         String startDateStr = selectedItemsDTO.startDate();
         String endDateStr = selectedItemsDTO.endDate();
         LocalDate startDate = startDateStr != null && !startDateStr.isEmpty() ? LocalDate.parse(startDateStr)
-                : LocalDate.now().minusYears(10);
+                : LocalDate.now().minusYears(100);
         LocalDate endDate = endDateStr != null && !endDateStr.isEmpty() ? LocalDate.parse(endDateStr) : LocalDate.now();
         int startYear = startDate.getYear();
         int endYear = endDate.getYear();
