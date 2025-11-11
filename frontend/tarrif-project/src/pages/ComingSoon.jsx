@@ -1,20 +1,26 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock, Sparkles, Sun, Moon } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useTheme } from '../contexts/use-theme';
-import underConstruction from '../assets/UnderConstruction.png'
 
 const ComingSoon = ({ feature = "This feature" }) => {
   const navigate = useNavigate();
-  const { colors } = useTheme();
+  const { colors, toggleTheme, isDark } = useTheme();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'transparent' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ backgroundColor: colors.background }}>
       {/* Animated background */}
-      <div className="absolute inset-0" style={{ background: 'transparent' }}>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-slate-900 dark:to-slate-800" />
+      <div className="absolute inset-0" style={{ backgroundColor: colors.background }}>
+        <div 
+          className="absolute inset-0" 
+          style={{ 
+            background: isDark 
+              ? `linear-gradient(135deg, ${colors.background} 0%, #2a2a2a 50%, #1a1a1a 100%)`
+              : `linear-gradient(135deg, ${colors.background} 0%, #f0f0f0 50%, #e8e8e8 100%)`
+          }} 
+        />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(120,119,198,0.1),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,107,107,0.1),transparent_50%)]" />
       </div>
@@ -30,18 +36,58 @@ const ComingSoon = ({ feature = "This feature" }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8"
+          className="mb-8 flex items-center justify-between"
         >
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
-            className="mb-4"
-            style={{ color: colors.foreground }}
+            className="mb-4 transition-all duration-300"
+            style={{ 
+              color: colors.foreground,
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = colors.surface;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+            }}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <img src={underConstruction}/>
+          
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleTheme}
+              className="transition-all duration-300 shadow-md mb-4"
+              style={{
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                color: colors.accent,
+                borderWidth: '1px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = colors.accent;
+                e.target.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = colors.surface;
+                e.target.style.color = colors.accent;
+              }}
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Main content */}
@@ -49,7 +95,11 @@ const ComingSoon = ({ feature = "This feature" }) => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-slate-200 dark:border-slate-700"
+          className="backdrop-blur-lg rounded-2xl p-8 shadow-xl"
+          style={{ 
+            backgroundColor: `${colors.surface}E6`, // Using surface color with 90% opacity
+            border: `1px solid ${colors.border}`
+          }}
         >
           {/* Animated clock icon */}
           <motion.div
@@ -147,8 +197,9 @@ const ComingSoon = ({ feature = "This feature" }) => {
           {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-blue-400 rounded-full opacity-60"
+              className="absolute w-2 h-2 rounded-full opacity-60"
               style={{
+                backgroundColor: colors.accent,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
               }}
