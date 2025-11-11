@@ -9,14 +9,13 @@ use diesel::{
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::DbPool;
 use crate::jwt::jwt_middleware::JwtMiddleware;
 use crate::router;
 use crate::docs;
 use crate::auth;
 
 /*
- * Initialises c‹⁄onnection to database
+ * Initialises connection to database
  *
  * @Return -> Pointer to the connected database
  */
@@ -24,10 +23,30 @@ pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
     let database_url = env::var("RUST_DATABASE_URL").expect("Database url not set");
 
     let manager = ConnectionManager::<PgConnection>::new(&database_url);
-    let pool = DbPool::builder().build(manager).unwrap();
+    let pool = match Pool::builder()
+        .max_size(3) // Reduced to 3 connections to avoid overwhelming RDS
+        .min_idle(Some(1)) // Keep at least 1 idle connection
+        .max_lifetime(Some(std::time::Duration::from_secs(300))) // 5 minutes max lifetime
+        .idle_timeout(Some(std::time::Duration::from_secs(60))) // Close idle connections after 1 minute
+        .connection_timeout(std::time::Duration::from_secs(10)) // 10 second connection timeout
+        .build(manager) {
+        Ok(pool) => {
+            println!("Database connection pool created successfully");
+            pool
+        },
+        Err(e) => {
+            panic!("Unable to connect to the database: {}", e);
+        }
+    };
 
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Unable to connect to the database"));
+    // Test the connection - don't panic on failure, just log
+    match PgConnection::establish(&database_url) {
+        Ok(_) => println!("Database connection established successfully"),
+        Err(e) => {
+            println!("Warning: Could not establish initial database connection: {}", e);
+            println!("The application will continue, but database operations may fail until connection is restored");
+        },
+    }
 
     pool
 }

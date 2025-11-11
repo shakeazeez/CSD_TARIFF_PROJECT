@@ -27,11 +27,16 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - clear storage and redirect to login
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('username');
-      localStorage.removeItem('userType');
-      window.location.href = '/login';
+      // Only redirect if the request was authenticated (had Authorization header)
+      // For login/signup requests, 401 means wrong credentials, not token expired
+      const hadAuthHeader = error.config?.headers?.Authorization;
+      if (hadAuthHeader) {
+        // Token expired or invalid - clear storage and redirect to login
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('username');
+        localStorage.removeItem('userType');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
