@@ -882,6 +882,39 @@ export function Calculator({ onMenuClick }) {
                           >
                             {typeof fieldValues[key] === "number" ? fieldValues[key].toFixed(2) : fieldValues[key] || "N/A"}
                           </div>
+                          {key === 'itemCostWithTariff' && cost && current?.tariffRate && (
+                            <div
+                              className="mt-3 pt-2 border-t"
+                              style={{ 
+                                borderColor: colors.border,
+                              }}
+                            >
+                              <div
+                                className="text-sm font-medium mb-1"
+                                style={{ color: colors.muted }}
+                              >
+                                General Formula:
+                              </div>
+                              <div
+                                className="text-base font-mono mb-2"
+                                style={{ color: colors.foreground }}
+                              >
+                                Base Cost + (Tariff Rate × Base Cost)
+                              </div>
+                              <div
+                                className="text-sm font-medium mb-1"
+                                style={{ color: colors.muted }}
+                              >
+                                Calculation:
+                              </div>
+                              <div
+                                className="text-base font-mono"
+                                style={{ color: colors.accent }}
+                              >
+                                ${cost} + (${current.tariffRate.toFixed(2)}% × ${cost})
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                   </div>
@@ -914,6 +947,7 @@ export function Calculator({ onMenuClick }) {
                     value={value}
                     title={title}
                     legend={legend}
+                    baseCost={cost}
                   />
                 </CardContent>
               </Card>
