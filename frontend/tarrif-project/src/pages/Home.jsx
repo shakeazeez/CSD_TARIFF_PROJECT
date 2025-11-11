@@ -125,7 +125,7 @@ export function Home({ onMenuClick }){
     }, []);
 
     useEffect(() => {
-        if(sessionStorage.getItem("authToken") != null){
+        if(localStorage.getItem("authToken") != null){
             navigate("/dashboard");
         }
     }, [navigate]);

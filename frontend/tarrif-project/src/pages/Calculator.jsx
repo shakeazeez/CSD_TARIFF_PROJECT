@@ -318,8 +318,8 @@ export function Calculator({ onMenuClick }) {
   // Pinning
   const [pinned, setPinned] = useState([]);
   useEffect(() => {
-    if (sessionStorage.getItem("authToken") != null) {
-      const storedPins = sessionStorage.getItem("pin");
+    if (localStorage.getItem("authToken") != null) {
+      const storedPins = localStorage.getItem("pin");
       if (storedPins) {
         try {
           // Try to parse as JSON array first (from login/addPin/delPin responses)
@@ -511,18 +511,18 @@ export function Calculator({ onMenuClick }) {
     // Update state
     setPinned(updatedPins);
     // Sync to localStorage as JSON array (consistent with backend responses)
-    sessionStorage.setItem("pin", JSON.stringify(updatedPins));
+    localStorage.setItem("pin", JSON.stringify(updatedPins));
   };
 
   const addPin = async (item) => {
     try {
       const response = await api.post(
-        `/user/${sessionStorage.getItem(
+        `/user/${localStorage.getItem(
           "username"
         )}/pinned-tariffs/${item}`,
         ""
       );
-      sessionStorage.setItem("pin", JSON.stringify(response.data));
+      localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error adding pin:", error);
     }
@@ -531,12 +531,12 @@ export function Calculator({ onMenuClick }) {
   const delPin = async (item) => {
     try {
       const response = await api.post(
-        `/user/${sessionStorage.getItem(
+        `/user/${localStorage.getItem(
           "username"
         )}/unpinned-tariffs/${item}`,
         ""
       );
-      sessionStorage.setItem("pin", JSON.stringify(response.data));
+      localStorage.setItem("pin", JSON.stringify(response.data));
     } catch (error) {
       console.error("Error removing pin:", error);
     }
@@ -821,7 +821,7 @@ export function Calculator({ onMenuClick }) {
                     Current Tariff Results
                   </CardTitle>
                   {/* add to pin button */}
-                  {sessionStorage.getItem("authToken") != null ? (
+                  {localStorage.getItem("authToken") != null ? (
                     <Button
                       className={`${
                         pinned.includes(Number(current.tariffId))

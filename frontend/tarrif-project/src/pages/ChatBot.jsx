@@ -197,7 +197,7 @@ export function ChatBot({ onMenuClick }) {
   // fetch chat history from backend (for authenticated users)
   const fetchChatHistory = useCallback(async () => {
     try {
-      const username = sessionStorage.getItem("username");
+      const username = localStorage.getItem("username");
       if (!username) return;
       const response = await api.get(`/news/history/${username}`);
 
@@ -344,7 +344,7 @@ export function ChatBot({ onMenuClick }) {
 
       const params = { query: queryToSend };
       if (isAuthenticated) {
-        params.username = sessionStorage.getItem("username");
+        params.username = localStorage.getItem("username");
         // Add conversationId if appending to existing conversation
         const activeIdx = activeConversationRef.current;
         if (activeIdx >= 0 && guestConversations[activeIdx] && guestConversations[activeIdx].id) {
@@ -484,8 +484,8 @@ export function ChatBot({ onMenuClick }) {
 
         // If user is authenticated and conversation has an id (server-side), attempt server delete
         if (isAuthenticated && convToDelete && convToDelete.id) {
-          const username = sessionStorage.getItem('username');
-          const token = sessionStorage.getItem('authToken');
+          const username = localStorage.getItem('username');
+          const token = localStorage.getItem('authToken');
           if (username && token) {
             api.delete(`/news/history/${username}/${convToDelete.id}`)
               .then(() => {
