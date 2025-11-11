@@ -161,11 +161,16 @@ public class BankIndustrySearchServiceImpl implements BankIndustrySearchService 
                     .filter(tariff -> tariff.getLocalDate() != null)
                     .filter(tariff -> tariff.getLocalDate().getYear() >= startYear
                             && tariff.getLocalDate().getYear() <= endYear)
-                    .filter(tariff -> tariff.getPercentageRate() > 0.0) // prevent from showing tariffs with 0
-                                                                        // percentage
                     .collect(Collectors.toList());
 
             if (partnerCountryTariffList.isEmpty()) {
+                continue;
+            }
+
+            // Skip countries where all tariff rates are 0
+            boolean allRatesAreZero = partnerCountryTariffList.stream()
+                    .allMatch(tariff -> tariff.getPercentageRate() == 0.0);
+            if (allRatesAreZero) {
                 continue;
             }
 
