@@ -29,5 +29,7 @@ COPY --from=build /app/tariffCalc/target/tariffCalc-0.0.1-SNAPSHOT.jar tariffCal
 COPY --from=build /app/user/target/user-0.0.1-SNAPSHOT.jar user.jar
 COPY --from=build /app/news/target/news-0.0.1-SNAPSHOT.jar news.jar
 EXPOSE 8080 8081 8082 8083
+COPY start-services.sh /app/start-services.sh
+RUN chmod +x /app/start-services.sh
 ENTRYPOINT ["dumb-init", "--"]
-CMD java -jar tariffCalc.jar & java -jar user.jar & java -jar news.jar & wait
+CMD ["/app/start-services.sh"]
