@@ -46,4 +46,3 @@ build/
 ### scripts ###
 *.cmd
 *.sh
-!backend/start-services.sh
