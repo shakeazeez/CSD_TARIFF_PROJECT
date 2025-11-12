@@ -1,8 +1,8 @@
 # CSD Tariff Project
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.java.com/)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-000000.svg)](https://www.rust-lang.org/)
+[![Java](https://img.shields.io/badge/Java-21+-orange.svg)](https://www.java.com/)
+[![Rust](https://img.shields.io/badge/Rust-1.89+-000000.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)](https://www.postgresql.org/)
 
