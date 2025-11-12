@@ -38,4 +38,4 @@ WORKDIR /app
 COPY --from=build /app/target/release/router /app/router
 
 EXPOSE 8080
-CMD ["./router"]
+CMD ["sh", "-c", "sleep 45 && ./router"]
