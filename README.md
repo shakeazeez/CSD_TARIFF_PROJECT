@@ -95,6 +95,92 @@ docker-compose up
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
+### Note: If you want to launch WITHOUT docker
+1. Macos (Using package manager homebrew)
+
+FRONTEND
+```bash
+brew install npm 
+cd frontend/tarif-project
+npm install 
+npm run dev
+```
+
+BACKEND
+```bash
+# For the rust router (note for frontend to connect to any services and any user authentication, this needs to be present)
+brew install rustup # Follow all bash/zsh configuration examples provided 
+brew install libpq  # Follow all bash/zsh configuration examples provided 
+cd backend/router 
+
+# Temporarily set the DYLB library for diesel so it can run
+export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libpq/lib:$DYLD_LIBRARY_PATH"
+cargo run
+
+# For tariff calculation portion of website 
+cd backend/tariffCalc 
+./mvnw clean compile && ./mvnw spring-boot:run
+
+# For user logic functionality
+cd backend/user 
+./mvnw clean compile && ./mvnw spring-boot:run
+
+# For openai and newsapi functinality
+cd backend/news 
+./mvnw clean compile && ./mvnw spring-boot:run
+```
+
+2. For Windows 
+FRONTEND
+Download: https://nodejs.org
+Run 
+````powershell
+cd frontend\tarif-project
+npm 
+````
+
+BACKEND
+Install Postgres from the following website
+https://www.postgresql.org/download/windows/
+ 
+Install Rust with 
+````powershell
+winget install Rustlang.Rustup
+rustup default stable
+````
+Add postgres paths 
+
+```powershell
+setx PQ_LIB_DIR "C:\Program Files\location\to\postgres\install\PostgreSQL\16\lib"
+setx PQ_INCLUDE_DIR "C:\Program Files\location\to\postgres\install\PostgreSQL\16\include"
+setx PATH "$($env:PATH);C:\Program Files\location\to\postgres\install\PostgreSQL\16\bin"
+```
+
+Run router 
+```powershell
+cd backend\router
+cargo install diesel_cli --no-default-features --features postgres
+cargo run -release
+```
+
+Run service
+```powershell
+cd backend\tariffCalc 
+./mvnw clean compile && ./mvnw spring-boot:run
+
+# For user logic functionality
+cd backend\user 
+./mvnw clean compile && ./mvnw spring-boot:run
+
+# For openai and newsapi functinality
+cd backend\news 
+./mvnw clean compile && ./mvnw spring-boot:run
+```
+
+3. For Linux 
+
+bops you installed the OS you can figure out how to do it yourself
+
 ### 4. Access Your App
 - Frontend: http://localhost
 - API Gateway: http://localhost:8080
