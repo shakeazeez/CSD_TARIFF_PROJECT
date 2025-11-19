@@ -187,6 +187,7 @@ bops you installed the OS you can figure out how to do it yourself
 - Tariff Service: http://localhost:8081
 - User Service: http://localhost:8082
 - News Service: http://localhost:8083
+
 Note: For authentication to work, all request must go through port 8080 as that is where the 
       user authentication logic is stored. 
 
