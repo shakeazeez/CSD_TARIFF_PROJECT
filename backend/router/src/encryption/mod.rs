@@ -13,7 +13,6 @@ pub fn encrypt_password(password: String) -> String {
     );
     
     let pass_hash = hash.hash_password(&password.into_bytes(), &salt).unwrap();
-    
     pass_hash.to_string()
 }
 
